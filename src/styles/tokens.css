@@ -1,0 +1,85 @@
+/* =========================================================
+   DIZAYN TIZIMI — tokenlar (ranglar, tipografika, o‘lchamlar)
+   Barcha komponentlar faqat shu o‘zgaruvchilardan foydalanadi.
+   Oldingi versiyaning ranglari saqlangan (yashil-akademik palitra).
+   ========================================================= */
+:root {
+  /* Asosiy ranglar */
+  --c-ink: #1f3832;
+  --c-ink-soft: #3d5650;
+  --c-muted: #6f817a;
+  --c-primary: #276e59;
+  --c-primary-600: #1f5b49;
+  --c-primary-dark: #153a32;
+  --c-mint: #dff1e5;
+  --c-mint-soft: #eef7f1;
+  --c-accent: #c9a646;        /* akademik oltin */
+  --c-accent-soft: #f6eccb;
+
+  /* Fon va chiziqlar */
+  --c-paper: #f6f7f2;
+  --c-surface: #ffffff;
+  --c-surface-2: #fafbf7;
+  --c-line: #e3e8df;
+  --c-line-strong: #cfd8cc;
+
+  /* Holat ranglari */
+  --c-success: #2f855a;
+  --c-success-soft: #e3f4ea;
+  --c-warning: #b7791f;
+  --c-warning-soft: #fbf0d9;
+  --c-danger: #c0453a;
+  --c-danger-soft: #fbe6e3;
+  --c-info: #2b6cb0;
+  --c-info-soft: #e5eef9;
+  --c-demo: #8a5a00;
+  --c-demo-soft: #fff4d6;
+
+  /* O‘yinlar bo‘limi uchun jonli ranglar */
+  --g-coral: #e8765a;
+  --g-blue: #3d7bd9;
+  --g-violet: #7a5ccf;
+  --g-amber: #e0a526;
+  --g-teal: #1f9e8f;
+
+  /* Grafik ranglari (ketma-ket) */
+  --chart-1: #276e59;
+  --chart-2: #3d7bd9;
+  --chart-3: #c9a646;
+  --chart-4: #e8765a;
+  --chart-5: #7a5ccf;
+
+  /* Tipografika */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --font-serif: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 15px;
+  --fs-md: 17px;
+  --fs-lg: 20px;
+  --fs-xl: 26px;
+  --fs-2xl: 34px;
+  --fs-3xl: 46px;
+
+  /* O‘lchamlar */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 72px;
+
+  --shadow-sm: 0 1px 2px rgba(21, 58, 50, 0.06);
+  --shadow-md: 0 8px 28px rgba(21, 58, 50, 0.07);
+  --shadow-lg: 0 18px 50px rgba(21, 58, 50, 0.12);
+
+  --container: 1200px;
+  --sidebar-w: 248px;
+  --header-h: 68px;
+}
