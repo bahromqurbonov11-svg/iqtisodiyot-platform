@@ -1,185 +1,138 @@
 
-import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
-import { Button, Notice } from '@/components/ui';
-import { paths } from '@/navigation/paths';
+import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/services/supabase';
-import { AuthShell } from './AuthShell';
 
-type StudentGroup = {
-  id: number;
-  name: string;
-};
-
-export function RegisterPage() {
-  const navigate = useNavigate();
-  const [groups, setGroups] = useState<StudentGroup[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+export function ResetPasswordPage() {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    async function loadGroups() {
-      const { data, error } = await supabase
-        .from('student_groups')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('id');
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
 
-      if (error) {
-        setError('Guruhlar ro‘yxatini yuklab bo‘lmadi.');
-        return;
-      }
-
-      setGroups(data ?? []);
+    if (password.length < 8) {
+      setError('Parol kamida 8 ta belgidan iborat bo‘lishi kerak.');
+      return;
     }
 
-    void loadGroups();
-  }, []);
+    if (password !== confirmPassword) {
+      setError('Parollar bir xil emas.');
+      return;
+    }
 
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
     setLoading(true);
 
-    const fd = new FormData(e.currentTarget);
-    const username = String(fd.get('username') ?? '')
-      .trim()
-      .toLowerCase();
-    const password = String(fd.get('password') ?? '');
-
     try {
-      const { data, error: requestError } =
-        await supabase.functions.invoke('register-student', {
-          body: {
-            first_name: String(fd.get('first_name') ?? '').trim(),
-            last_name: String(fd.get('last_name') ?? '').trim(),
-            username,
-            password,
-            group_id: Number(fd.get('group_id')),
-          },
-        });
+      const { data, error: sessionError } =
+        await supabase.auth.getSession();
 
-      if (requestError || !data?.success) {
+      if (sessionError || !data.session) {
         throw new Error(
-          data?.error ?? 'Ro‘yxatdan o‘tishda xatolik yuz berdi.'
+          'Parolni tiklash sessiyasi topilmadi. Yangi tiklash havolasini so‘rang.'
         );
       }
 
-      setSuccess(true);
+      const { error: updateError } =
+        await supabase.auth.updateUser({ password });
 
-      const { error: loginError } =
-        await supabase.auth.signInWithPassword({
-          email: `${username}@students.invalid`,
-          password,
-        });
-
-      if (!loginError) {
-        navigate('/kabinet');
+      if (updateError) {
+        throw updateError;
       }
+
+      setMessage('Parol muvaffaqiyatli yangilandi.');
+      setPassword('');
+      setConfirmPassword('');
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Noma’lum xatolik.'
+        err instanceof Error
+          ? err.message
+          : 'Parolni yangilashda xatolik yuz berdi.'
       );
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <AuthShell
-      title="Ro‘yxatdan o‘tish"
-      subtitle="Ma’lumotlaringizni kiriting va talaba hisobini yarating."
-      aside={
-        <div className="auth__aside-inner">
-          <div className="eyebrow eyebrow--light">
-            Talabalar uchun
-          </div>
-          <h2>Shaxsiy hisobingizni yarating</h2>
-          <p>
-            Ro‘yxatdan o‘tgach, login va parolingiz orqali
-            tizimga kirishingiz mumkin.
-          </p>
-        </div>
-      }
+    <div
+      style={{
+        maxWidth: 440,
+        margin: '70px auto',
+        padding: 24,
+      }}
     >
-      <form className="form mt-5" onSubmit={onSubmit}>
-        <div className="form__row">
-          <label className="field">
-            <span>Familiya</span>
-            <input name="last_name" required />
-          </label>
-          <label className="field">
-            <span>Ism</span>
-            <input name="first_name" required />
-          </label>
-        </div>
+      <h1>Yangi parol o‘rnatish</h1>
 
-        <label className="field">
-          <span>Guruh</span>
-          <select name="group_id" defaultValue="" required>
-            <option value="" disabled>
-              Guruhni tanlang
-            </option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
+      <p className="muted mt-3">
+        Hisobingiz uchun yangi parol belgilang.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-4">
+        <label htmlFor="new-password">
+          Yangi parol
         </label>
 
-        <label className="field">
-          <span>Login</span>
-          <input
-            name="username"
-            autoComplete="username"
-            required
-            placeholder="talaba01"
-          />
-        </label>
+        <input
+          id="new-password"
+          className="input"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
 
-        <label className="field">
-          <span>Parol</span>
+        <div className="mt-3">
+          <label htmlFor="confirm-password">
+            Parolni takrorlang
+          </label>
+
           <input
-            name="password"
+            id="confirm-password"
+            className="input"
             type="password"
             autoComplete="new-password"
-            minLength={8}
+            value={confirmPassword}
+            onChange={(event) =>
+              setConfirmPassword(event.target.value)
+            }
             required
           />
-        </label>
+        </div>
 
         {error && (
-          <Notice kind="stage" title="Xatolik">
+          <p className="text-danger mt-3" role="alert">
             {error}
-          </Notice>
-        )}
-
-        {success && (
-          <p>
-            Hisobingiz yaratildi. Endi tizimga kirishingiz mumkin.
           </p>
         )}
 
-        <Button
-          type="submit"
-          size="lg"
-          block
-          icon={<UserPlus size={18} />}
-          disabled={loading || groups.length === 0}
-        >
-          {loading ? 'Saqlanmoqda...' : 'Ro‘yxatdan o‘tish'}
-        </Button>
+        {message && (
+          <p className="text-success mt-3" role="status">
+            {message}
+          </p>
+        )}
 
-        <p className="small center muted">
-          Hisobingiz bormi?{' '}
-          <Link to={paths.login} className="link">
-            Tizimga kirish
-          </Link>
-        </p>
+        <button
+          type="submit"
+          className="btn btn--primary btn--md mt-4"
+          disabled={loading}
+        >
+          {loading
+            ? 'Saqlanmoqda...'
+            : 'Yangi parolni saqlash'}
+        </button>
       </form>
-    </AuthShell>
+
+      <p className="mt-4">
+        <Link to="/kirish" className="link">
+          Kirish sahifasiga qaytish
+        </Link>
+      </p>
+    </div>
   );
 }
