@@ -1,97 +1,440 @@
+
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, ClipboardCheck, Gamepad2, Upload, Presentation, FolderOpen, ExternalLink } from 'lucide-react';
-import { PageHeader, Card, Badge, Notice, Button } from '@/components/ui';
+import {
+  BookOpen,
+  Upload,
+  FileText,
+  RefreshCw,
+  Trash2,
+  Download,
+} from 'lucide-react';
+import { PageHeader, Card, Button } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
-import { materialsService, resolveRepo } from '@/services/materials.service';
-import { appConfig } from '@/config/app.config';
-import { games } from '@/data/games';
+import { supabase } from '@/services/supabase';
+import { useAuth } from '@/services/auth/AuthContext';
 import { paths } from '@/navigation/paths';
 
+type Resource = {
+  id: string;
+  title: string;
+  description: string | null;
+  topic_name: string | null;
+  file_name: string;
+  file_path: string;
+  file_type: string | null;
+  file_size: number | null;
+  created_at: string;
+};
+
+const BUCKET = 'learning-resources';
+const MAX_SIZE = 25 * 1024 * 1024;
+
 export function AdminContentPage() {
+  const { user } = useAuth();
   const topics = catalogService.getTopics().data;
-  const counts = materialsService.countByTopic('slides');
-  const total = materialsService.total('slides');
-  const repo = resolveRepo();
-  const withSlides = Object.keys(counts).length;
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [topicName, setTopicName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
+
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  async function loadResources() {
+    setLoading(true);
+
+    const { data, error: loadError } = await supabase
+      .from('learning_resources')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (loadError) {
+      setError(loadError.message);
+    } else {
+      setResources((data ?? []) as Resource[]);
+    }
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    void loadResources();
+  }, []);
+
+  async function handleUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (!user || user.role !== 'admin') {
+      setError('Faqat administrator resurs yuklay oladi.');
+      return;
+    }
+
+    if (!title.trim() || !topicName || !file) {
+      setError('Resurs nomi, mavzu va faylni kiriting.');
+      return;
+    }
+
+    if (file.size > MAX_SIZE) {
+      setError('Fayl hajmi 25 MB dan oshmasligi kerak.');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError || !authData.user) {
+        throw new Error('Qayta tizimga kiring.');
+      }
+
+      const extension =
+        file.name.split('.').pop()?.toLowerCase() || 'bin';
+
+      const filePath =
+        `${topicName}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(filePath, file, {
+          contentType: file.type || 'application/octet-stream',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase
+        .from('learning_resources')
+        .insert({
+          title: title.trim(),
+          description: description.trim() || null,
+          topic_name: topicName,
+          file_name: file.name,
+          file_path: filePath,
+          file_type: file.type || null,
+          file_size: file.size,
+          uploaded_by: authData.user.id,
+        });
+
+      if (insertError) {
+        const { error: cleanupError } = await supabase.storage
+          .from(BUCKET)
+          .remove([filePath]);
+
+        if (cleanupError) {
+          console.error('Faylni tozalashda xatolik:', cleanupError);
+        }
+
+        throw insertError;
+      }
+
+      setTitle('');
+      setDescription('');
+      setTopicName('');
+      setFile(null);
+      setFileInputKey((value) => value + 1);
+      setMessage('Resurs muvaffaqiyatli yuklandi.');
+
+      await loadResources();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Resursni yuklashda xatolik yuz berdi.'
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDownload(resource: Resource) {
+    setError('');
+
+    const { data, error: downloadError } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(resource.file_path, 60, {
+        download: resource.file_name,
+      });
+
+    if (downloadError || !data?.signedUrl) {
+      setError(downloadError?.message || 'Faylni ochib bo‘lmadi.');
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = data.signedUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  async function handleDelete(resource: Resource) {
+    if (!window.confirm(`"${resource.title}" resursi o‘chirilsinmi?`)) {
+      return;
+    }
+
+    setError('');
+    setMessage('');
+
+    const { error: storageError } = await supabase.storage
+      .from(BUCKET)
+      .remove([resource.file_path]);
+
+    if (storageError) {
+      setError(storageError.message);
+      return;
+    }
+
+    const { error: deleteError } = await supabase
+      .from('learning_resources')
+      .delete()
+      .eq('id', resource.id);
+
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+
+    setMessage('Resurs o‘chirildi.');
+    await loadResources();
+  }
+
+  function formatSize(size: number | null) {
+    if (size === null) return '—';
+    return `${(size / 1024 / 1024).toFixed(2)} MB`;
+  }
 
   return (
     <>
       <PageHeader
         eyebrow="Administrator paneli"
         title="Kontent boshqaruvi"
-        description="Mavzular, taqdimotlar, test savollari va o‘yinlar holati."
-        actions={
-          repo ? (
-            <a className="btn btn--secondary btn--md" href={`${repo.url}/tree/${repo.branch}/${appConfig.repository.materialsDir}`} target="_blank" rel="noreferrer">
-              <FolderOpen size={16} /> <span>Barcha materiallar (GitHub)</span>
-            </a>
-          ) : undefined
-        }
+        description="O‘quv resurslarini yuklash va boshqarish."
       />
 
-      <Card title="Taqdimotni qanday yuklash mumkin" actions={<Presentation size={18} className="muted" />}>
-        <ol className="plan plan--sm">
-          <li><span>1</span>Quyidagi jadvalda kerakli mavzu qatoridagi <b>“Yuklash”</b> tugmasini bosing — GitHub’ning shu mavzu papkasi ochiladi.</li>
-          <li><span>2</span>Faylni (.pptx, .ppt yoki .pdf) sahifaga sudrab tashlang. Fayl nomi saytda sarlavha bo‘ladi; ruscha bo‘lsa nomiga <code>RU</code> qo‘shing.</li>
-          <li><span>3</span>Pastdagi yashil <b>“Commit changes”</b> tugmasini bosing.</li>
-          <li><span>4</span>1–2 daqiqadan so‘ng sayt avtomatik yangilanadi va taqdimot mavzu sahifasida paydo bo‘ladi.</li>
-        </ol>
-        <p className="xs muted mt-3">
-          Yuklash uchun GitHub hisobingizga kirgan va repozitoriyga yozish huquqiga ega bo‘lishingiz kerak — talabalar fayl qo‘sha olmaydi. O‘chirish yoki nomini o‘zgartirish: “Papka” tugmasi → faylni oching → ⋯ menyusidan “Delete file”. Bitta faylning hajmi 25 MB dan oshmasin.
-          Katta taqdimotni PDF ko‘rinishida saqlash hajmni kamaytiradi va brauzerda ochilishini tezlashtiradi.
-        </p>
-        {!repo && (
-          <Notice kind="info" title="Yuklash tugmalari GitHub Pages’da ishlaydi">
-            Sayt hozir GitHub Pages’dan tashqarida ochilgan, shuning uchun repozitoriy manzili noma’lum. Fayllarni repozitoriyning{' '}
-            <code>{appConfig.repository.materialsDir}/&lt;mavzu&gt;/taqdimotlar</code> papkasiga qo‘shing yoki{' '}
-            <code>src/config/app.config.ts</code> faylida <code>repository.owner</code> ni to‘ldiring.
-          </Notice>
-        )}
+      <Card title="Yangi resurs yuklash" className="mt-5">
+        <form onSubmit={handleUpload}>
+          <div className="mt-3">
+            <label htmlFor="resource-title">
+              Resurs nomi
+            </label>
+            <input
+              id="resource-title"
+              className="input"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Masalan: Talab va taklif mavzusi"
+              required
+            />
+          </div>
+
+          <div className="mt-3">
+            <label htmlFor="resource-topic">
+              Mavzu
+            </label>
+            <select
+              id="resource-topic"
+              className="input"
+              value={topicName}
+              onChange={(event) => setTopicName(event.target.value)}
+              required
+            >
+              <option value="">Mavzuni tanlang</option>
+              {topics.map((topic) => (
+                <option key={topic.id} value={topic.id}>
+                  {topic.globalOrder}. {topic.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mt-3">
+            <label htmlFor="resource-description">
+              Tavsif
+            </label>
+            <textarea
+              id="resource-description"
+              className="input"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Resurs haqida qisqacha ma’lumot"
+              rows={3}
+            />
+          </div>
+
+          <div className="mt-3">
+            <label htmlFor="resource-file">
+              Fayl tanlash
+            </label>
+            <input
+              key={fileInputKey}
+              id="resource-file"
+              type="file"
+              className="input"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.zip"
+              onChange={(event) =>
+                setFile(event.target.files?.[0] ?? null)
+              }
+              required
+            />
+            <p className="small muted">
+              Maksimal hajm: 25 MB.
+            </p>
+          </div>
+
+          {error && (
+            <p className="text-danger mt-3" role="alert">
+              {error}
+            </p>
+          )}
+
+          {message && (
+            <p className="text-success mt-3" role="status">
+              {message}
+            </p>
+          )}
+
+          <div className="mt-4">
+            <button
+              type="submit"
+              className="btn btn--primary btn--md"
+              disabled={uploading}
+            >
+              <Upload size={16} />
+              {uploading ? 'Yuklanmoqda...' : 'Resursni yuklash'}
+            </button>
+          </div>
+        </form>
       </Card>
 
       <div className="stats mt-5">
-        <div className="stat"><div className="stat__top"><span className="stat__label">Mavzular</span><BookOpen size={18} /></div><div className="stat__value">25</div><div className="stat__hint">Sillabusdan yuklangan</div></div>
-        <div className="stat stat--success"><div className="stat__top"><span className="stat__label">Taqdimotlar</span><Presentation size={18} /></div><div className="stat__value">{total}</div><div className="stat__hint">{withSlides}/25 mavzuda bor</div></div>
-        <div className="stat stat--neutral"><div className="stat__top"><span className="stat__label">Test savollari</span><ClipboardCheck size={18} /></div><div className="stat__value">0</div><div className="stat__hint">4-bosqichda</div></div>
-        <div className="stat stat--neutral"><div className="stat__top"><span className="stat__label">Faol o‘yinlar</span><Gamepad2 size={18} /></div><div className="stat__value">0/{games.length}</div><div className="stat__hint">5-bosqichdan</div></div>
+        <div className="stat">
+          <div className="stat__top">
+            <span className="stat__label">
+              Mavzular
+            </span>
+            <BookOpen size={18} />
+          </div>
+          <div className="stat__value">
+            {topics.length}
+          </div>
+        </div>
+
+        <div className="stat stat--success">
+          <div className="stat__top">
+            <span className="stat__label">
+              Yuklangan resurslar
+            </span>
+            <FileText size={18} />
+          </div>
+          <div className="stat__value">
+            {resources.length}
+          </div>
+        </div>
       </div>
 
-      <Card padded={false} className="mt-5">
-        <div className="table-wrap table-wrap--flush">
-          <table className="table">
-            <thead>
-              <tr><th>№</th><th>Mavzu</th><th>Taqdimotlar</th><th>Boshqa materiallar</th><th>Test</th><th className="right">Taqdimot yuklash</th></tr>
-            </thead>
-            <tbody>
-              {topics.map((t) => {
-                const n = counts[t.id] ?? 0;
-                const up = materialsService.uploadUrl(t.id);
-                const folder = materialsService.folderUrl(t.id);
-                return (
-                  <tr key={t.id}>
-                    <td className="muted">{t.globalOrder}</td>
-                    <td><Link to={paths.topic(t.id)} className="link">{t.title}</Link></td>
-                    <td>{n ? <Badge tone="success">{n} ta</Badge> : <Badge>Yo‘q</Badge>}</td>
-                    <td><Badge>2-bosqichda</Badge></td>
-                    <td><Badge>4-bosqichda</Badge></td>
-                    <td className="right">
-                      {up ? (
-                        <div className="row-actions">
-                          <a className="chip-btn chip-btn--success" href={up} target="_blank" rel="noreferrer"><Upload size={14} /> Yuklash</a>
-                          {folder && <a className="chip-btn" href={folder} target="_blank" rel="noreferrer" title="GitHub’dagi papka"><ExternalLink size={14} /> Papka</a>}
+      <Card title="Yuklangan resurslar" className="mt-5">
+        <button
+          type="button"
+          className="btn btn--secondary btn--md"
+          onClick={() => void loadResources()}
+          disabled={loading}
+        >
+          <RefreshCw size={16} />
+          Yangilash
+        </button>
+
+        {loading ? (
+          <p className="muted mt-3">
+            Resurslar yuklanmoqda...
+          </p>
+        ) : resources.length === 0 ? (
+          <p className="muted mt-3">
+            Hozircha resurs yuklanmagan.
+          </p>
+        ) : (
+          <div className="table-wrap mt-3">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Resurs nomi</th>
+                  <th>Mavzu</th>
+                  <th>Hajmi</th>
+                  <th>Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resources.map((resource) => {
+                  const topic = topics.find(
+                    (item) => item.id === resource.topic_name
+                  );
+
+                  return (
+                    <tr key={resource.id}>
+                      <td>
+                        <strong>{resource.title}</strong>
+                        <div className="small muted">
+                          {resource.file_name}
                         </div>
-                      ) : (
-                        <code className="xs muted">{t.id}/taqdimotlar</code>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td>
+                        {topic?.title || resource.topic_name || '—'}
+                      </td>
+                      <td>
+                        {formatSize(resource.file_size)}
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="chip-btn"
+                            onClick={() =>
+                              void handleDownload(resource)
+                            }
+                          >
+                            <Download size={14} />
+                            Yuklab olish
+                          </button>
+
+                          <button
+                            type="button"
+                            className="chip-btn"
+                            onClick={() =>
+                              void handleDelete(resource)
+                            }
+                          >
+                            <Trash2 size={14} />
+                            O‘chirish
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
-      <Button to={paths.materials} variant="ghost" className="mt-4">Materiallar sahifasi</Button>
+
+      <Button
+        to={paths.materials}
+        variant="ghost"
+        className="mt-4"
+      >
+        Materiallar sahifasi
+      </Button>
     </>
   );
 }
