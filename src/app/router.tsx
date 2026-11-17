@@ -1,68 +1,130 @@
-import { createHashRouter } from 'react-router-dom';
-import { PublicLayout } from '@/layouts/PublicLayout';
-import { DashboardLayout } from '@/layouts/DashboardLayout';
-import { HomePage } from '@/modules/public/HomePage';
-import { AboutPage } from '@/modules/public/AboutPage';
-import { NotFoundPage } from '@/modules/public/NotFoundPage';
-import { TopicsPage } from '@/modules/catalog/TopicsPage';
-import { TopicDetailPage } from '@/modules/catalog/TopicDetailPage';
-import { MaterialsPage } from '@/modules/materials/MaterialsPage';
-import { TestsPage } from '@/modules/tests/TestsPage';
-import { TestDetailPage } from '@/modules/tests/TestDetailPage';
-import { GamesPage } from '@/modules/games/GamesPage';
-import { GameDetailPage } from '@/modules/games/GameDetailPage';
-import { LoginPage } from '@/modules/auth/LoginPage';
-import { RegisterPage } from '@/modules/auth/RegisterPage';
-import { CabinetOverviewPage } from '@/modules/student/CabinetOverviewPage';
-import { CabinetResultsPage } from '@/modules/student/CabinetResultsPage';
-import { CabinetProfilePage } from '@/modules/student/CabinetProfilePage';
-import { AdminOverviewPage } from '@/modules/admin/AdminOverviewPage';
-import { AdminLearnersPage } from '@/modules/admin/AdminLearnersPage';
-import { AdminContentPage } from '@/modules/admin/AdminContentPage';
-import { AdminIntegrationPage } from '@/modules/admin/AdminIntegrationPage';
-import { AnalyticsPage } from '@/modules/analytics/AnalyticsPage';
 
-/**
- * Hash router (#/mavzular) tanlangan: sayt istalgan statik hostingda
- * server sozlamasisiz ishlaydi. Server qo‘shilgach createBrowserRouter ga
- * o‘tish uchun faqat shu qatorni almashtirish kifoya.
- */
-export const router = createHashRouter([
-  {
-    element: <PublicLayout />,
-    children: [
-      { path: '/', element: <HomePage /> },
-      { path: '/fan-haqida', element: <AboutPage /> },
-      { path: '/mavzular', element: <TopicsPage /> },
-      { path: '/mavzular/:topicId', element: <TopicDetailPage /> },
-      { path: '/materiallar', element: <MaterialsPage /> },
-      { path: '/testlar', element: <TestsPage /> },
-      { path: '/testlar/:testId', element: <TestDetailPage /> },
-      { path: '/oyinlar', element: <GamesPage /> },
-      { path: '/oyinlar/:slug', element: <GameDetailPage /> },
-      { path: '*', element: <NotFoundPage /> },
-    ],
-  },
-  { path: '/kirish', element: <LoginPage /> },
-  { path: '/royxatdan-otish', element: <RegisterPage /> },
-  {
-    path: '/kabinet',
-    element: <DashboardLayout role="student" />,
-    children: [
-      { index: true, element: <CabinetOverviewPage /> },
-      { path: 'natijalar', element: <CabinetResultsPage /> },
-      { path: 'profil', element: <CabinetProfilePage /> },
-    ],
-  },
-  {
-    path: '/admin',
-    element: <DashboardLayout role="admin" />,
-    children: [
-      { index: true, element: <AdminOverviewPage /> },
-      { path: 'talabalar', element: <AdminLearnersPage /> },
-      { path: 'kontent', element: <AdminContentPage /> },
-      { path: 'analitika', element: <AnalyticsPage /> },
-      { path: 'integratsiya', element: <AdminIntegrationPage /> },
-    ],
-  },
-]);
+import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/services/supabase';
+
+export function ResetPasswordPage() {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (password.length < 8) {
+      setError('Parol kamida 8 ta belgidan iborat bo‘lsin.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Parollar bir xil emas.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError || !data.session) {
+        throw new Error(
+          'Parolni tiklash sessiyasi topilmadi. Yangi tiklash havolasini so‘rang.'
+        );
+      }
+
+      const { error: updateError } =
+        await supabase.auth.updateUser({ password });
+
+      if (updateError) throw updateError;
+
+      setMessage('Parol muvaffaqiyatli yangilandi.');
+      setPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Parolni yangilab bo‘lmadi.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{
+      maxWidth: 440,
+      margin: '70px auto',
+      padding: 24
+    }}>
+      <h1>Yangi parol o‘rnatish</h1>
+
+      <p className="muted mt-3">
+        Hisobingiz uchun yangi parol belgilang.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-4">
+        <label htmlFor="new-password">
+          Yangi parol
+        </label>
+        <input
+          id="new-password"
+          className="input"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
+
+        <div className="mt-3">
+          <label htmlFor="confirm-password">
+            Parolni takrorlang
+          </label>
+          <input
+            id="confirm-password"
+            className="input"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) =>
+              setConfirmPassword(event.target.value)
+            }
+            required
+          />
+        </div>
+
+        {error && (
+          <p className="text-danger mt-3" role="alert">
+            {error}
+          </p>
+        )}
+
+        {message && (
+          <p className="text-success mt-3" role="status">
+            {message}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          className="btn btn--primary btn--md mt-4"
+          disabled={loading}
+        >
+          {loading ? 'Saqlanmoqda...' : 'Yangi parolni saqlash'}
+        </button>
+      </form>
+
+      <p className="mt-4">
+        <Link to="/kirish" className="link">
+          Kirish sahifasiga qaytish
+        </Link>
+      </p>
+    </div>
+  );
+}
