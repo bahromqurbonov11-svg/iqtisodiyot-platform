@@ -64,7 +64,7 @@
 .chip-btn:hover { border-color: var(--c-ink-soft); }
 .chip-btn--success { color: var(--c-success); border-color: #b9dcc8; background: var(--c-success-soft); }
 .chip-btn--danger { color: var(--c-danger); border-color: #efc2bc; background: var(--c-danger-soft); }
-.row-actions { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.row-actions { display: inline-flex; gap: 6px; flex-wrap: nowrap; justify-content: flex-end; white-space: nowrap; }
 
 /* ---- Karta ---- */
 .card { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); min-width: 0; }

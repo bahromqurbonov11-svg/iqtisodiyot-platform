@@ -6,3 +6,4 @@ dist-single
 !.env.example
 *.log
 .DS_Store
+src/data/generated/

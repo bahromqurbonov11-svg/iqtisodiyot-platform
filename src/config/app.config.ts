@@ -6,8 +6,20 @@
 export const appConfig = {
   appName: 'Iqtisodiyot nazariyasi',
   appTagline: 'Ta’lim va analitika platformasi',
-  version: '0.2.0',
+  version: '0.3.0',
   stage: 1, // Joriy rivojlanish bosqichi (README dagi yo‘l xaritasiga qarang)
+
+  /**
+   * GitHub repozitoriysi — taqdimotlarni yuklash havolalari uchun.
+   * owner bo‘sh qolsa, sayt GitHub Pages'da ochilganda manzildan avtomatik aniqlanadi
+   * (https://<owner>.github.io/<repo>/). Boshqa hostingda bo‘lsa, shu yerga yozing.
+   */
+  repository: {
+    owner: '',
+    name: 'iqtisodiyot-platform',
+    branch: 'main',
+    materialsDir: 'public/materials',
+  },
 
   /** Tashkilot va fan identifikatorlari (markaziy platforma uchun) */
   organization: {

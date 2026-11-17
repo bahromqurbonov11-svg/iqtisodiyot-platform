@@ -1,15 +1,20 @@
 {
   "name": "iqtisodiyot-platform",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Iqtisodiyot nazariyasi — ta’lim va analitika platformasi (1-bosqich: sayt skeleti)",
   "packageManager": "pnpm@11.25.0",
   "scripts": {
+    "materials": "node scripts/build-materials-manifest.mjs",
+    "predev": "npm run materials",
     "dev": "vite --host 127.0.0.1",
+    "prebuild": "npm run materials",
     "build": "tsc --noEmit && vite build",
+    "prebuild:single": "npm run materials",
     "build:single": "tsc --noEmit && vite build --mode single",
     "preview": "vite preview --host 127.0.0.1",
+    "pretypecheck": "npm run materials",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -25,5 +30,8 @@
     "typescript": "~5.9.3",
     "vite": "^7.2.2",
     "vite-plugin-singlefile": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

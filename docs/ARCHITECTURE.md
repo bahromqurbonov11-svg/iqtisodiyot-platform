@@ -58,3 +58,13 @@ Hozir `demoAuthProvider` — haqiqiy kirish yo‘q, faqat “demo ko‘rish reji
 
 `src/i18n/ru.ts` — `uz.ts` bilan bir xil kalitlar. `appConfig.i18n.availableLocales` ga
 `'ru'` qo‘shilgach, til almashtirgich yoqiladi. Mavzu nomlari uchun `IN_sillabus_*_RU.docx` mavjud.
+
+## O‘quv materiallari (v0.3.0 dan)
+
+- Fayllar: `public/materials/<topic_id>/<turkum>/` (hozir faqat `taqdimotlar`).
+- `scripts/build-materials-manifest.mjs` build oldidan `src/data/generated/materials.manifest.json` ni yaratadi
+  (git’da saqlanmaydi). Yangi turkum qo‘shish — skriptdagi `CATEGORIES` va `MaterialCategoryId` ga yozish.
+- `services/materials.service.ts` — ro‘yxat, yuklab olish/ko‘rish manzillari, GitHub yuklash havolalari.
+  Server paydo bo‘lganda faqat shu servis ichi o‘zgaradi (`origin: 'repository'` → `'server'`).
+- Yuklash: GitHub veb-interfeysi orqali (statik hostingda server yo‘q). 3-bosqichda admin paneldan
+  to‘g‘ridan-to‘g‘ri yuklash server API orqali qo‘shiladi.

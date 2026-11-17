@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, BookOpen, Presentation, BookA, Briefcase, ClipboardCheck, Gamepad2, Lightbulb, Clock, Network,
+  ArrowLeft, ArrowRight, BookOpen, BookA, Briefcase, ClipboardCheck, Gamepad2, Lightbulb, Clock, Network,
 } from 'lucide-react';
 import { PageHeader, Card, Badge, Button, StageBadge } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
@@ -9,6 +9,8 @@ import { games } from '@/data/games';
 import { paths } from '@/navigation/paths';
 import { NotFoundPage } from '@/modules/public/NotFoundPage';
 import { GameIcon } from '@/modules/games/GameIcon';
+import { SlidesList } from '@/modules/materials/SlidesList';
+import { materialsService } from '@/services/materials.service';
 
 /**
  * MAVZU SAHIFASI SHABLONI — barcha 25 mavzu uchun bitta komponent.
@@ -22,10 +24,10 @@ export function TopicDetailPage() {
   const part = catalogService.getSubject().data.parts.find((p) => p.id === topic.partId)!;
   const siblings = catalogService.getTopics(topic.partId).data;
   const { prev, next } = catalogService.getAdjacent(topic.id);
+  const slideCount = materialsService.list(topic.id).data.length;
 
   const materialSlots = [
     { icon: BookOpen, title: 'Ma’ruza matni', text: 'Asosiy nazariy material' },
-    { icon: Presentation, title: 'Taqdimot', text: 'Ma’ruza slaydlari' },
     { icon: BookA, title: 'Glossariy', text: 'Mavzu atamalari' },
     { icon: Briefcase, title: 'Keys / amaliy topshiriq', text: 'Amaliy mashg‘ulot uchun' },
   ];
@@ -59,7 +61,15 @@ export function TopicDetailPage() {
             </ol>
           </Card>
 
-          <Card title="O‘quv materiallari" actions={<StageBadge stage={2} />}>
+          <Card
+            title="Taqdimotlar"
+            subtitle="Ma’ruza slaydlari — ko‘rish va yuklab olish"
+            actions={slideCount > 0 ? <Badge tone="success">{slideCount} ta fayl</Badge> : undefined}
+          >
+            <SlidesList topicId={topic.id} />
+          </Card>
+
+          <Card title="Boshqa o‘quv materiallari" actions={<StageBadge stage={2} />}>
             <div className="slots">
               {materialSlots.map((m) => (
                 <div key={m.title} className="slot">

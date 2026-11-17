@@ -1,6 +1,6 @@
 # Iqtisodiyot nazariyasi — ta’lim va analitika platformasi
 
-**Versiya:** 0.2.0 · **Bosqich:** 1 — sayt skeleti va dizayn
+**Versiya:** 0.3.0 · **Bosqich:** 1 — sayt skeleti va dizayn (+ taqdimotlarni yuklash)
 
 Iqtisodiyot nazariyasi fani (IQN11210, Soliq oliy maktabi) uchun ta’lim platformasi.
 Yakuniy maqsad — talabalarning bilim bo‘shliqlarini aniqlaydigan, o‘qituvchiga tahliliy
@@ -11,7 +11,8 @@ ma’lumot beradigan va boshqa fanlar bilan markaziy analitika orqali birlashadi
 | Ishlaydi (1-bosqich) | Hali ishlamaydi |
 |---|---|
 | Barcha sahifalar va navigatsiya | Haqiqiy kirish / ro‘yxatdan o‘tish (3-bosqich) |
-| 25 mavzu katalogi (sillabusdan, haqiqiy nomlar) | O‘quv fayllari (2-bosqich) |
+| 25 mavzu katalogi (sillabusdan, haqiqiy nomlar) | Ma’ruza matnlari, glossariy, keyslar (2-bosqich) |
+| **Taqdimotlar: qo‘lda yuklash, ko‘rish, yuklab olish** | |
 | Mavzu sahifasi shabloni (25 mavzu uchun bitta) | Testlarni topshirish va baholash (4-bosqich) |
 | Test va o‘yin sahifalari tuzilmasi | O‘yinlarning o‘zi (5, 8-bosqich) |
 | Talaba kabineti, administrator paneli, analitika — DEMO ma’lumot bilan | Natijalarni saqlash, ma’lumotlar bazasi (6-bosqich) |
@@ -34,6 +35,35 @@ npm run typecheck    # TypeScript tekshiruvi
 
 Sayt hash-marshrutlash (`#/mavzular`) ishlatadi, shuning uchun `dist/` papkasini istalgan
 statik hostingga (Netlify, Vercel, GitHub Pages, oddiy server) sozlamasiz joylash mumkin.
+
+## GitHub Pages’ga joylash (bir martalik sozlash)
+
+1. github.com’da yangi **Public** repozitoriy yarating, nomi: `iqtisodiyot-platform`.
+   (Bepul GitHub Pages faqat ochiq repozitoriyda ishlaydi.)
+2. Ushbu loyiha fayllarini repozitoriyga yuklang (`git push` yoki GitHub sahifasi orqali).
+3. Repozitoriyda: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+4. **Actions** bo‘limida “Saytni GitHub Pages'ga joylash” jarayoni yashil bo‘lgach, sayt manzili:
+   `https://<github-login>.github.io/iqtisodiyot-platform/`
+
+Shundan keyin `main` tarmog‘iga har bir o‘zgarish saytni avtomatik yangilaydi (`.github/workflows/deploy.yml`).
+Repozitoriy nomini o‘zgartirsangiz ham sayt ishlayveradi (nisbiy manzillar ishlatilgan).
+
+## Taqdimotlarni yuklash (o‘qituvchi uchun)
+
+Fayllar `public/materials/<mavzu-id>/taqdimotlar/` papkalarida saqlanadi
+(`in1-t01` … `in1-t12` — 1-qism, `in2-t01` … `in2-t13` — 2-qism).
+
+**Eng oson yo‘l:** saytda Administrator paneli → **Kontent** → mavzu qatoridagi **“Yuklash”**.
+GitHub’ning shu mavzu papkasi ochiladi → faylni sudrab tashlang → **Commit changes**.
+1–2 daqiqada taqdimot mavzu sahifasida paydo bo‘ladi.
+
+- Ruxsat etilgan turlar: `.pptx`, `.ppt`, `.ppsx`, `.pdf`.
+- Fayl nomi sarlavha bo‘ladi: `6-mavzu Talab va taklif.pptx`. Ruscha fayl nomiga `RU` qo‘shing — saytda RU belgisi chiqadi.
+- GitHub sahifasi orqali bitta fayl ≤ 25 MB (git orqali ≤ 100 MB). Saytning umumiy hajmi ≤ 1 GB.
+- Ko‘rish: PDF brauzerda ochiladi; PPTX — Microsoft Office Online orqali (faqat sayt internetda ochiq bo‘lganda).
+- Fayllar ro‘yxatini qo‘lda yozish shart emas: `scripts/build-materials-manifest.mjs` build paytida o‘zi tuzadi.
+- Yuklash huquqi faqat repozitoriyga yozish huquqi borlarda bo‘ladi; talabalar faqat ko‘radi va yuklab oladi.
+- Diqqat: ochiq repozitoriydagi fayllarni internetda har kim yuklab olishi mumkin.
 
 ## Texnologiyalar
 

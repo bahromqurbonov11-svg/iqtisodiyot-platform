@@ -26,7 +26,7 @@ export type ActivityId = string;
 export type AttemptId = string;
 
 /** Ma’lumot manbasi: sillabusdan olingan haqiqiy ma’lumotmi yoki namunami */
-export type DataOrigin = 'syllabus' | 'demo' | 'server';
+export type DataOrigin = 'syllabus' | 'demo' | 'server' | 'repository';
 
 export interface SourceRef {
   origin: DataOrigin;
@@ -97,6 +97,22 @@ export interface Skill {
   conceptId: ConceptId;
   title: string;
   level: 'remember' | 'understand' | 'apply' | 'analyze';
+}
+
+// ---------- O‘quv materiallari ----------
+export type MaterialCategoryId = 'slides'; // keyinchalik: 'lectures' | 'glossary' | 'cases' ...
+
+/** Repozitoriydagi haqiqiy fayl (public/materials/<topicId>/<turkum>/) */
+export interface MaterialFile {
+  topicId: TopicId;
+  category: MaterialCategoryId;
+  fileName: string;
+  title: string;
+  ext: string; // pptx | ppt | ppsx | pdf
+  lang: 'uz' | 'ru';
+  size: number; // bayt
+  path: string; // sayt ildiziga nisbatan manzil
+  updatedAt: string; // ISO sana
 }
 
 // ---------- Diagnostik savollar ----------
