@@ -1,130 +1,158 @@
 
-import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/services/supabase';
+import { createHashRouter } from 'react-router-dom';
 
-export function ResetPasswordPage() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+import { PublicLayout } from '@/layouts/PublicLayout';
+import { DashboardLayout } from '@/layouts/DashboardLayout';
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    setMessage('');
+import { HomePage } from '@/modules/public/HomePage';
+import { AboutPage } from '@/modules/public/AboutPage';
+import { NotFoundPage } from '@/modules/public/NotFoundPage';
 
-    if (password.length < 8) {
-      setError('Parol kamida 8 ta belgidan iborat bo‘lsin.');
-      return;
-    }
+import { TopicsPage } from '@/modules/catalog/TopicsPage';
+import { TopicDetailPage } from '@/modules/catalog/TopicDetailPage';
 
-    if (password !== confirmPassword) {
-      setError('Parollar bir xil emas.');
-      return;
-    }
+import { MaterialsPage } from '@/modules/materials/MaterialsPage';
 
-    setLoading(true);
+import { TestsPage } from '@/modules/tests/TestsPage';
+import { TestDetailPage } from '@/modules/tests/TestDetailPage';
 
-    try {
-      const { data, error: sessionError } =
-        await supabase.auth.getSession();
+import { GamesPage } from '@/modules/games/GamesPage';
+import { GameDetailPage } from '@/modules/games/GameDetailPage';
 
-      if (sessionError || !data.session) {
-        throw new Error(
-          'Parolni tiklash sessiyasi topilmadi. Yangi tiklash havolasini so‘rang.'
-        );
-      }
+import { LoginPage } from '@/modules/auth/LoginPage';
+import { RegisterPage } from '@/modules/auth/RegisterPage';
+import { ResetPasswordPage } from '@/modules/auth/ResetPasswordPage';
 
-      const { error: updateError } =
-        await supabase.auth.updateUser({ password });
+import { CabinetOverviewPage } from '@/modules/student/CabinetOverviewPage';
+import { CabinetResultsPage } from '@/modules/student/CabinetResultsPage';
+import { CabinetProfilePage } from '@/modules/student/CabinetProfilePage';
 
-      if (updateError) throw updateError;
+import { AdminOverviewPage } from '@/modules/admin/AdminOverviewPage';
+import { AdminLearnersPage } from '@/modules/admin/AdminLearnersPage';
+import { AdminContentPage } from '@/modules/admin/AdminContentPage';
+import { AdminIntegrationPage } from '@/modules/admin/AdminIntegrationPage';
 
-      setMessage('Parol muvaffaqiyatli yangilandi.');
-      setPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Parolni yangilab bo‘lmadi.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+import { AnalyticsPage } from '@/modules/analytics/AnalyticsPage';
 
-  return (
-    <div style={{
-      maxWidth: 440,
-      margin: '70px auto',
-      padding: 24
-    }}>
-      <h1>Yangi parol o‘rnatish</h1>
+/**
+ * Platforma GitHub Pages orqali ishlaydi.
+ * Shu sababli Hash Router ishlatiladi.
+ *
+ * Masalan:
+ * /#/kirish
+ * /#/parolni-tiklash
+ * /#/kabinet
+ * /#/admin
+ */
 
-      <p className="muted mt-3">
-        Hisobingiz uchun yangi parol belgilang.
-      </p>
+export const router = createHashRouter([
+  {
+    element: <PublicLayout />,
+    children: [
+      {
+        path: '/',
+        element: <HomePage />,
+      },
+      {
+        path: '/fan-haqida',
+        element: <AboutPage />,
+      },
+      {
+        path: '/mavzular',
+        element: <TopicsPage />,
+      },
+      {
+        path: '/mavzular/:topicId',
+        element: <TopicDetailPage />,
+      },
+      {
+        path: '/materiallar',
+        element: <MaterialsPage />,
+      },
+      {
+        path: '/testlar',
+        element: <TestsPage />,
+      },
+      {
+        path: '/testlar/:testId',
+        element: <TestDetailPage />,
+      },
+      {
+        path: '/oyinlar',
+        element: <GamesPage />,
+      },
+      {
+        path: '/oyinlar/:slug',
+        element: <GameDetailPage />,
+      },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
+    ],
+  },
 
-      <form onSubmit={handleSubmit} className="mt-4">
-        <label htmlFor="new-password">
-          Yangi parol
-        </label>
-        <input
-          id="new-password"
-          className="input"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
+  // Kirish va ro'yxatdan o'tish
+  {
+    path: '/kirish',
+    element: <LoginPage />,
+  },
+  {
+    path: '/royxatdan-otish',
+    element: <RegisterPage />,
+  },
 
-        <div className="mt-3">
-          <label htmlFor="confirm-password">
-            Parolni takrorlang
-          </label>
-          <input
-            id="confirm-password"
-            className="input"
-            type="password"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(event) =>
-              setConfirmPassword(event.target.value)
-            }
-            required
-          />
-        </div>
+  // Parolni tiklash
+  {
+    path: '/parolni-tiklash',
+    element: <ResetPasswordPage />,
+  },
 
-        {error && (
-          <p className="text-danger mt-3" role="alert">
-            {error}
-          </p>
-        )}
+  // Talaba kabineti
+  {
+    path: '/kabinet',
+    element: <DashboardLayout role="student" />,
+    children: [
+      {
+        index: true,
+        element: <CabinetOverviewPage />,
+      },
+      {
+        path: 'natijalar',
+        element: <CabinetResultsPage />,
+      },
+      {
+        path: 'profil',
+        element: <CabinetProfilePage />,
+      },
+    ],
+  },
 
-        {message && (
-          <p className="text-success mt-3" role="status">
-            {message}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          className="btn btn--primary btn--md mt-4"
-          disabled={loading}
-        >
-          {loading ? 'Saqlanmoqda...' : 'Yangi parolni saqlash'}
-        </button>
-      </form>
-
-      <p className="mt-4">
-        <Link to="/kirish" className="link">
-          Kirish sahifasiga qaytish
-        </Link>
-      </p>
-    </div>
-  );
-}
+  // Administrator paneli
+  {
+    path: '/admin',
+    element: <DashboardLayout role="admin" />,
+    children: [
+      {
+        index: true,
+        element: <AdminOverviewPage />,
+      },
+      {
+        path: 'talabalar',
+        element: <AdminLearnersPage />,
+      },
+      {
+        path: 'kontent',
+        element: <AdminContentPage />,
+      },
+      {
+        path: 'analitika',
+        element: <AnalyticsPage />,
+      },
+      {
+        path: 'integratsiya',
+        element: <AdminIntegrationPage />,
+      },
+    ],
+  },
+]);
