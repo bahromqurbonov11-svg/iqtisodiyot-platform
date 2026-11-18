@@ -27,7 +27,6 @@ export function TopicDetailPage() {
   const part = catalogService.getSubject().data.parts.find((p) => p.id === topic.partId)!;
   const siblings = catalogService.getTopics(topic.partId).data;
   const { prev, next } = catalogService.getAdjacent(topic.id);
-  const slideCount = materialsService.list(topic.id).data.length;
 
   return (
     <div className="container page">
@@ -56,14 +55,6 @@ export function TopicDetailPage() {
                 <li key={s}><span>{i + 1}</span>{s}</li>
               ))}
             </ol>
-          </Card>
-
-          <Card
-            title="Taqdimotlar"
-            subtitle="Ma’ruza slaydlari — ko‘rish va yuklab olish"
-            actions={slideCount > 0 ? <Badge tone="success">{slideCount} ta fayl</Badge> : undefined}
-          >
-            <SlidesList topicId={topic.id} />
           </Card>
 
           <UploadedMaterials topicId={topic.id} topicTitle={topic.title} />
@@ -164,13 +155,12 @@ type UploadedMaterial = {
 function UploadedMaterials({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {
   const { user } = useAuth();
 
-  return (
-    <Card title="Yuklangan o‘quv materiallari">
-      {user ? (
-        <MaterialFiles key={topicId + ':' + user.id} topicId={topicId} topicTitle={topicTitle} />
-      ) : (
-        <Button to="/kirish" variant="secondary">Materiallarni ko‘rish uchun kiring</Button>
-      )}
+  return user ? (
+    <MaterialFiles key={topicId + ':' + user.id} topicId={topicId} topicTitle={topicTitle} />
+  ) : (
+    <Card title="Taqdimotlar" subtitle="Ma’ruza slaydlari — ko‘rish va yuklab olish">
+      {materialsService.list(topicId).data.length > 0 && <SlidesList topicId={topicId} />}
+      <Button to="/kirish" variant="secondary">Yuklangan materiallarni ko‘rish uchun kiring</Button>
     </Card>
   );
 }
@@ -224,14 +214,14 @@ function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: s
     }
   }
 
-  return (
-    <>
-      {error && <p role="alert">{error}</p>}
-      {!files && !error && <p role="status">Materiallar yuklanmoqda…</p>}
-      {files?.length === 0 && <p className="muted">Bu mavzuga material yuklanmagan.</p>}
-      {files && files.length > 0 && (
+  const slides = files?.filter((file) => file.material_kind === 'slides' || (!file.material_kind && /\.(pptx|ppt|ppsx)$/i.test(file.file_name))) ?? [];
+  const other = files?.filter((file) => !slides.includes(file)) ?? [];
+  const repositoryCount = materialsService.list(topicId).data.length;
+
+  function renderFiles(items: UploadedMaterial[]) {
+    return (
         <ul className="stack">
-          {files.map((file) => (
+          {items.map((file) => (
             <li key={file.id} className="slot">
               <div>
                 <strong>{file.title}</strong>
@@ -249,7 +239,19 @@ function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: s
             </li>
           ))}
         </ul>
-      )}
+    );
+  }
+
+  return (
+    <>
+      <Card title="Taqdimotlar" subtitle="Ma’ruza slaydlari — ko‘rish va yuklab olish"
+        actions={slides.length + repositoryCount > 0 ? <Badge tone="success">{slides.length + repositoryCount} ta fayl</Badge> : undefined}>
+        {error && <p role="alert">{error}</p>}
+        {!files && !error && <p role="status">Materiallar yuklanmoqda…</p>}
+        {slides.length > 0 && renderFiles(slides)}
+        {(repositoryCount > 0 || (files && slides.length === 0)) && <SlidesList topicId={topicId} />}
+      </Card>
+      {other.length > 0 && <Card title="Boshqa o‘quv materiallari">{renderFiles(other)}</Card>}
       {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
     </>
   );
@@ -260,7 +262,7 @@ type SlideRenderer = typeof import('@pagus-kit/renderer').renderSlide;
 
 function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer } | null>(null);
+  const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer; links: Awaited<ReturnType<typeof readSlideLinks>> | null } | null>(null);
   const [slide, setSlide] = useState(0);
   const [image, setImage] = useState<string>();
   const [expanded, setExpanded] = useState(false);
@@ -281,9 +283,10 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
           import('@pagus-kit/renderer'),
         ]);
         if (result.error || !result.data) throw new Error('Presentation unavailable');
-        const presentation = await parse(await result.data.arrayBuffer());
+        const bytes = await result.data.arrayBuffer();
+        const [presentation, links] = await Promise.all([parse(bytes), readSlideLinks(bytes).catch(() => null)]);
         if (presentation.slides.length === 0) throw new Error('Presentation is empty');
-        if (active) setDeck({ presentation, renderSlide });
+        if (active) setDeck({ presentation, renderSlide, links });
       } catch {
         if (active) setError('Taqdimotni ochib bo‘lmadi. Faylni yuklab olib ko‘ring.');
       }
@@ -334,8 +337,31 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
           <strong>{file.title}</strong>
           <Button variant="ghost" onClick={() => dialog.current?.close()}>Yopish</Button>
         </div>
-        <div className="presentation-viewer__stage">
-          {image && <img src={image} alt={'Slayd ' + (slide + 1)} style={expanded ? { height: '78dvh' } : undefined} onError={() => setError('Bu slaydni ko‘rsatib bo‘lmadi.')} />}
+        <div className="presentation-viewer__stage" style={{ position: 'relative' }}>
+          {image && <img key={image} src={image} alt={'Slayd ' + (slide + 1)} style={expanded ? { height: '78dvh' } : undefined} onLoad={(event) => {
+              if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+              const transition = deck?.presentation.slides[slide]?.transition;
+              if (transition?.type === 'cut') return;
+              event.currentTarget.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: transition?.duration ?? 180 });
+            }} onError={() => setError('Bu slaydni ko‘rsatib bo‘lmadi.')} />}
+          {image && deck?.links && deck.links.width > 0 && deck.links.height > 0 && (
+            <svg viewBox={'0 0 ' + deck.links.width + ' ' + deck.links.height}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+              {deck.links.slides[slide]?.map((link, index) => (
+                <rect key={index} x={link.left} y={link.top} width={link.width} height={link.height}
+                  fill="transparent" style={{ pointerEvents: 'all', cursor: 'pointer' }} role="button" tabIndex={0}
+                  aria-label={link.label + ' — ' + (link.slide + 1) + '-slayd'}
+                  onClick={() => { setError(''); setSlide(link.slide); }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setError('');
+                      setSlide(link.slide);
+                    }
+                  }} />
+              ))}
+            </svg>
+          )}
           {!deck && !error && <p role="status">Taqdimot ochilmoqda…</p>}
         </div>
         {error && <p role="alert">{error}</p>}
@@ -348,4 +374,65 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
       </div>
     </dialog>
   );
+}
+
+type SlideLink = { left: number; top: number; width: number; height: number; slide: number; label: string };
+
+async function readSlideLinks(bytes: ArrayBuffer) {
+  const { default: JSZip } = await import('jszip');
+  const zip = await JSZip.loadAsync(bytes);
+  const parser = new DOMParser();
+  const readXml = async (path: string) => {
+    const entry = zip.file(path);
+    return entry ? parser.parseFromString(await entry.async('string'), 'application/xml') : null;
+  };
+  const elements = (parent: Document | Element | null, name: string) =>
+    parent ? Array.from(parent.getElementsByTagNameNS('*', name)) : [];
+  const relationships = async (path: string) => {
+    const file = new URL(path, 'https://pptx.invalid/');
+    const parts = file.pathname.slice(1).split('/');
+    const name = parts.pop();
+    const xml = await readXml([...parts, '_rels', name + '.rels'].join('/'));
+    return new Map(elements(xml, 'Relationship')
+      .filter((item) => item.getAttribute('Type')?.endsWith('/slide') && item.getAttribute('TargetMode') !== 'External')
+      .map((item) => {
+        const target = new URL(item.getAttribute('Target') || '', file);
+        return [item.getAttribute('Id'), target.origin === file.origin ? target.pathname.slice(1) : ''];
+      }));
+  };
+  const relationId = (node: Element) => Array.from(node.attributes)
+    .find((attribute) => attribute.localName === 'id' && attribute.namespaceURI?.endsWith('/relationships'))?.value ?? null;
+  const presentation = await readXml('ppt/presentation.xml');
+  const references = await relationships('ppt/presentation.xml');
+  const size = elements(presentation, 'sldSz')[0];
+  const width = Number(size?.getAttribute('cx'));
+  const height = Number(size?.getAttribute('cy'));
+  const ids = elements(presentation, 'sldIdLst')[0];
+  const paths = elements(ids ?? null, 'sldId').map((id) => references.get(relationId(id)) ?? '');
+  const indexes = new Map(paths.map((path, index) => [path, index]));
+  const slides = await Promise.all(paths.map(async (path) => {
+    const xml = await readXml(path);
+    const links = elements(xml, 'hlinkClick');
+    if (!links.length) return [];
+    const targets = await relationships(path);
+    return links.flatMap((link): SlideLink[] => {
+      if (link.getAttribute('action') !== 'ppaction://hlinksldjump') return [];
+      const slide = indexes.get(targets.get(relationId(link)) || '');
+      if (slide === undefined) return [];
+      let shape = link.parentElement;
+      while (shape && !['sp', 'pic', 'graphicFrame'].includes(shape.localName)) shape = shape.parentElement;
+      const transform = elements(shape, 'xfrm')[0];
+      const origin = elements(transform ?? null, 'off')[0];
+      const extent = elements(transform ?? null, 'ext')[0];
+      const left = Number(origin?.getAttribute('x'));
+      const top = Number(origin?.getAttribute('y'));
+      const boxWidth = Number(extent?.getAttribute('cx'));
+      const boxHeight = Number(extent?.getAttribute('cy'));
+      if (![left, top, boxWidth, boxHeight].every(Number.isFinite) || boxWidth <= 0 || boxHeight <= 0) return [];
+      const label = elements(link.parentElement?.parentElement ?? null, 't')[0]?.textContent?.trim()
+        || link.getAttribute('tooltip') || 'O‘tish';
+      return [{ left, top, width: boxWidth, height: boxHeight, slide, label }];
+    });
+  }));
+  return { width, height, slides };
 }
