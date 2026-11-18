@@ -73,15 +73,13 @@ export function TopicsPage() {
               </div>
               <div className="topic-grid">
                 {list.map((t) => (
-                  <article key={t.id} className="topic-card">
-                    <Link to={paths.topic(t.id)} aria-label={t.title} style={{ display: 'grid', gap: 8, color: 'inherit' }}>
+                  <Link key={t.id} to={paths.topic(t.id)} aria-label={t.title} className="topic-card">
                     <div className="topic-card__top">
                       <span className="topic-card__num">{String(t.globalOrder).padStart(2, '0')}</span>
                       <span className="topic-card__part">{p.order}-qism · {t.order}-mavzu</span>
                       <ArrowUpRight size={18} className="topic-card__arrow" aria-hidden />
                     </div>
                     <h3 className="topic-card__title">{t.title}</h3>
-                    </Link>
                     <ul className="topic-card__subs">
                       {t.subtopics.slice(0, 3).map((s) => (
                         <li key={s}>{s}</li>
@@ -91,7 +89,7 @@ export function TopicsPage() {
                     <div className="topic-card__foot">
                       <span><Clock size={13} /> Ma’ruza {t.lectureHours} s · Amaliy {t.practiceHours} s</span>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </section>
@@ -116,7 +114,7 @@ const diagramIcons: Partial<Record<number, { steps: [LucideIcon, LucideIcon, Luc
 
 function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: TopicVisual }) {
   const icons = diagramIcons[topicNumber];
-  const [selected, setSelected] = useState(visual.kind === 'market' ? 1 : 0);
+  const selected = visual.kind === 'market' ? 1 : 0;
   const chart = visual.kind !== 'flow';
   const chartMax = Math.max(...visual.values, 1);
   const chartMin = visual.kind === 'line' ? Math.min(...visual.values) : 0;
@@ -148,21 +146,21 @@ function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: To
         </svg>
       )}
       {visual.kind === 'market' && <div className="xs muted">● Talab · ○ Taklif</div>}
-      <div role="group" aria-label={visual.title} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5, marginTop: 7 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5, marginTop: 7 }}>
         {visual.steps.map(([label], i) => {
           const Icon = icons?.steps[i];
           const active = i === selected;
           return (
             <div key={label} style={{ position: 'relative', minWidth: 0 }}>
-              <button type="button" aria-pressed={active} onClick={() => setSelected(i)}
+              <span
                 style={{ width: '100%', minWidth: 0, minHeight: Icon ? 98 : 36, padding: Icon ? '8px 4px' : '4px 3px',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7,
                   font: 'inherit', fontSize: 11.5, border: '1px solid #b7cec0', borderRadius: 8,
-                  background: active ? '#245d4b' : '#fff', color: active ? '#fff' : '#23473d', cursor: 'pointer' }}>
+                  background: active ? '#245d4b' : '#fff', color: active ? '#fff' : '#23473d' }}>
                 {Icon && <span aria-hidden="true" style={{ width: 40, height: 40, display: 'grid', placeItems: 'center', borderRadius: 10,
                   background: active ? 'rgb(255 255 255 / 15%)' : '#e3f0e8' }}><Icon size={23} strokeWidth={1.65} /></span>}
                 <span>{label}</span>
-              </button>
+              </span>
               {icons?.sequence && i < visual.steps.length - 1 && (
                 <span aria-hidden="true" style={{ position: 'absolute', top: '43%', right: -9, zIndex: 1, pointerEvents: 'none',
                   borderRadius: 12, background: '#f1f7f3', color: '#416f5c', display: 'grid', placeItems: 'center' }}><ArrowRight size={13} /></span>
@@ -171,7 +169,7 @@ function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: To
           );
         })}
       </div>
-      <p className="xs" aria-live="polite" style={{ margin: '7px 0 0', minHeight: '3.4em', lineHeight: 1.4 }}>{visual.steps[selected][1]}</p>
+      <p className="xs" style={{ margin: '7px 0 0', minHeight: '3.4em', lineHeight: 1.4 }}>{visual.steps[selected][1]}</p>
     </div>
   );
 }
