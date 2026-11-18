@@ -17,7 +17,9 @@ type ListedPresentation = { id: string; topicId: string; title: string; file_nam
 export function MaterialsPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
-  const showPresentations = params.get('tur') === 'taqdimotlar';
+  const category = params.get('tur');
+  if (category === 'glossariy') return <GlossaryPage />;
+  const showPresentations = category === 'taqdimotlar';
   return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user)}
     showPresentations={showPresentations} />;
 }
@@ -164,13 +166,15 @@ function MaterialsLibrary({ signedIn, showPresentations }: {
       <div className="cat-grid mt-5">
         {materialCategories.map((c) => {
           const Icon = icons[c.icon];
-          if (c.id === 'slides') return (
-            <Link key={c.id} to={paths.materials + '?tur=taqdimotlar'} className="card card--pad cat-card"
+          if (c.id === 'slides' || c.id === 'glossary') return (
+            <Link key={c.id} to={paths.materials + (c.id === 'slides' ? '?tur=taqdimotlar' : '?tur=glossariy')} className="card card--pad cat-card"
               style={{ color: 'inherit' }}>
               <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
-              <span className="cat-card__foot"><Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge></span>
+              <span className="cat-card__foot">
+                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">Atamalarni ko‘rish</Badge>}
+              </span>
             </Link>
           );
           return (
@@ -291,6 +295,67 @@ function FirstSlidePreview({ filePath, publicUrl }: { filePath?: string; publicU
         <img src={imageUrl} alt="Taqdimotning birinchi slaydi" onError={() => setFailed(true)}
           style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
       ) : <Presentation size={27} aria-label={failed ? 'Oldindan ko‘rish mavjud emas' : 'Taqdimot'} />}
+    </div>
+  );
+}
+
+type GlossaryEntry = { term: string; definitions: string[] };
+
+function normalizeGlossaryText(text: string) {
+  return text.normalize('NFC').toLowerCase().replace(/[‘’ʻʼ´'\u0060]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function GlossaryPage() {
+  const [entries, setEntries] = useState<GlossaryEntry[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    import('../../../iqtisodiyot-glossariy.json').then(({ default: terms }) => {
+      if (mounted) setEntries(terms);
+    }).catch(() => {
+      if (mounted) setLoadError(true);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const words = normalizeGlossaryText(query).split(' ').filter(Boolean);
+  const results = (entries ?? []).filter(({ term, definitions }) => {
+    const haystack = normalizeGlossaryText([term, ...definitions].join(' '));
+    return words.every((word) => haystack.includes(word));
+  });
+
+  return (
+    <div className="container page">
+      <PageHeader crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Glossariy' }]}
+        title="Iqtisodiyot glossariysi" description="Iqtisodiy atamalar va ularning ta’riflari" />
+      <div className="stack">
+        <label className="stack stack--sm">
+          <strong>Glossariydan qidirish</strong>
+          <input className="input" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+            placeholder="Atama yoki ta’rifni yozing…" />
+        </label>
+        {loadError && <p role="alert">Glossariyni yuklab bo‘lmadi. Sahifani yangilab ko‘ring.</p>}
+        {!entries && !loadError && <p role="status">Glossariy yuklanmoqda…</p>}
+        {entries && (
+          <>
+            <p className="small muted" aria-live="polite">
+              {query.trim() ? results.length + ' ta natija · jami ' + entries.length + ' ta atama' : entries.length + ' ta atama'}
+            </p>
+            {results.length === 0 ? <p>Qidiruvga mos atama yoki ta’rif topilmadi.</p> : (
+              <dl className="grid grid--2" style={{ margin: 0 }}>
+                {results.map(({ term, definitions }) => (
+                  <div key={term} className="card card--pad stack stack--sm">
+                    <dt><strong>{term}</strong></dt>
+                    {definitions.map((definition) => <dd key={definition} className="muted small" style={{ margin: 0 }}>{definition}</dd>)}
+                  </div>
+                ))}
+              </dl>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
