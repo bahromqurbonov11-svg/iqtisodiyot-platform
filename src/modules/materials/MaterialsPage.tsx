@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText } from 'lucide-react';
 import { PageHeader, Card, Badge, Button, Tabs } from '@/components/ui';
@@ -109,33 +109,44 @@ function MaterialsLibrary({ signedIn, showPresentations }: {
           {downloadError && <p role="alert">{downloadError}</p>}
           {fullCountReady && slideTotal === 0 && <p>Hali taqdimot yuklanmagan.</p>}
           <ul className="grid grid--3" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {allTopics.filter((topic) => slideCounts[topic.id]).map((topic) => (
-              <li key={topic.id}>
-                <Card title={topic.globalOrder + '-mavzu. ' + topic.title} className="stack stack--sm">
-                {(uploaded ?? []).filter((file) => file.topicId === topic.id).map((file) => (
-                  <div key={file.id} className="file">
-                    <span className="file__main">{file.title}</span>
-                    <div className="file__actions">
-                      {/\.pptx$/i.test(file.file_name) && <Button size="sm" variant="secondary" onClick={() => setPresentation(file)}>Slaydlarni ko‘rish</Button>}
-                      <Button size="sm" variant="secondary" onClick={() => void download(file)}>Yuklab olish</Button>
-                    </div>
-                  </div>
-                ))}
-                {materialsService.list(topic.id, 'slides').data.map((file) => {
-                  const view = materialsService.viewUrl(file);
-                  return (
-                    <div key={file.path} className="file">
-                      <span className="file__main">{file.title}</span>
-                      <div className="file__actions">
-                        {view && <a href={view} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm">Ko‘rish</a>}
-                        <a href={materialsService.fileUrl(file)} download={file.fileName} className="btn btn--secondary btn--sm">Yuklab olish</a>
-                      </div>
-                    </div>
-                  );
-                })}
-                </Card>
-              </li>
-            ))}
+            {allTopics.filter((topic) => slideCounts[topic.id]).map((topic) => {
+              const libraryFiles = (uploaded ?? []).filter((file) => file.topicId === topic.id);
+              const repositoryFiles = materialsService.list(topic.id, 'slides').data;
+              const multiple = libraryFiles.length + repositoryFiles.length > 1;
+              return (
+                <li key={topic.id}>
+                  <Card title={topic.globalOrder + '-mavzu. ' + topic.title} className="stack stack--sm">
+                    {libraryFiles.map((file) => {
+                      const canPreview = /\.pptx$/i.test(file.file_name);
+                      return (
+                        <div key={file.id} className="stack stack--sm">
+                          {multiple && <p className="small muted" style={{ overflowWrap: 'anywhere' }}>{file.file_name}</p>}
+                          <FirstSlidePreview filePath={canPreview ? file.file_path : undefined} />
+                          <div className="presentation-actions">
+                            {canPreview && <Button size="sm" variant="secondary" onClick={() => setPresentation(file)}>Ko‘rish</Button>}
+                            <Button size="sm" variant="secondary" onClick={() => void download(file)}>Yuklab olish</Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {repositoryFiles.map((file) => {
+                      const view = materialsService.viewUrl(file);
+                      const url = materialsService.fileUrl(file);
+                      return (
+                        <div key={file.path} className="stack stack--sm">
+                          {multiple && <p className="small muted" style={{ overflowWrap: 'anywhere' }}>{file.fileName}</p>}
+                          <FirstSlidePreview publicUrl={file.ext.toLowerCase() === 'pptx' ? url : undefined} />
+                          <div className="presentation-actions">
+                            {view && <a href={view} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm">Ko‘rish</a>}
+                            <a href={url} download={file.fileName} className="btn btn--secondary btn--sm">Yuklab olish</a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </Card>
+                </li>
+              );
+            })}
           </ul>
       {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
     </div>
@@ -221,6 +232,65 @@ function MaterialsLibrary({ signedIn, showPresentations }: {
         </table>
       </div>
       <p className="xs muted mt-3">Raqamni bossangiz, mavzu sahifasi ochiladi.</p>
+    </div>
+  );
+}
+
+function FirstSlidePreview({ filePath, publicUrl }: { filePath?: string; publicUrl?: string }) {
+  const frame = useRef<HTMLDivElement>(null);
+  const [imageUrl, setImageUrl] = useState<string>();
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if ((!filePath && !publicUrl) || !frame.current) return;
+    let active = true;
+    let previewUrl: string | undefined;
+
+    async function load() {
+      try {
+        const bytes = filePath
+          ? supabase.storage.from('learning-resources').download(filePath).then(({ data, error }) => {
+              if (error || !data) throw new Error('Presentation unavailable');
+              return data.arrayBuffer();
+            })
+          : fetch(publicUrl!).then((response) => {
+              if (!response.ok) throw new Error('Presentation unavailable');
+              return response.arrayBuffer();
+            });
+        const [buffer, { parse }, { renderSlide }] = await Promise.all([
+          bytes, import('@pagus-kit/core'), import('@pagus-kit/renderer'),
+        ]);
+        if (!active) return;
+        const deck = await parse(buffer);
+        if (!active) return;
+        if (!deck.slides[0]) throw new Error('No first slide');
+        const { svg } = renderSlide(deck.slides[0], deck.slideSize);
+        previewUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+        setImageUrl(previewUrl);
+      } catch {
+        if (active) setFailed(true);
+      }
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      void load();
+    }, { rootMargin: '160px' });
+    observer.observe(frame.current);
+    return () => {
+      active = false;
+      observer.disconnect();
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [filePath, publicUrl]);
+
+  return (
+    <div ref={frame} style={{ aspectRatio: '16 / 9', display: 'grid', placeItems: 'center', overflow: 'hidden', background: 'var(--c-surface)', border: '1px solid var(--c-line)', borderRadius: 10 }}>
+      {imageUrl && !failed ? (
+        <img src={imageUrl} alt="Taqdimotning birinchi slaydi" onError={() => setFailed(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+      ) : <Presentation size={27} aria-label={failed ? 'Oldindan ko‘rish mavjud emas' : 'Taqdimot'} />}
     </div>
   );
 }
