@@ -150,7 +150,7 @@ function SituationGame({ concepts, restart }: { concepts: readonly GameConcept[]
     answer,
     choices: shuffle([answer, ...shuffle(concepts.map((_, i) => i).filter((i) => i !== answer)).slice(0, 3)]),
     column: reverse ? 2 : 0,
-  }))));
+  })))));
   const [index, setIndex] = useState(0);
   const [choice, setChoice] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
