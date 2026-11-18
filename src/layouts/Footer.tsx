@@ -13,6 +13,11 @@ export function Footer() {
             {appConfig.organization.name}. Fan kodi {appConfig.subject.code}. Platforma talabalar bilimidagi bo‘shliqlarni aniqlash
             va o‘qituvchiga tahliliy ma’lumot berish uchun ishlab chiqilmoqda.
           </p>
+          <address className="small" style={{ fontStyle: 'normal', marginTop: 12, lineHeight: 1.65 }}>
+            <div>Muallif: <strong>Qurbonov Baxromjon</strong></div>
+            <div>Telefon: <a href="tel:+998938636355" className="link">+998 93 863 63 55</a></div>
+            <div>Telegram: <a href="https://t.me/BaxromjonQurbonov" className="link">@BaxromjonQurbonov</a></div>
+          </address>
         </div>
         <div>
           <h4>O‘qish</h4>
@@ -39,7 +44,10 @@ export function Footer() {
         </div>
       </div>
       <div className="container site-footer__bottom">
-        <span>© 2026 Iqtisodiyot nazariyasi — ta’lim va analitika platformasi</span>
+        <div>
+          <p>© 2026 Qurbonov Baxromjon. Barcha huquqlar himoyalangan.</p>
+          <p>Sayt materiallaridan foydalanganda «Iqtisodiyot nazariyasi — ta’lim va analitika» saytini manba sifatida ko‘rsating.</p>
+        </div>
         <span>v{appConfig.version} · {appConfig.stage}-bosqich</span>
       </div>
     </footer>
