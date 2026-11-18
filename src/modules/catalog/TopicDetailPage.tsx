@@ -239,7 +239,7 @@ function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: s
                 {file.description && <p className="small">{file.description}</p>}
               </div>
               <div className="presentation-actions">
-                {/.pptx$/i.test(file.file_name) && (
+                {/\.pptx$/i.test(file.file_name) && (
                   <Button variant="secondary" onClick={() => setPresentation(file)}>Slaydlarni ko‘rish</Button>
                 )}
                 <Button variant="secondary" disabled={downloading !== null} icon={<Download size={16} />} onClick={() => void download(file)}>
@@ -264,6 +264,7 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
   const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer } | null>(null);
   const [slide, setSlide] = useState(0);
   const [image, setImage] = useState<string>();
+  const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -316,11 +317,17 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
   }
 
   async function fullscreen() {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else await frame.current?.requestFullscreen();
+      else if (document.fullscreenEnabled && frame.current) await frame.current.requestFullscreen();
+      else setExpanded(true);
     } catch {
-      setError('To‘liq ekran rejimi bu brauzerda ochilmadi.');
+      setExpanded(true);
     }
   }
 
@@ -328,6 +335,7 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
     <dialog
       ref={dialog}
       className="presentation-viewer"
+      style={expanded ? { width: '100vw', height: '100dvh', maxWidth: 'none', maxHeight: 'none', margin: 0, borderRadius: 0 } : undefined}
       aria-label={file.title}
       onClose={onClose}
       onKeyDown={(event) => {
@@ -343,7 +351,7 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
           <Button variant="ghost" onClick={() => dialog.current?.close()}>Yopish</Button>
         </div>
         <div className="presentation-viewer__stage">
-          {image && <img src={image} alt={'Slayd ' + (slide + 1)} onError={() => setError('Bu slaydni ko‘rsatib bo‘lmadi.')} />}
+          {image && <img src={image} alt={'Slayd ' + (slide + 1)} style={expanded ? { height: '78dvh' } : undefined} onError={() => setError('Bu slaydni ko‘rsatib bo‘lmadi.')} />}
           {!deck && !error && <p role="status">Taqdimot ochilmoqda…</p>}
         </div>
         {error && <p role="alert">{error}</p>}
@@ -351,7 +359,7 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
           <Button variant="secondary" disabled={slide === 0} onClick={() => move(-1)}>Oldingi</Button>
           <span aria-live="polite">{count > 0 ? (slide + 1) + ' / ' + count : '—'}</span>
           <Button variant="secondary" disabled={slide + 1 >= count} onClick={() => move(1)}>Keyingi</Button>
-          <Button variant="secondary" disabled={!document.fullscreenEnabled} onClick={() => void fullscreen()}>To‘liq ekran</Button>
+          <Button variant="secondary" onClick={() => void fullscreen()}>{expanded ? 'Oddiy oyna' : 'To‘liq ekran'}</Button>
         </div>
       </div>
     </dialog>
