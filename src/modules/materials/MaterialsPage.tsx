@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText } from 'lucide-react';
-import { PageHeader, Card, Badge, Notice, Tabs } from '@/components/ui';
+import { PageHeader, Card, Badge, Button, Notice, Tabs } from '@/components/ui';
 import { materialCategories, type MaterialCategory } from '@/data/materials';
 import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
 import { materialsService } from '@/services/materials.service';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/services/auth/AuthContext';
+import { PresentationViewer } from '@/modules/catalog/TopicDetailPage';
 
 const icons: Record<MaterialCategory['icon'], typeof BookOpen> = { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText };
+
+type ListedPresentation = { id: string; topicId: string; title: string; file_name: string; file_path: string };
 
 export function MaterialsPage() {
   const { user } = useAuth();
@@ -20,8 +23,37 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
   const subject = catalogService.getSubject().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
   const topics = catalogService.getTopics(partId).data;
-  const [uploaded, setUploaded] = useState<Record<string, number> | null>(null);
+  const [uploaded, setUploaded] = useState<ListedPresentation[] | null>(null);
   const [countError, setCountError] = useState(false);
+  const [showPresentations, setShowPresentations] = useState(false);
+  const [presentation, setPresentation] = useState<ListedPresentation | null>(null);
+  const [downloadError, setDownloadError] = useState('');
+  const listHeading = useRef<HTMLHeadingElement>(null);
+
+  function openPresentations() {
+    setShowPresentations(true);
+    if (showPresentations) listHeading.current?.focus();
+  }
+
+  useEffect(() => {
+    if (showPresentations) listHeading.current?.focus();
+  }, [showPresentations]);
+
+  async function download(file: ListedPresentation) {
+    setDownloadError('');
+    try {
+      const { data, error } = await supabase.storage.from('learning-resources')
+        .createSignedUrl(file.file_path, 60, { download: file.file_name });
+      if (error || !data?.signedUrl) throw error;
+      const link = document.createElement('a');
+      link.href = data.signedUrl;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      setDownloadError('Faylni yuklab bo‘lmadi. Qayta urinib ko‘ring.');
+    }
+  }
 
   useEffect(() => {
     if (!signedIn) return;
@@ -31,11 +63,11 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
       try {
         const topics = catalogService.getTopics().data;
         const topicIds = new Map(topics.flatMap((topic) => [[topic.id, topic.id], [topic.title, topic.id]]));
-        const counts: Record<string, number> = {};
+        const files: ListedPresentation[] = [];
         const pageSize = 500;
         for (let offset = 0; ; offset += pageSize) {
           const { data, error } = await supabase.from('learning_resources')
-            .select('topic_name,material_kind,file_name')
+            .select('id,topic_name,material_kind,title,file_name,file_path')
             .or('material_kind.eq.slides,material_kind.is.null')
             .order('id')
             .range(offset, offset + pageSize - 1);
@@ -44,12 +76,12 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
           for (const row of data) {
             const id = topicIds.get(row.topic_name ?? '');
             if (id && (row.material_kind === 'slides' || /\.(pptx|ppt|ppsx)$/i.test(row.file_name))) {
-              counts[id] = (counts[id] ?? 0) + 1;
+              files.push({ id: row.id, topicId: id, title: row.title, file_name: row.file_name, file_path: row.file_path });
             }
           }
           if (data.length < pageSize) break;
         }
-        if (active) setUploaded(counts);
+        if (active) setUploaded(files);
       } catch {
         if (active) setCountError(true);
       }
@@ -60,8 +92,9 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
   }, [signedIn]);
 
   const slideCounts = materialsService.countByTopic('slides');
-  for (const [id, count] of Object.entries(uploaded ?? {})) {
-    slideCounts[id] = (slideCounts[id] ?? 0) + count;
+  const allTopics = catalogService.getTopics().data;
+  for (const { topicId } of uploaded ?? []) {
+    slideCounts[topicId] = (slideCounts[topicId] ?? 0) + 1;
   }
   const slideTotal = Object.values(slideCounts).reduce((total, count) => total + count, 0);
   const fullCountReady = uploaded !== null;
@@ -79,9 +112,9 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
       />
 
       <Notice kind="info" title="Taqdimotlar">
-        {signedIn ? 'Taqdimotni ko‘rish yoki yuklab olish uchun mavzu sahifasini oching.' : (
-          <>Administrator yuklagan taqdimotlar va ularning sonini ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</>
-        )}
+        <button type="button" className="link" aria-expanded={showPresentations} onClick={openPresentations}>
+          Barcha taqdimotlarni shu sahifada ochish
+        </button>
       </Notice>
 
       <div className="cat-grid mt-5">
@@ -90,11 +123,16 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
           return (
             <Card key={c.id} className="cat-card">
               <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
-              <h3>{c.title}</h3>
+              <h3>{c.id === 'slides' ? (
+                <button type="button" className="link" aria-expanded={showPresentations} onClick={openPresentations}>{c.title}</button>
+              ) : c.title}</h3>
               <p className="small muted">{c.description}</p>
               <div className="cat-card__foot">
                 {c.id === 'slides' ? (
-                  <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge>
+                  <button type="button" aria-label="Taqdimotlar ro‘yxatini ochish" aria-expanded={showPresentations} onClick={openPresentations}
+                    style={{ padding: 0, border: 0, background: 'transparent', cursor: 'pointer' }}>
+                    <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge>
+                  </button>
                 ) : c.knownInProject ? (
                   <Badge tone="accent">Loyihada mavjud: {c.knownInProject}</Badge>
                 ) : (
@@ -105,6 +143,49 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
           );
         })}
       </div>
+
+      {showPresentations && (
+        <section className="mt-7 stack" aria-labelledby="library-presentations">
+          <div className="section__head">
+            <h2 id="library-presentations" ref={listHeading} tabIndex={-1}>Barcha taqdimotlar</h2>
+            <Button variant="secondary" onClick={() => setShowPresentations(false)}>Ro‘yxatni yopish</Button>
+          </div>
+          {!signedIn && <p>Administrator yuklagan fayllarni ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</p>}
+          {signedIn && !fullCountReady && !countError && <p role="status">Taqdimotlar yuklanmoqda…</p>}
+          {countError && <p role="alert">Yuklangan taqdimotlar ro‘yxatini olib bo‘lmadi.</p>}
+          {downloadError && <p role="alert">{downloadError}</p>}
+          {fullCountReady && slideTotal === 0 && <p>Hali taqdimot yuklanmagan.</p>}
+          <ul className="files">
+            {allTopics.map((topic) => (
+              <li key={topic.id} className="stack stack--sm" hidden={!slideCounts[topic.id]}>
+                <h3 className="small">{topic.globalOrder}. {topic.title}</h3>
+                {(uploaded ?? []).filter((file) => file.topicId === topic.id).map((file) => (
+                  <div key={file.id} className="file">
+                    <span className="file__main">{file.title}</span>
+                    <div className="file__actions">
+                      {/\.pptx$/i.test(file.file_name) && <Button size="sm" variant="secondary" onClick={() => setPresentation(file)}>Slaydlarni ko‘rish</Button>}
+                      <Button size="sm" variant="secondary" onClick={() => void download(file)}>Yuklab olish</Button>
+                    </div>
+                  </div>
+                ))}
+                {materialsService.list(topic.id, 'slides').data.map((file) => {
+                  const view = materialsService.viewUrl(file);
+                  return (
+                    <div key={file.path} className="file">
+                      <span className="file__main">{file.title}</span>
+                      <div className="file__actions">
+                        {view && <a href={view} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm">Ko‘rish</a>}
+                        <a href={materialsService.fileUrl(file)} download={file.fileName} className="btn btn--secondary btn--sm">Yuklab olish</a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
 
       <div className="section__head mt-7">
         <div>
