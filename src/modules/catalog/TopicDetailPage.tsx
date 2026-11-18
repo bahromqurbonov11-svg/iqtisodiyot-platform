@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, BookOpen, BookA, Briefcase, ClipboardCheck, Gamepad2, Lightbulb, Clock, Network,
+  ArrowLeft, ArrowRight, Download, ClipboardCheck, Gamepad2, Lightbulb, Clock, Network,
 } from 'lucide-react';
 import { PageHeader, Card, Badge, Button, StageBadge } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
@@ -11,6 +12,8 @@ import { NotFoundPage } from '@/modules/public/NotFoundPage';
 import { GameIcon } from '@/modules/games/GameIcon';
 import { SlidesList } from '@/modules/materials/SlidesList';
 import { materialsService } from '@/services/materials.service';
+import { supabase } from '@/services/supabase';
+import { useAuth } from '@/services/auth/AuthContext';
 
 /**
  * MAVZU SAHIFASI SHABLONI — barcha 25 mavzu uchun bitta komponent.
@@ -25,12 +28,6 @@ export function TopicDetailPage() {
   const siblings = catalogService.getTopics(topic.partId).data;
   const { prev, next } = catalogService.getAdjacent(topic.id);
   const slideCount = materialsService.list(topic.id).data.length;
-
-  const materialSlots = [
-    { icon: BookOpen, title: 'Ma’ruza matni', text: 'Asosiy nazariy material' },
-    { icon: BookA, title: 'Glossariy', text: 'Mavzu atamalari' },
-    { icon: Briefcase, title: 'Keys / amaliy topshiriq', text: 'Amaliy mashg‘ulot uchun' },
-  ];
 
   return (
     <div className="container page">
@@ -69,20 +66,7 @@ export function TopicDetailPage() {
             <SlidesList topicId={topic.id} />
           </Card>
 
-          <Card title="Boshqa o‘quv materiallari" actions={<StageBadge stage={2} />}>
-            <div className="slots">
-              {materialSlots.map((m) => (
-                <div key={m.title} className="slot">
-                  <m.icon size={20} aria-hidden />
-                  <div>
-                    <strong>{m.title}</strong>
-                    <small className="muted">{m.text}</small>
-                  </div>
-                  <span className="slot__state">Fayl ulanmagan</span>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <UploadedMaterials topicId={topic.id} topicTitle={topic.title} />
 
           <Card title="Asosiy tushunchalar" actions={<StageBadge stage={2} />}>
             <div className="placeholder">
@@ -158,5 +142,108 @@ export function TopicDetailPage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+const materialLabels: Record<string, string> = {
+  slides: 'Taqdimot',
+  lecture: 'Ma’ruza',
+  glossary: 'Glossariy',
+  case: 'Keys / amaliy topshiriq',
+};
+
+type UploadedMaterial = {
+  id: string;
+  title: string;
+  description: string | null;
+  material_kind: string | null;
+  file_name: string;
+  file_path: string;
+};
+
+function UploadedMaterials({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {
+  const { user } = useAuth();
+
+  return (
+    <Card title="Yuklangan o‘quv materiallari">
+      {user ? (
+        <MaterialFiles key={topicId + ':' + user.id} topicId={topicId} topicTitle={topicTitle} />
+      ) : (
+        <Button to="/kirish" variant="secondary">Materiallarni ko‘rish uchun kiring</Button>
+      )}
+    </Card>
+  );
+}
+
+function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {
+  const [files, setFiles] = useState<UploadedMaterial[] | null>(null);
+  const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      try {
+        const { data, error: loadError } = await supabase
+          .from('learning_resources')
+          .select('id,title,description,material_kind,file_name,file_path')
+          .in('topic_name', [topicId, topicTitle])
+          .order('created_at', { ascending: false });
+        if (loadError) throw loadError;
+        if (active) setFiles(data ?? []);
+      } catch {
+        if (active) setError('Materiallar ro‘yxatini yuklab bo‘lmadi.');
+      }
+    }
+
+    void load();
+    return () => { active = false; };
+  }, [topicId, topicTitle]);
+
+  async function download(file: UploadedMaterial) {
+    setError('');
+    setDownloading(file.id);
+
+    try {
+      const { data, error: downloadError } = await supabase.storage
+        .from('learning-resources')
+        .createSignedUrl(file.file_path, 60, { download: file.file_name });
+      if (downloadError || !data?.signedUrl) throw new Error('Download unavailable');
+
+      const link = document.createElement('a');
+      link.href = data.signedUrl;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      setError('Faylni yuklab bo‘lmadi. Qayta urinib ko‘ring.');
+    } finally {
+      setDownloading(null);
+    }
+  }
+
+  return (
+    <>
+      {error && <p role="alert">{error}</p>}
+      {!files && !error && <p role="status">Materiallar yuklanmoqda…</p>}
+      {files?.length === 0 && <p className="muted">Bu mavzuga material yuklanmagan.</p>}
+      {files && files.length > 0 && (
+        <ul className="stack">
+          {files.map((file) => (
+            <li key={file.id} className="slot">
+              <div>
+                <strong>{file.title}</strong>
+                <small className="muted">{(file.material_kind && materialLabels[file.material_kind]) || 'O‘quv materiali'}</small>
+                {file.description && <p className="small">{file.description}</p>}
+              </div>
+              <Button variant="secondary" disabled={downloading !== null} icon={<Download size={16} />} onClick={() => void download(file)}>
+                {downloading === file.id ? 'Yuklanmoqda…' : 'Yuklab olish'}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
