@@ -260,7 +260,6 @@ type SlideRenderer = typeof import('@pagus-kit/renderer').renderSlide;
 
 function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const frame = useRef<HTMLDivElement>(null);
   const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer } | null>(null);
   const [slide, setSlide] = useState(0);
   const [image, setImage] = useState<string>();
@@ -316,21 +315,6 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
     setSlide(next);
   }
 
-  async function fullscreen() {
-    if (expanded) {
-      setExpanded(false);
-      return;
-    }
-
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else if (document.fullscreenEnabled && frame.current) await frame.current.requestFullscreen();
-      else setExpanded(true);
-    } catch {
-      setExpanded(true);
-    }
-  }
-
   return (
     <dialog
       ref={dialog}
@@ -345,7 +329,7 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
         }
       }}
     >
-      <div ref={frame} className="presentation-viewer__frame">
+      <div>
         <div className="presentation-viewer__header">
           <strong>{file.title}</strong>
           <Button variant="ghost" onClick={() => dialog.current?.close()}>Yopish</Button>
@@ -359,7 +343,7 @@ function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose
           <Button variant="secondary" disabled={slide === 0} onClick={() => move(-1)}>Oldingi</Button>
           <span aria-live="polite">{count > 0 ? (slide + 1) + ' / ' + count : '—'}</span>
           <Button variant="secondary" disabled={slide + 1 >= count} onClick={() => move(1)}>Keyingi</Button>
-          <Button variant="secondary" onClick={() => void fullscreen()}>{expanded ? 'Oddiy oyna' : 'To‘liq ekran'}</Button>
+          <Button variant="secondary" onClick={() => setExpanded((current) => !current)}>{expanded ? 'Oddiy oyna' : 'To‘liq ekran'}</Button>
         </div>
       </div>
     </dialog>
