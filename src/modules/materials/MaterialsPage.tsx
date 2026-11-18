@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText } from 'lucide-react';
-import { PageHeader, Card, Badge, Button, Notice, Tabs } from '@/components/ui';
+import { PageHeader, Card, Badge, Button, Tabs } from '@/components/ui';
 import { materialCategories, type MaterialCategory } from '@/data/materials';
 import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
@@ -16,13 +16,14 @@ type ListedPresentation = { id: string; topicId: string; title: string; file_nam
 
 export function MaterialsPage() {
   const { user } = useAuth();
-  const [showPresentations, setShowPresentations] = useState(false);
+  const [params] = useSearchParams();
+  const showPresentations = params.get('tur') === 'taqdimotlar';
   return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user)}
-    showPresentations={showPresentations} setShowPresentations={setShowPresentations} />;
+    showPresentations={showPresentations} />;
 }
 
-function MaterialsLibrary({ signedIn, showPresentations, setShowPresentations }: {
-  signedIn: boolean; showPresentations: boolean; setShowPresentations: (show: boolean) => void;
+function MaterialsLibrary({ signedIn, showPresentations }: {
+  signedIn: boolean; showPresentations: boolean;
 }) {
   const subject = catalogService.getSubject().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
@@ -31,17 +32,6 @@ function MaterialsLibrary({ signedIn, showPresentations, setShowPresentations }:
   const [countError, setCountError] = useState(false);
   const [presentation, setPresentation] = useState<ListedPresentation | null>(null);
   const [downloadError, setDownloadError] = useState('');
-  const listHeading = useRef<HTMLHeadingElement>(null);
-
-  function openPresentations() {
-    setShowPresentations(true);
-    if (showPresentations) listHeading.current?.focus();
-  }
-
-  useEffect(() => {
-    if (showPresentations) listHeading.current?.focus();
-  }, [showPresentations]);
-
   async function download(file: ListedPresentation) {
     setDownloadError('');
     try {
@@ -105,66 +95,23 @@ function MaterialsLibrary({ signedIn, showPresentations, setShowPresentations }:
     : !signedIn ? (slideTotal ? slideTotal + ' ta ochiq fayl' : 'Ko‘rish uchun kiring')
     : countError ? 'Jami sonni yuklab bo‘lmadi' : 'Hisoblanmoqda…';
 
-  return (
-    <div className="container page">
+  if (showPresentations) return (
+    <div className="container page stack">
       <PageHeader
-        crumbs={[{ label: 'Bosh sahifa', to: paths.home }, { label: 'O‘quv materiallari' }]}
-        eyebrow="O‘quv materiallari"
-        title="Materiallar kutubxonasi"
-        description="Ma’ruzalar, taqdimotlar, keyslar, test to‘plamlari va glossariy — mavzular bo‘yicha tartiblangan holda."
+        crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Taqdimotlar' }]}
+        title="Taqdimotlar"
+        description={fullCountReady ? slideTotal + ' ta taqdimot · mavzular bo‘yicha' : 'Mavzular bo‘yicha taqdimotlar'}
+        actions={<Button to={paths.materials} variant="secondary">Materiallarga qaytish</Button>}
       />
-
-      <Notice kind="info" title="Taqdimotlar">
-        <button type="button" className="link" aria-expanded={showPresentations} onClick={openPresentations}>
-          Barcha taqdimotlarni shu sahifada ochish
-        </button>
-      </Notice>
-
-      <div className="cat-grid mt-5">
-        {materialCategories.map((c) => {
-          const Icon = icons[c.icon];
-          if (c.id === 'slides') return (
-            <button key={c.id} type="button" className="card card--pad cat-card" aria-label={c.title}
-              aria-expanded={showPresentations} onClick={openPresentations}
-              style={{ textAlign: 'left', cursor: 'pointer', color: 'inherit' }}>
-              <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
-              <strong>{c.title}</strong>
-              <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
-              <span className="cat-card__foot"><Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge></span>
-            </button>
-          );
-          return (
-            <Card key={c.id} className="cat-card">
-              <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
-              <h3>{c.title}</h3>
-              <p className="small muted">{c.description}</p>
-              <div className="cat-card__foot">
-                {c.knownInProject ? (
-                  <Badge tone="accent">Loyihada mavjud: {c.knownInProject}</Badge>
-                ) : (
-                  <Badge>Tayyorlanadi</Badge>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {showPresentations && (
-        <section className="mt-7 stack" aria-labelledby="library-presentations">
-          <div className="section__head">
-            <h2 id="library-presentations" ref={listHeading} tabIndex={-1}>Barcha taqdimotlar</h2>
-            <Button variant="secondary" onClick={() => setShowPresentations(false)}>Ro‘yxatni yopish</Button>
-          </div>
           {!signedIn && <p>Administrator yuklagan fayllarni ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</p>}
           {signedIn && !fullCountReady && !countError && <p role="status">Taqdimotlar yuklanmoqda…</p>}
           {countError && <p role="alert">Yuklangan taqdimotlar ro‘yxatini olib bo‘lmadi.</p>}
           {downloadError && <p role="alert">{downloadError}</p>}
           {fullCountReady && slideTotal === 0 && <p>Hali taqdimot yuklanmagan.</p>}
-          <ul className="files">
+          <ul className="grid grid--3" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {allTopics.filter((topic) => slideCounts[topic.id]).map((topic) => (
-              <li key={topic.id} className="stack stack--sm">
-                <h3 className="small">{topic.globalOrder}. {topic.title}</h3>
+              <li key={topic.id}>
+                <Card title={topic.globalOrder + '-mavzu. ' + topic.title} className="stack stack--sm">
                 {(uploaded ?? []).filter((file) => file.topicId === topic.id).map((file) => (
                   <div key={file.id} className="file">
                     <span className="file__main">{file.title}</span>
@@ -186,12 +133,51 @@ function MaterialsLibrary({ signedIn, showPresentations, setShowPresentations }:
                     </div>
                   );
                 })}
+                </Card>
               </li>
             ))}
           </ul>
-        </section>
-      )}
       {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
+    </div>
+  );
+
+  return (
+    <div className="container page">
+      <PageHeader
+        crumbs={[{ label: 'Bosh sahifa', to: paths.home }, { label: 'O‘quv materiallari' }]}
+        eyebrow="O‘quv materiallari"
+        title="Materiallar kutubxonasi"
+        description="Ma’ruzalar, taqdimotlar, keyslar, test to‘plamlari va glossariy — mavzular bo‘yicha tartiblangan holda."
+      />
+
+      <div className="cat-grid mt-5">
+        {materialCategories.map((c) => {
+          const Icon = icons[c.icon];
+          if (c.id === 'slides') return (
+            <Link key={c.id} to={paths.materials + '?tur=taqdimotlar'} className="card card--pad cat-card"
+              style={{ color: 'inherit' }}>
+              <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
+              <strong>{c.title}</strong>
+              <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
+              <span className="cat-card__foot"><Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge></span>
+            </Link>
+          );
+          return (
+            <Card key={c.id} className="cat-card">
+              <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
+              <h3>{c.title}</h3>
+              <p className="small muted">{c.description}</p>
+              <div className="cat-card__foot">
+                {c.knownInProject ? (
+                  <Badge tone="accent">Loyihada mavjud: {c.knownInProject}</Badge>
+                ) : (
+                  <Badge>Tayyorlanadi</Badge>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
 
       <div className="section__head mt-7">
         <div>
