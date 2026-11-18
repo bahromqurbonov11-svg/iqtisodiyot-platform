@@ -65,7 +65,7 @@ export const supabaseAuthProvider: AuthProvider = {
       throw new Error('Login va parolni kiriting.');
     }
 
-    const email = `${username}@students.invalid`;
+    const email = username.includes('@') ? username : `${username}@students.invalid`;
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
