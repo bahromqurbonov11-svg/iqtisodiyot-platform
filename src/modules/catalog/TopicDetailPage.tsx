@@ -260,7 +260,7 @@ function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: s
 type Presentation = Awaited<ReturnType<typeof import('@pagus-kit/core').parse>>;
 type SlideRenderer = typeof import('@pagus-kit/renderer').renderSlide;
 
-function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose: () => void }) {
+export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMaterial, 'title' | 'file_path'>; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer; links: Awaited<ReturnType<typeof readSlideLinks>> | null } | null>(null);
   const [slide, setSlide] = useState(0);
