@@ -10,6 +10,7 @@ const gameTypes = {
   'vaziyatli-qaror': { title: 'Vaziyatni tahlil qiling', other: 'moslashtirish' },
 } as const;
 const taskCount = 10;
+const pairStyle = { whiteSpace: 'normal', height: 'auto', minHeight: 48, paddingBlock: 10, lineHeight: 1.35, textAlign: 'left', justifyContent: 'flex-start' } as const;
 
 function shuffle<T>(items: readonly T[]): T[] {
   const result = [...items];
@@ -112,7 +113,7 @@ function MatchingGame({ concepts, restart }: { concepts: readonly GameConcept[];
         <div className="grid grid--2">
           <div className="stack stack--sm" aria-label="Birinchi ustun">
             {left.map((id, i) => (
-              <Button key={id} block variant={picked === id ? 'primary' : 'secondary'} disabled={checked} onClick={() => setPicked(id)}>
+              <Button key={id} block style={pairStyle} aria-pressed={picked === id} variant={picked === id ? 'primary' : 'secondary'} disabled={checked} onClick={() => setPicked(id)}>
                 {i + 1}. {concepts[id][round === 0 ? 0 : 1]}
                 {pairs[id] !== undefined && ' → ' + String.fromCharCode(65 + right.indexOf(pairs[id]))}
               </Button>
@@ -120,7 +121,7 @@ function MatchingGame({ concepts, restart }: { concepts: readonly GameConcept[];
           </div>
           <div className="stack stack--sm" aria-label="Ikkinchi ustun">
             {right.map((id, i) => (
-              <Button key={id} block variant="secondary" disabled={checked || picked === null} onClick={() => assign(id)}>
+              <Button key={id} block style={pairStyle} variant="secondary" disabled={checked || picked === null} onClick={() => assign(id)}>
                 {String.fromCharCode(65 + i)}. {concepts[id][round === 0 ? 1 : 0]}
               </Button>
             ))}
