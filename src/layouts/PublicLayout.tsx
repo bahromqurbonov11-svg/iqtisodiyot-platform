@@ -28,7 +28,7 @@ export function PublicLayout() {
       <StageStrip />
       <header className="site-header">
         <div className="container site-header__inner">
-          <Brand />
+          <Brand showSchool />
           <nav className={`site-nav${open ? ' is-open' : ''}`} aria-label="Asosiy navigatsiya">
             {publicMenu(t).map((m) => (
               <NavLink key={m.to} to={m.to} className={({ isActive }) => `site-nav__link${isActive ? ' is-active' : ''}`}>
