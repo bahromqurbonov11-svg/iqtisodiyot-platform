@@ -1,21 +1,33 @@
+import { ChartNoAxesCombined } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { paths } from '@/navigation/paths';
+import schoolLogo from '../../soliq-oliy-maktabi-logo.png';
 
-/** Logotip belgisi: talab va taklif egri chiziqlari kesishmasi */
 export function BrandMark({ size = 34 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden className="brand__mark">
-      <rect width="40" height="40" rx="10" fill="var(--c-primary-dark)" />
-      <path d="M9 10 C 16 18, 22 24, 31 30" stroke="#dff1e5" strokeWidth="2.6" fill="none" strokeLinecap="round" />
-      <path d="M9 30 C 17 23, 23 17, 31 10" stroke="var(--c-accent)" strokeWidth="2.6" fill="none" strokeLinecap="round" />
-      <circle cx="20" cy="20" r="2.8" fill="#fff" />
-    </svg>
+    <span className="brand__mark" aria-hidden="true" style={{
+      width: size, height: size, flexShrink: 0, display: 'grid', placeItems: 'center',
+      borderRadius: 9, background: 'var(--c-primary-dark)', color: '#e3f3e9',
+    }}>
+      <ChartNoAxesCombined size={Math.round(size * 0.65)} strokeWidth={1.9} />
+    </span>
   );
 }
 
-export function Brand({ compact = false, to = paths.home }: { compact?: boolean; to?: string }) {
+export function Brand({ compact = false, showSchool = false, to = paths.home }: {
+  compact?: boolean; showSchool?: boolean; to?: string;
+}) {
   return (
-    <Link to={to} className="brand" aria-label="Iqtisodiyot nazariyasi — bosh sahifa">
+    <Link to={to} className="brand" aria-label={showSchool
+      ? 'Soliq oliy maktabi · Iqtisodiyot nazariyasi — bosh sahifa'
+      : 'Iqtisodiyot nazariyasi — bosh sahifa'}>
+      {showSchool && (
+        <span style={{ width: 'clamp(62px, 8vw, 104px)', aspectRatio: '2.15', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+          <img src={schoolLogo} alt="Soliq oliy maktabi" width={447} height={447} style={{
+            position: 'absolute', width: '128%', height: 'auto', maxWidth: 'none', left: '-13%', top: '-87%',
+          }} />
+        </span>
+      )}
       <BrandMark />
       {!compact && (
         <span className="brand__text">
