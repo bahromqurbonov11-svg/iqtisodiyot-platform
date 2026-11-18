@@ -56,7 +56,7 @@ export function HomePage() {
             {[
               { icon: BookOpen, title: 'O‘rganing', text: 'Mavzu bo‘yicha ma’ruza, taqdimot va glossariy.', to: paths.materials, stage: 2 },
               { icon: ClipboardCheck, title: 'Tekshiring', text: 'Har bir savol aniq tushunchaga bog‘langan diagnostik test.', to: paths.tests, stage: 4 },
-              { icon: Gamepad2, title: 'Mashq qiling', text: 'Moslashtirish, ketma-ketlik, vaziyatli qaror o‘yinlari.', to: paths.games, stage: 5 },
+              { icon: Gamepad2, title: 'Mashq qiling', text: 'Moslashtirish, ketma-ketlik, vaziyatli qaror o‘yinlari.', to: paths.games, stage: 0 },
               { icon: LineIcon, title: 'Natijani ko‘ring', text: 'Kuchli tomonlar va bo‘shliqlar xaritasi, tavsiyalar.', to: paths.cabinet, stage: 7 },
             ].map((s, i) => (
               <Link to={s.to} key={s.title} className="step">
@@ -64,7 +64,7 @@ export function HomePage() {
                 <span className="step__icon"><s.icon size={22} /></span>
                 <h3>{s.title}</h3>
                 <p className="muted">{s.text}</p>
-                <Badge tone="info">{s.stage}-bosqichda to‘liq ishlaydi</Badge>
+                {s.stage > 0 && <Badge tone="info">{s.stage}-bosqichda to‘liq ishlaydi</Badge>}
               </Link>
             ))}
           </div>
@@ -123,16 +123,16 @@ export function HomePage() {
           <div className="section__head">
             <div>
               <div className="eyebrow">Interaktiv o‘yinlar</div>
-              <h2>Besh xil o‘yin — besh xil tafakkur ko‘nikmasi</h2>
+              <h2>Har mavzu uchun ikkita o‘yin</h2>
             </div>
             <Button to={paths.games} variant="ghost" iconRight={<ArrowRight size={16} />}>O‘yinlar bo‘limi</Button>
           </div>
           <div className="game-strip">
-            {games.map((g) => (
-              <Link key={g.slug} to={paths.game(g.slug)} className="game-chip" style={{ ['--gc' as string]: g.color }}>
+            {games.filter((g) => g.slug === 'moslashtirish' || g.slug === 'vaziyatli-qaror').map((g) => (
+              <Link key={g.slug} to={paths.games} className="game-chip" style={{ ['--gc' as string]: g.color }}>
                 <span className="game-chip__icon"><GameIcon name={g.icon} size={22} /></span>
-                <strong>{g.title}</strong>
-                <small>{g.short}</small>
+                <strong>{g.slug === 'moslashtirish' ? g.title : 'Vaziyatni tahlil qiling'}</strong>
+                <small>Har mavzuda 10 ta topshiriq</small>
               </Link>
             ))}
           </div>
