@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, Download, ClipboardCheck, Gamepad2, Lightbulb, Clock, Network,
+  ArrowLeft, ArrowRight, Download, ClipboardCheck, Gamepad2, Lightbulb, Clock,
 } from 'lucide-react';
 import { PageHeader, Card, Badge, Button, StageBadge } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
 import { references } from '@/data/subject';
+import { topicConcepts } from '@/data/topicConcepts';
 import { paths } from '@/navigation/paths';
 import { NotFoundPage } from '@/modules/public/NotFoundPage';
 import { SlidesList } from '@/modules/materials/SlidesList';
@@ -57,14 +58,15 @@ export function TopicDetailPage() {
 
           <UploadedMaterials topicId={topic.id} topicTitle={topic.title} />
 
-          <Card title="Asosiy tushunchalar" actions={<StageBadge stage={2} />}>
-            <div className="placeholder">
-              <Network size={22} aria-hidden />
-              <p>
-                Bu yerda mavzuning tushunchalari va ular orasidagi bog‘liqlik ko‘rsatiladi. Tushunchalar ro‘yxati ma’ruza matnlari va
-                glossariy asosida tuziladi — testlar va o‘yinlar aynan shu tushunchalarga bog‘lanadi.
-              </p>
-            </div>
+          <Card title="Asosiy tushunchalar">
+            <dl className="stack stack--sm" aria-label="Mavzuning asosiy tushunchalari">
+              {topicConcepts[topic.globalOrder - 1].map(([term, definition]) => (
+                <div key={term}>
+                  <dt><strong>{term}</strong></dt>
+                  <dd className="small muted" style={{ margin: 0 }}>{definition}</dd>
+                </div>
+              ))}
+            </dl>
           </Card>
 
           <div className="grid grid--2">
