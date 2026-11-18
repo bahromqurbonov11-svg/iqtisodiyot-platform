@@ -36,6 +36,7 @@ export function AdminContentPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [topicName, setTopicName] = useState('');
+  const [kind, setKind] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
 
@@ -76,8 +77,8 @@ export function AdminContentPage() {
       return;
     }
 
-    if (!title.trim() || !topicName || !file) {
-      setError('Resurs nomi, mavzu va faylni kiriting.');
+    if (!title.trim() || !topicName || !kind || !file) {
+      setError('Resurs nomi, mavzu, turi va faylni kiriting.');
       return;
     }
 
@@ -117,6 +118,7 @@ export function AdminContentPage() {
           title: title.trim(),
           description: description.trim() || null,
           topic_name: topicName,
+          material_kind: kind,
           file_name: file.name,
           file_path: filePath,
           file_type: file.type || null,
@@ -137,6 +139,7 @@ export function AdminContentPage() {
       }
 
       setTitle('');
+      setKind('');
       setDescription('');
       setTopicName('');
       setFile(null);
@@ -260,6 +263,17 @@ export function AdminContentPage() {
                   {topic.globalOrder}. {topic.title}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div className="mt-3">
+            <label htmlFor="resource-kind">Material turi</label>
+            <select id="resource-kind" className="input" value={kind} onChange={(event) => setKind(event.target.value)} required>
+              <option value="">Turini tanlang</option>
+              <option value="slides">Taqdimot</option>
+              <option value="lecture">Ma’ruza</option>
+              <option value="glossary">Glossariy</option>
+              <option value="case">Keys / amaliy topshiriq</option>
             </select>
           </div>
 
