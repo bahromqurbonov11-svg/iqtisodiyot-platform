@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Download, ClipboardCheck, Gamepad2, Lightbulb, Clock, Network,
@@ -179,6 +179,7 @@ function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: s
   const [files, setFiles] = useState<UploadedMaterial[] | null>(null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [presentation, setPresentation] = useState<UploadedMaterial | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -237,13 +238,122 @@ function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: s
                 <small className="muted">{(file.material_kind && materialLabels[file.material_kind]) || 'O‘quv materiali'}</small>
                 {file.description && <p className="small">{file.description}</p>}
               </div>
-              <Button variant="secondary" disabled={downloading !== null} icon={<Download size={16} />} onClick={() => void download(file)}>
-                {downloading === file.id ? 'Yuklanmoqda…' : 'Yuklab olish'}
-              </Button>
+              <div className="presentation-actions">
+                {/.pptx$/i.test(file.file_name) && (
+                  <Button variant="secondary" onClick={() => setPresentation(file)}>Slaydlarni ko‘rish</Button>
+                )}
+                <Button variant="secondary" disabled={downloading !== null} icon={<Download size={16} />} onClick={() => void download(file)}>
+                  {downloading === file.id ? 'Yuklanmoqda…' : 'Yuklab olish'}
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
       )}
+      {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
     </>
+  );
+}
+
+type Presentation = Awaited<ReturnType<typeof import('@pagus-kit/core').parse>>;
+type SlideRenderer = typeof import('@pagus-kit/renderer').renderSlide;
+
+function PresentationViewer({ file, onClose }: { file: UploadedMaterial; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer } | null>(null);
+  const [slide, setSlide] = useState(0);
+  const [image, setImage] = useState<string>();
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    dialog.current?.showModal();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function open() {
+      try {
+        const [result, { parse }, { renderSlide }] = await Promise.all([
+          supabase.storage.from('learning-resources').download(file.file_path),
+          import('@pagus-kit/core'),
+          import('@pagus-kit/renderer'),
+        ]);
+        if (result.error || !result.data) throw new Error('Presentation unavailable');
+        const presentation = await parse(await result.data.arrayBuffer());
+        if (presentation.slides.length === 0) throw new Error('Presentation is empty');
+        if (active) setDeck({ presentation, renderSlide });
+      } catch {
+        if (active) setError('Taqdimotni ochib bo‘lmadi. Faylni yuklab olib ko‘ring.');
+      }
+    }
+
+    void open();
+    return () => { active = false; };
+  }, [file.file_path]);
+
+  useEffect(() => {
+    if (!deck) return;
+    try {
+      const { svg } = deck.renderSlide(deck.presentation.slides[slide], deck.presentation.slideSize);
+      const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+      setImage(url);
+      return () => URL.revokeObjectURL(url);
+    } catch {
+      setImage(undefined);
+      setError('Bu slaydni ko‘rsatib bo‘lmadi.');
+    }
+  }, [deck, slide]);
+
+  const count = deck?.presentation.slides.length ?? 0;
+
+  function move(offset: number) {
+    const next = slide + offset;
+    if (next < 0 || next >= count) return;
+    setError('');
+    setSlide(next);
+  }
+
+  async function fullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await frame.current?.requestFullscreen();
+    } catch {
+      setError('To‘liq ekran rejimi bu brauzerda ochilmadi.');
+    }
+  }
+
+  return (
+    <dialog
+      ref={dialog}
+      className="presentation-viewer"
+      aria-label={file.title}
+      onClose={onClose}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          event.preventDefault();
+          move(event.key === 'ArrowLeft' ? -1 : 1);
+        }
+      }}
+    >
+      <div ref={frame} className="presentation-viewer__frame">
+        <div className="presentation-viewer__header">
+          <strong>{file.title}</strong>
+          <Button variant="ghost" onClick={() => dialog.current?.close()}>Yopish</Button>
+        </div>
+        <div className="presentation-viewer__stage">
+          {image && <img src={image} alt={'Slayd ' + (slide + 1)} onError={() => setError('Bu slaydni ko‘rsatib bo‘lmadi.')} />}
+          {!deck && !error && <p role="status">Taqdimot ochilmoqda…</p>}
+        </div>
+        {error && <p role="alert">{error}</p>}
+        <div className="presentation-actions">
+          <Button variant="secondary" disabled={slide === 0} onClick={() => move(-1)}>Oldingi</Button>
+          <span aria-live="polite">{count > 0 ? (slide + 1) + ' / ' + count : '—'}</span>
+          <Button variant="secondary" disabled={slide + 1 >= count} onClick={() => move(1)}>Keyingi</Button>
+          <Button variant="secondary" disabled={!document.fullscreenEnabled} onClick={() => void fullscreen()}>To‘liq ekran</Button>
+        </div>
+      </div>
+    </dialog>
   );
 }
