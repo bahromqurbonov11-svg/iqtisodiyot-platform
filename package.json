@@ -18,6 +18,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@pagus-kit/core": "0.1.1",
+    "@pagus-kit/renderer": "0.1.1",
     "@supabase/supabase-js": "^2.49.0",
     "lucide-react": "^0.468.0",
     "react": "^19.2.0",
