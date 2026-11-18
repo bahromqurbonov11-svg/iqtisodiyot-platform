@@ -300,3 +300,12 @@ a.mastery-list__name:hover { color: var(--c-primary); }
   .part-card { padding: 20px; }
   .q__stem { font-size: 18px; }
 }
+
+.presentation-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.presentation-viewer { width: min(1100px, 96vw); max-height: 95dvh; padding: 16px; border: 0; border-radius: 12px; color: var(--c-ink); }
+.presentation-viewer::backdrop { background: rgb(12 25 20 / 78%); }
+.presentation-viewer__header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.presentation-viewer__stage { display: grid; place-items: center; margin-block: 12px; background: #172520; color: white; min-height: 100px; }
+.presentation-viewer__stage img { display: block; width: 100%; height: min(64dvh, 620px); object-fit: contain; }
+.presentation-viewer:fullscreen { max-width: none; max-height: none; width: 100%; height: 100%; }
+.presentation-viewer:fullscreen .presentation-viewer__stage img { height: 78dvh; }
