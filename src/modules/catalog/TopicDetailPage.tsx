@@ -6,10 +6,8 @@ import {
 import { PageHeader, Card, Badge, Button, StageBadge } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
 import { references } from '@/data/subject';
-import { games } from '@/data/games';
 import { paths } from '@/navigation/paths';
 import { NotFoundPage } from '@/modules/public/NotFoundPage';
-import { GameIcon } from '@/modules/games/GameIcon';
 import { SlidesList } from '@/modules/materials/SlidesList';
 import { materialsService } from '@/services/materials.service';
 import { supabase } from '@/services/supabase';
@@ -76,15 +74,15 @@ export function TopicDetailPage() {
                 Test sahifasi
               </Button>
             </Card>
-            <Card title="O‘yinlar" actions={<StageBadge stage={5} />}>
+            <Card title="O‘yinlar" actions={<Badge tone="info">2 ta o‘yin</Badge>}>
               <div className="game-mini-list">
-                {games.slice(0, 3).map((g) => (
-                  <Link key={g.slug} to={paths.game(g.slug)} className="game-mini" style={{ ['--gc' as string]: g.color }}>
-                    <GameIcon name={g.icon} size={16} /> {g.title}
-                  </Link>
-                ))}
+                <Link to={paths.game('moslashtirish') + '?mavzu=' + topic.id} className="game-mini">
+                  <Gamepad2 size={16} /> Tushunchalarni moslashtirish · 10 ta
+                </Link>
+                <Link to={paths.game('vaziyatli-qaror') + '?mavzu=' + topic.id} className="game-mini">
+                  <Gamepad2 size={16} /> Vaziyatni tahlil qiling · 10 ta
+                </Link>
               </div>
-              <Link to={paths.games} className="link small mt-3 inline-flex"><Gamepad2 size={14} /> Barcha o‘yinlar</Link>
             </Card>
           </div>
 
