@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, ClipboardCheck, Gamepad2, LineChart as LineIcon, Target, Layers, GraduationCap, Clock } from 'lucide-react';
-import { Button, Badge, DemoBadge } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
 import { games } from '@/data/games';
@@ -156,24 +156,6 @@ export function HomePage() {
               <li><Target size={16} /> Guruh va individual hisobotlar</li>
             </ul>
             <Button to={paths.analytics} variant="light" iconRight={<ArrowRight size={16} />}>Analitika panelini ko‘rish</Button>
-          </div>
-          <div className="analytics-teaser__card">
-            <div className="analytics-teaser__card-head">
-              <span>Eng ko‘p xato qilinayotgan tushunchalar</span>
-              <DemoBadge />
-            </div>
-            {[
-              ['Talab va talab hajmi farqi', 48],
-              ['Narx egiluvchanligi', 41],
-              ['Muqobil xarajat', 37],
-              ['Monopoliyada narx tanlovi', 33],
-            ].map(([l, v]) => (
-              <div key={l} className="mini-bar">
-                <span>{l}</span>
-                <div className="mini-bar__track"><div style={{ width: `${v}%` }} /></div>
-                <b>{v}%</b>
-              </div>
-            ))}
           </div>
         </div>
       </section>
