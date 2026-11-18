@@ -9,7 +9,6 @@ import {
 } from 'react';
 
 import type { AuthProvider, SessionUser } from './auth.types';
-import { demoUsers } from './demo-auth.provider';
 import {
   supabaseAuthProvider,
   restoreSupabaseSession,
@@ -19,7 +18,6 @@ import { supabase } from '../supabase';
 interface AuthValue {
   provider: AuthProvider;
   user: SessionUser | null;
-  previewAs: (role: 'student' | 'admin') => void;
   exitPreview: () => void;
 }
 
@@ -75,10 +73,6 @@ export function AuthProviderRoot({
     () => ({
       provider,
       user,
-
-      previewAs: (role) => {
-        setUser(demoUsers[role]);
-      },
 
       exitPreview: () => {
         setUser(null);
