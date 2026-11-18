@@ -179,6 +179,11 @@ export function AdminContentPage() {
   }
 
   async function handleDelete(resource: Resource) {
+    if (user?.role !== 'admin') {
+      setError('Faqat administrator resurs o‘chira oladi.');
+      return;
+    }
+
     if (!window.confirm(`"${resource.title}" resursi o‘chirilsinmi?`)) {
       return;
     }
