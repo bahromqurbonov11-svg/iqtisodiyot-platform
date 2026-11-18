@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, Clock, ArrowUpRight } from 'lucide-react';
+import {
+  Search, Clock, ArrowUpRight, ArrowRight, Store, Landmark, Building2, Package,
+  Coins, ShoppingCart, House, Factory, Users, Wallet, Cog, TrendingUp,
+  Globe, Ship, PenTool, CreditCard, Leaf, ShieldCheck, Activity,
+  type LucideIcon,
+} from 'lucide-react';
 import { PageHeader, Badge, Tabs } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
@@ -82,7 +87,7 @@ export function TopicsPage() {
                         <li key={s}>{s}</li>
                       ))}
                     </ul>
-                    <TopicDiagram visual={topicVisuals[t.globalOrder - 1]} />
+                    <TopicDiagram topicNumber={t.globalOrder} visual={topicVisuals[t.globalOrder - 1]} />
                     <div className="topic-card__foot">
                       <span><Clock size={13} /> Ma’ruza {t.lectureHours} s · Amaliy {t.practiceHours} s</span>
                     </div>
@@ -97,7 +102,20 @@ export function TopicsPage() {
     </div>
   );
 }
-function TopicDiagram({ visual }: { visual: TopicVisual }) {
+const diagramIcons: Partial<Record<number, { steps: [LucideIcon, LucideIcon, LucideIcon]; sequence?: boolean }>> = {
+  3: { steps: [Store, Landmark, Building2] },
+  4: { steps: [Package, Coins, ShoppingCart], sequence: true },
+  5: { steps: [House, Factory, Store], sequence: true },
+  7: { steps: [Users, Building2, Store] },
+  10: { steps: [Wallet, Cog, ShoppingCart], sequence: true },
+  14: { steps: [ShoppingCart, TrendingUp, Activity], sequence: true },
+  20: { steps: [Landmark, CreditCard, ShoppingCart], sequence: true },
+  21: { steps: [Factory, ShieldCheck, Leaf], sequence: true },
+  23: { steps: [PenTool, Ship, Globe], sequence: true },
+};
+
+function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: TopicVisual }) {
+  const icons = diagramIcons[topicNumber];
   const [selected, setSelected] = useState(visual.kind === 'market' ? 1 : 0);
   const chart = visual.kind !== 'flow';
   const chartMax = Math.max(...visual.values, 1);
@@ -131,12 +149,27 @@ function TopicDiagram({ visual }: { visual: TopicVisual }) {
       )}
       {visual.kind === 'market' && <div className="xs muted">● Talab · ○ Taklif</div>}
       <div role="group" aria-label={visual.title} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5, marginTop: 7 }}>
-        {visual.steps.map(([label], i) => (
-          <button key={label} type="button" aria-pressed={i === selected} onClick={() => setSelected(i)}
-            style={{ minWidth: 0, minHeight: 36, padding: '4px 3px', font: 'inherit', fontSize: 11.5, border: '1px solid #b7cec0', borderRadius: 7, background: i === selected ? '#245d4b' : '#fff', color: i === selected ? '#fff' : '#23473d', cursor: 'pointer' }}>
-            {visual.kind === 'flow' && <span aria-hidden="true">{i + 1}. </span>}{label}
-          </button>
-        ))}
+        {visual.steps.map(([label], i) => {
+          const Icon = icons?.steps[i];
+          const active = i === selected;
+          return (
+            <div key={label} style={{ position: 'relative', minWidth: 0 }}>
+              <button type="button" aria-pressed={active} onClick={() => setSelected(i)}
+                style={{ width: '100%', minWidth: 0, minHeight: Icon ? 98 : 36, padding: Icon ? '8px 4px' : '4px 3px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  font: 'inherit', fontSize: 11.5, border: '1px solid #b7cec0', borderRadius: 8,
+                  background: active ? '#245d4b' : '#fff', color: active ? '#fff' : '#23473d', cursor: 'pointer' }}>
+                {Icon && <span aria-hidden="true" style={{ width: 40, height: 40, display: 'grid', placeItems: 'center', borderRadius: 10,
+                  background: active ? 'rgb(255 255 255 / 15%)' : '#e3f0e8' }}><Icon size={23} strokeWidth={1.65} /></span>}
+                <span>{label}</span>
+              </button>
+              {icons?.sequence && i < visual.steps.length - 1 && (
+                <span aria-hidden="true" style={{ position: 'absolute', top: '43%', right: -9, zIndex: 1, pointerEvents: 'none',
+                  borderRadius: 12, background: '#f1f7f3', color: '#416f5c', display: 'grid', placeItems: 'center' }}><ArrowRight size={13} /></span>
+              )}
+            </div>
+          );
+        })}
       </div>
       <p className="xs" aria-live="polite" style={{ margin: '7px 0 0', minHeight: '3.4em', lineHeight: 1.4 }}>{visual.steps[selected][1]}</p>
     </div>
