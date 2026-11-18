@@ -56,7 +56,7 @@ export function HomePage() {
             {[
               { icon: BookOpen, title: 'O‘rganing', text: 'Mavzu bo‘yicha ma’ruza, taqdimot va glossariy.', to: paths.materials, stage: 2 },
               { icon: ClipboardCheck, title: 'Tekshiring', text: 'Har bir savol aniq tushunchaga bog‘langan diagnostik test.', to: paths.tests, stage: 4 },
-              { icon: Gamepad2, title: 'Mashq qiling', text: 'Moslashtirish, ketma-ketlik, vaziyatli qaror o‘yinlari.', to: paths.games, stage: 0 },
+              { icon: Gamepad2, title: 'Mashq qiling', text: 'Atamalarni moslashtiring va amaliy vaziyatlarni tahlil qiling.', to: paths.games, stage: 0 },
               { icon: LineIcon, title: 'Natijani ko‘ring', text: 'Kuchli tomonlar va bo‘shliqlar xaritasi, tavsiyalar.', to: paths.cabinet, stage: 7 },
             ].map((s, i) => (
               <Link to={s.to} key={s.title} className="step">
