@@ -16,16 +16,19 @@ type ListedPresentation = { id: string; topicId: string; title: string; file_nam
 
 export function MaterialsPage() {
   const { user } = useAuth();
-  return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user)} />;
+  const [showPresentations, setShowPresentations] = useState(false);
+  return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user)}
+    showPresentations={showPresentations} setShowPresentations={setShowPresentations} />;
 }
 
-function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
+function MaterialsLibrary({ signedIn, showPresentations, setShowPresentations }: {
+  signedIn: boolean; showPresentations: boolean; setShowPresentations: (show: boolean) => void;
+}) {
   const subject = catalogService.getSubject().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
   const topics = catalogService.getTopics(partId).data;
   const [uploaded, setUploaded] = useState<ListedPresentation[] | null>(null);
   const [countError, setCountError] = useState(false);
-  const [showPresentations, setShowPresentations] = useState(false);
   const [presentation, setPresentation] = useState<ListedPresentation | null>(null);
   const [downloadError, setDownloadError] = useState('');
   const listHeading = useRef<HTMLHeadingElement>(null);
@@ -120,20 +123,23 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
       <div className="cat-grid mt-5">
         {materialCategories.map((c) => {
           const Icon = icons[c.icon];
+          if (c.id === 'slides') return (
+            <button key={c.id} type="button" className="card card--pad cat-card" aria-label={c.title}
+              aria-expanded={showPresentations} onClick={openPresentations}
+              style={{ textAlign: 'left', cursor: 'pointer', color: 'inherit' }}>
+              <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
+              <strong>{c.title}</strong>
+              <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
+              <span className="cat-card__foot"><Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge></span>
+            </button>
+          );
           return (
             <Card key={c.id} className="cat-card">
               <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
-              <h3>{c.id === 'slides' ? (
-                <button type="button" className="link" aria-expanded={showPresentations} onClick={openPresentations}>{c.title}</button>
-              ) : c.title}</h3>
+              <h3>{c.title}</h3>
               <p className="small muted">{c.description}</p>
               <div className="cat-card__foot">
-                {c.id === 'slides' ? (
-                  <button type="button" aria-label="Taqdimotlar ro‘yxatini ochish" aria-expanded={showPresentations} onClick={openPresentations}
-                    style={{ padding: 0, border: 0, background: 'transparent', cursor: 'pointer' }}>
-                    <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge>
-                  </button>
-                ) : c.knownInProject ? (
+                {c.knownInProject ? (
                   <Badge tone="accent">Loyihada mavjud: {c.knownInProject}</Badge>
                 ) : (
                   <Badge>Tayyorlanadi</Badge>
@@ -156,8 +162,8 @@ function MaterialsLibrary({ signedIn }: { signedIn: boolean }) {
           {downloadError && <p role="alert">{downloadError}</p>}
           {fullCountReady && slideTotal === 0 && <p>Hali taqdimot yuklanmagan.</p>}
           <ul className="files">
-            {allTopics.map((topic) => (
-              <li key={topic.id} className="stack stack--sm" hidden={!slideCounts[topic.id]}>
+            {allTopics.filter((topic) => slideCounts[topic.id]).map((topic) => (
+              <li key={topic.id} className="stack stack--sm">
                 <h3 className="small">{topic.globalOrder}. {topic.title}</h3>
                 {(uploaded ?? []).filter((file) => file.topicId === topic.id).map((file) => (
                   <div key={file.id} className="file">
