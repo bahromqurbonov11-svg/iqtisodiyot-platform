@@ -3,6 +3,7 @@ import { Brand } from '@/components/Brand';
 import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
 import { useI18n } from '@/i18n';
+import { SiteStatsLine } from './VisitReport';
 
 export function Footer() {
   const { t } = useI18n();
@@ -47,6 +48,7 @@ export function Footer() {
         </div>
       </div>
       <div className="container site-footer__bottom">
+        <SiteStatsLine />
         <div>
           <p>© 2026 Qurbonov Baxromjon. Barcha huquqlar himoyalangan.</p>
           <p>Sayt materiallaridan foydalanganda «Iqtisodiyot nazariyasi — ta’lim va analitika» saytini manba sifatida ko‘rsating.</p>
