@@ -125,7 +125,7 @@ function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: To
   const fill = (active: boolean) => active ? 'var(--c-primary)' : '#bbdbcb';
 
   return (
-    <div style={{ background: '#f1f7f3', border: '1px solid #dce9e1', borderRadius: 12, padding: 12, marginTop: 'auto' }}>
+    <div className="topic-diagram-motion" style={{ background: '#f1f7f3', border: '1px solid #dce9e1', borderRadius: 12, padding: 12, marginTop: 'auto' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'baseline', gap: 4 }}>
         <strong className="small">{visual.title}</strong>
         {chart && <span className="xs muted">O‘quv misoli</span>}
@@ -134,11 +134,11 @@ function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: To
         <svg viewBox="0 0 300 88" aria-hidden="true" style={{ display: 'block', width: '100%', height: 'auto', marginBlock: 4 }}>
           <path d="M22 15V78H278" fill="none" stroke="#b7cec0" />
           {visual.kind === 'market' && (
-            <polyline points={line([...visual.values].reverse())} fill="none" stroke="#a56d22" strokeWidth={2.5} />
+            <polyline className="topic-motion-line" pathLength={1} points={line([...visual.values].reverse())} fill="none" stroke="#a56d22" strokeWidth={2.5} />
           )}
-          {visual.kind !== 'bars' && <polyline points={line(visual.values)} fill="none" stroke="var(--c-primary)" strokeWidth={2.5} />}
+          {visual.kind !== 'bars' && <polyline className="topic-motion-line" pathLength={1} points={line(visual.values)} fill="none" stroke="var(--c-primary)" strokeWidth={2.5} />}
           {visual.values.map((value, i) => visual.kind === 'bars' ? (
-            <rect key={i} x={x(i) - 22} y={y(value)} width={44} height={78 - y(value)} rx={4} fill={fill(i === selected)} />
+            <rect className="topic-motion-bar" key={i} x={x(i) - 22} y={y(value)} width={44} height={78 - y(value)} rx={4} fill={fill(i === selected)} />
           ) : (
             <circle key={i} cx={x(i)} cy={y(value)} r={i === selected ? 6 : 3.5} fill={fill(i === selected)} stroke="var(--c-primary)" strokeWidth={1.5} />
           ))}
@@ -157,7 +157,7 @@ function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: To
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7,
                   font: 'inherit', fontSize: 11.5, border: '1px solid #b7cec0', borderRadius: 8,
                   background: active ? '#245d4b' : '#fff', color: active ? '#fff' : '#23473d' }}>
-                {Icon && <span aria-hidden="true" style={{ width: 40, height: 40, display: 'grid', placeItems: 'center', borderRadius: 10,
+                {Icon && <span className="topic-motion-icon" aria-hidden="true" style={{ width: 40, height: 40, display: 'grid', placeItems: 'center', borderRadius: 10,
                   background: active ? 'rgb(255 255 255 / 15%)' : '#e3f0e8' }}><Icon size={23} strokeWidth={1.65} /></span>}
                 <span>{label}</span>
               </span>

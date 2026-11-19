@@ -186,10 +186,21 @@ function HeroVisual() {
           <line x1="36" y1="20" x2="36" y2="196" stroke="#9fb1a8" />
           <path className="hero-chart-line" pathLength="1" d="M50 40 C 120 90, 180 130, 290 180" stroke="#276e59" strokeWidth="3" fill="none" strokeLinecap="round" />
           <path className="hero-chart-line hero-chart-line--second" pathLength="1" d="M50 180 C 130 140, 190 100, 290 40" stroke="#c9a646" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <path d="M50 40 C 120 90, 170 112, 170 112 L 170 196 L 50 196 Z" fill="url(#hvg)" />
-          <line x1="170" y1="112" x2="170" y2="196" stroke="#1f3832" strokeDasharray="4 4" />
-          <line x1="36" y1="112" x2="170" y2="112" stroke="#1f3832" strokeDasharray="4 4" />
+          <path className="hero-chart-shade" d="M50 40 C 120 90, 170 112, 170 112 L 170 196 L 50 196 Z" fill="url(#hvg)" />
+          <g className="hero-chart-guides">
+            <line x1="170" y1="112" x2="170" y2="196" stroke="#1f3832" strokeDasharray="4 4" />
+            <line x1="36" y1="112" x2="170" y2="112" stroke="#1f3832" strokeDasharray="4 4" />
+          </g>
+          <circle className="hero-chart-ring" cx="170" cy="112" r="14" fill="none" stroke="#276e59" />
           <circle className="hero-chart-point" cx="170" cy="112" r="7" fill="#fff" stroke="#153a32" strokeWidth="3" />
+          <g className="hero-chart-tracers" aria-hidden="true">
+            <circle r="4" fill="#276e59">
+              <animateMotion dur="3s" begin="1.4s" repeatCount="3" path="M50 40 C120 90 180 130 290 180" />
+            </circle>
+            <circle r="4" fill="#a8892f">
+              <animateMotion dur="3s" begin="1.6s" repeatCount="3" path="M50 180 C130 140 190 100 290 40" />
+            </circle>
+          </g>
           <text x="276" y="196" fontSize="12" fill="#276e59" fontWeight="700">D</text>
           <text x="280" y="36" fontSize="12" fill="#a8892f" fontWeight="700">S</text>
           <text x="20" y="116" fontSize="11" fill="#6f817a">P*</text>

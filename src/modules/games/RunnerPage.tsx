@@ -17,6 +17,7 @@ export function RunnerPage() {
   const { user } = useAuth();
   const [phase, setPhase] = useState<Phase>('ready');
   const [quiz, setQuiz] = useState<Quiz>();
+  const [quizResult, setQuizResult] = useState<'correct' | 'wrong' | 'error'>();
   const [score, setScore] = useState(0);
   const [frame, setFrame] = useState(initial);
   const [rank, setRank] = useState<Player[]>();
@@ -29,6 +30,15 @@ export function RunnerPage() {
   const world = useRef(initial());
   const run = useRef<string | undefined>(undefined);
   const track = useRef<HTMLButtonElement>(null);
+  const quizDialog = useRef<HTMLDialogElement>(null);
+  const quizFeedback = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const dialog = quizDialog.current;
+    if (phase === 'quiz' && dialog && !dialog.open) dialog.showModal();
+    if (phase !== 'quiz' && dialog?.open) dialog.close();
+  }, [phase]);
+  useEffect(() => { if (quizResult) quizFeedback.current?.focus(); }, [quizResult]);
 
   const refreshRank = useCallback(async () => {
     if (!user) return;
@@ -53,6 +63,7 @@ export function RunnerPage() {
       return;
     }
     setQuiz(data);
+    setQuizResult(undefined);
     setPhase('quiz');
   }, [finish]);
 
@@ -115,11 +126,21 @@ export function RunnerPage() {
   }
 
   async function answer(choice: number) {
-    if (busy || phase !== 'quiz') return;
+    if (busy || phase !== 'quiz' || quizResult) return;
     setBusy(true);
-    const { data, error } = await runner('answer', run.current, choice);
+    const { data } = await runner('answer', run.current, choice);
     setBusy(false);
     if (data?.status === 'correct') {
+      setQuizResult('correct');
+      void refreshRank();
+    } else {
+      setMissedTopic(data?.topic);
+      setQuizResult(data?.status === 'wrong' ? 'wrong' : 'error');
+    }
+  }
+
+  function afterQuiz() {
+    if (quizResult === 'correct') {
       world.current.x = 520;
       world.current.y = 0;
       world.current.velocity = 0;
@@ -127,10 +148,7 @@ export function RunnerPage() {
       setFrame({ ...world.current });
       setQuiz(undefined);
       setPhase('running');
-      void refreshRank();
-    } else {
-      setMissedTopic(data?.topic);
-      setMessage(error ? 'Javobni tekshirib bo‘lmadi.' : 'Javob xato. Raund tugadi.');
+    } else if (quizResult) {
       finish();
     }
   }
@@ -157,7 +175,7 @@ export function RunnerPage() {
         <button ref={track} type="button" className="runner-track" aria-label="Sakrash" onClick={jump} onKeyDown={event => {
           if (event.key === 'ArrowUp') { event.preventDefault(); jump(); }
         }}>
-          <svg viewBox="0 0 590 190" width="100%" aria-hidden="true">
+          <svg viewBox="0 0 590 190" preserveAspectRatio="xMidYMax meet" width="100%" aria-hidden="true">
             <rect width="590" height="190" fill="#eef6ed" />
             <circle cx="475" cy="45" r="22" fill="#e0bb6e" />
             <path d="M0 152Q75 78 160 152T310 152T460 152T610 152V190H0Z" fill="#c4ddca" />
@@ -174,10 +192,6 @@ export function RunnerPage() {
           {user && (phase === 'ready' || phase === 'over') && <Button disabled={busy} onClick={() => void start()}>{phase === 'over' ? 'Qayta o‘ynash' : 'Boshlash'}</Button>}
           {phase === 'running' && <p className="small muted">Sakrash uchun maydonni bosing yoki fokusda bo‘lganda Space tugmasini ishlating.</p>}
           {phase === 'loading' && <p role="status">Savol yuklanmoqda…</p>}
-          {phase === 'quiz' && quiz && <div className="stack">
-            <strong>{quiz.question}</strong>
-            {quiz.options.map((option, i) => <button key={i} className="test-option" disabled={busy} onClick={() => void answer(i)}>{option}</button>)}
-          </div>}
           {phase === 'over' && <strong>Raund natijasi: {score} ball</strong>}
           {message && <p role="status">{message}</p>}
           {topic && <Button variant="secondary" to={paths.topic(topic.id)}>{topic.title}</Button>}
@@ -192,5 +206,19 @@ export function RunnerPage() {
         </ol>
       </Card>
     </div>
+    <dialog ref={quizDialog} className="target-dialog" aria-labelledby="runner-quiz-heading" onCancel={event => event.preventDefault()}>
+      {quiz && <div className="stack">
+        <h2 id="runner-quiz-heading">Marra savoli</h2>
+        <strong>{quiz.question}</strong>
+        {!quizResult ? quiz.options.map((option, i) => (
+          <button key={i} type="button" className="test-option" disabled={busy} onClick={() => void answer(i)}>{option}</button>
+        )) : <>
+          <p ref={quizFeedback} tabIndex={-1} role="status" className={`target-feedback ${quizResult === 'correct' ? 'is-correct' : 'is-wrong'}`}>
+            {quizResult === 'correct' ? 'To‘g‘ri! Marra tasdiqlandi.' : quizResult === 'wrong' ? 'Javob xato. Raund tugadi.' : 'Javobni tekshirib bo‘lmadi.'}
+          </p>
+          <Button onClick={afterQuiz}>{quizResult === 'correct' ? 'Davom etish' : 'Natijani ko‘rish'}</Button>
+        </>}
+      </div>}
+    </dialog>
   </div>;
 }
