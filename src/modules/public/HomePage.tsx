@@ -8,7 +8,7 @@ import { appConfig } from '@/config/app.config';
 import { GameIcon } from '@/modules/games/GameIcon';
 import { CountUp, Reveal, Tilt } from '@/components/motion/Motion';
 import { MarketPlayground } from './MarketPlayground';
-import { Badge } from '@/components/ui';
+import { HeroChart } from './HeroChart';
 
 export function HomePage() {
   const { t } = useI18n();
@@ -87,7 +87,6 @@ export function HomePage() {
               Talab yoki taklif o‘zgarsa, narx va miqdor qanday o‘zgaradi? Slayderlarni suring va muvozanat nuqtasi
               qanday harakatlanishini kuzating. Shu tarzda tushunchalar yodlanmaydi, tushuniladi.
             </p>
-            <Badge tone="info">O‘quv namunasi</Badge>
             <div className="mt-4"><Button to={paths.simulator} variant="secondary" iconRight={<ArrowRight size={16} />}>To‘liq simulyator</Button></div>
           </Reveal>
           <Reveal delay={120} className="lab__widget"><MarketPlayground /></Reveal>
@@ -197,48 +196,15 @@ function HeroVisual() {
       <div className="hero-visual__panel">
         <div className="hero-visual__head">
           <span>Bozor muvozanati</span>
-          <span className="hero-visual__pill">6-mavzu · namuna</span>
+          <span className="hero-visual__pill">6-mavzu</span>
         </div>
-        <svg viewBox="0 0 320 220" className="hero-visual__chart">
-          <defs>
-            <linearGradient id="hvg" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stopColor="#276e59" stopOpacity=".16" />
-              <stop offset="1" stopColor="#276e59" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {[40, 80, 120, 160].map((y) => (
-            <line key={y} x1="36" x2="300" y1={y} y2={y} stroke="#e3e8df" />
-          ))}
-          <line x1="36" y1="196" x2="300" y2="196" stroke="#9fb1a8" />
-          <line x1="36" y1="20" x2="36" y2="196" stroke="#9fb1a8" />
-          <path className="hero-chart-line" pathLength="1" d="M50 40 C 120 90, 180 130, 290 180" stroke="#276e59" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <path className="hero-chart-line hero-chart-line--second" pathLength="1" d="M50 180 C 130 140, 190 100, 290 40" stroke="#c9a646" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <path className="hero-chart-shade" d="M50 40 C 120 90, 170 112, 170 112 L 170 196 L 50 196 Z" fill="url(#hvg)" />
-          <g className="hero-chart-guides">
-            <line x1="170" y1="112" x2="170" y2="196" stroke="#1f3832" strokeDasharray="4 4" />
-            <line x1="36" y1="112" x2="170" y2="112" stroke="#1f3832" strokeDasharray="4 4" />
-          </g>
-          <circle className="hero-chart-ring" cx="170" cy="112" r="14" fill="none" stroke="#276e59" />
-          <circle className="hero-chart-point" cx="170" cy="112" r="7" fill="#fff" stroke="#153a32" strokeWidth="3" />
-          <g className="hero-chart-tracers" aria-hidden="true">
-            <circle r="4" fill="#276e59">
-              <animateMotion dur="3s" begin="1.4s" repeatCount="3" path="M50 40 C120 90 180 130 290 180" />
-            </circle>
-            <circle r="4" fill="#a8892f">
-              <animateMotion dur="3s" begin="1.6s" repeatCount="3" path="M50 180 C130 140 190 100 290 40" />
-            </circle>
-          </g>
-          <text x="276" y="196" fontSize="12" fill="#276e59" fontWeight="700">D</text>
-          <text x="280" y="36" fontSize="12" fill="#a8892f" fontWeight="700">S</text>
-          <text x="20" y="116" fontSize="11" fill="#6f817a">P*</text>
-          <text x="164" y="212" fontSize="11" fill="#6f817a">Q*</text>
-        </svg>
+        <HeroChart />
       </div>
       <div className="hero-visual__float hero-visual__float--a">
-        <span className="dot dot--success" /> Talab qonuni <b>o‘zlashtirilgan</b>
+        <span className="dot dot--success" /> Talab qonuni <b>narx ↑ · miqdor ↓</b>
       </div>
       <div className="hero-visual__float hero-visual__float--b">
-        <span className="dot dot--danger" /> Egiluvchanlik <b>bo‘shliq</b>
+        <span className="dot dot--success" /> Muvozanat <b>talab = taklif</b>
       </div>
 
     </Tilt>
