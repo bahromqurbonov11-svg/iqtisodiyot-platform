@@ -2,6 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, BookOpen, Crosshair, Flag, GitCompareArrows, Lightbulb, SlidersHorizontal, Timer, type LucideIcon } from 'lucide-react';
 import { Badge, Button, PageHeader } from '@/components/ui';
 import { Reveal } from '@/components/motion/Motion';
+import { GameScene } from './GameScene';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
 
@@ -34,6 +35,7 @@ function GameTile({ g, query, index }: { g: GameCard; query: string; index: numb
   return (
     <Reveal delay={index * 70}>
       <Link to={paths.game(g.slug) + (g.perTopic ? query : '')} className="game-tile" style={{ ['--gc' as string]: g.color }}>
+        <span className="game-tile__scene"><GameScene slug={g.slug} /></span>
         <span className="game-tile__glow" aria-hidden />
         <span className="game-tile__icon"><Icon size={26} aria-hidden /></span>
         <h3>{g.title}</h3>
