@@ -1,5 +1,6 @@
+import { ReadOnlySlides } from '@/modules/materials/ReadOnlySlides';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Download, ClipboardCheck, Gamepad2, Lightbulb, Clock,
 } from 'lucide-react';
@@ -154,17 +155,26 @@ type UploadedMaterial = {
 
 function UploadedMaterials({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {
   const { user } = useAuth();
+  const [params] = useSearchParams();
+  const section = useRef<HTMLDivElement>(null);
+  const openSlides = params.get('tab') === 'taqdimot';
+  useEffect(() => {
+    if (openSlides) {
+      const frame = requestAnimationFrame(() => section.current?.scrollIntoView({ block: 'start' }));
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [openSlides, topicId]);
 
-  if (user?.external) return <Card title="O‘quv fayllari"><p>Yopiq fayllar Soliq oliy maktabi talabalari uchun.</p></Card>;
+  if (user?.external) return <div className="topic-slide-anchor" ref={section}><ReadOnlySlides key={topicId} number={catalogService.getTopic(topicId)?.globalOrder ?? 0} /></div>;
 
-  return user ? (
+  return <div className="topic-slide-anchor" ref={section}>{user ? (
     <MaterialFiles key={topicId + ':' + user.id} topicId={topicId} topicTitle={topicTitle} />
   ) : (
     <Card title="Taqdimotlar" subtitle="Ma’ruza slaydlari — ko‘rish va yuklab olish">
       {materialsService.list(topicId).data.length > 0 && <SlidesList topicId={topicId} />}
       <Button to="/kirish" variant="secondary">Yuklangan materiallarni ko‘rish uchun kiring</Button>
     </Card>
-  );
+  )}</div>;
 }
 
 function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {

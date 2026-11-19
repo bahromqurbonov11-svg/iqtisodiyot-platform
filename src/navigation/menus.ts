@@ -19,6 +19,7 @@ export const publicMenu = (t: Dictionary): NavItem[] => [
   { to: paths.materials, label: t.nav.materials },
   { to: paths.tests, label: t.nav.tests },
   { to: paths.games, label: t.nav.games },
+  { to: paths.simulator, label: t.nav.simulator },
 ];
 
 /** Talaba kabineti (yon menyu) */
@@ -38,6 +39,7 @@ export const studentMenu: { title: string; items: NavItem[] }[] = [
       { to: paths.topics, label: 'Mavzular', icon: BookOpen },
       { to: paths.tests, label: 'Testlar', icon: ClipboardCheck },
       { to: paths.games, label: 'O‘yinlar', icon: Gamepad2 },
+      { to: paths.simulator, label: 'Simulyator', icon: BarChart3 },
     ],
   },
 ];

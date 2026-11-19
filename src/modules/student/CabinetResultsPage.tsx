@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, Card, PageHeader } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
@@ -23,6 +24,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const [student, setStudent] = useState('');
   const [group, setGroup] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
+  const [practice, setPractice] = useState<string>();
   const topics = catalogService.getTopics().data;
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
       (!topicFilter || topic.globalOrder === Number(topicFilter)));
     const total = answers.length + legacy.reduce((sum, row) => sum + row.total, 0);
     const points = answers.filter(item => item.correct).length + legacy.reduce((sum, row) => sum + row.points, 0);
-    return total ? [{ label: topic.title, total, percent: Math.round(100 * points / total) }] : [];
+    return total ? [{ label: topic.title, total, percent: Math.round(100 * points / total), topicId: topic.id, topicNumber: topic.globalOrder }] : [];
   }).sort((a, b) => a.percent - b.percent);
   const questionGroups = new Map<string, typeof visibleItems>();
   visibleItems.forEach(item => {
@@ -66,12 +68,20 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const correctCount = visibleItems.filter(item => item.correct).length;
   const students = new Map((results ?? []).filter(row => !group || String(row.group_id) === group).map(row => [row.student_id, row.student]));
 
-  function bars(rows: typeof topicStats) {
+  function bars(rows: { label: string; total: number; percent: number; topicId?: string; topicNumber?: number }[]) {
     return <div className="stack">{rows.map(row => (
       <div key={row.label} className="analytics-bar">
-        <strong>{row.label}</strong>
+        {!admin && row.topicId ? (
+          <button type="button" className="analytics-topic-button" aria-expanded={practice === row.topicId}
+            onClick={() => setPractice(current => current === row.topicId ? undefined : row.topicId)}>{row.label}</button>
+        ) : <strong>{row.label}</strong>}
         <progress aria-label={row.label} value={row.percent} max={100} />
         <span>{row.percent}% · {row.total} ta javob</span>
+        {!admin && row.topicId && practice === row.topicId && <div className="presentation-actions">
+          <Link className="btn btn--secondary btn--sm" to={paths.topic(row.topicId) + '?tab=taqdimot'}>Slaydlar</Link>
+          <Link className="btn btn--secondary btn--sm" to={paths.materials + '?tur=keyslar&mavzu=' + row.topicNumber}>Keyslar</Link>
+          <Link className="btn btn--secondary btn--sm" to={paths.test('test-' + row.topicId)}>Mavzu testi</Link>
+        </div>}
       </div>
     ))}</div>;
   }

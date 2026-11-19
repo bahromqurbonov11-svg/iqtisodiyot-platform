@@ -1,3 +1,4 @@
+import { LanguageSelect } from '@/components/LanguageSelect';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
 import { Menu, X, LogIn, LayoutDashboard } from 'lucide-react';
@@ -64,6 +65,7 @@ export function PublicLayout() {
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
+        <div className="container site-language"><LanguageSelect /></div>
         <VisitReport />
       </header>
       <main id="main" className="site-main">

@@ -1,3 +1,5 @@
+import { LanguageSelect } from '@/components/LanguageSelect';
+import { useI18n } from '@/i18n';
 
 import { useEffect, useState } from 'react';
 import {
@@ -19,6 +21,7 @@ export function DashboardLayout({
 }: {
   role: 'student' | 'admin';
 }) {
+  const { t } = useI18n();
   const { user, provider, exitPreview } = useAuth();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -49,6 +52,14 @@ export function DashboardLayout({
     return <AccessGate required={role} />;
   }
 
+  const labels: Record<string, string> = {
+    [paths.home]: t.nav.home, [paths.cabinet]: t.nav.overview, [paths.admin]: t.nav.overview,
+    [paths.cabinetResults]: t.nav.results, [paths.cabinetProfile]: t.nav.profile,
+    [paths.topics]: t.nav.topics, [paths.tests]: t.nav.tests, [paths.games]: t.nav.games,
+    [paths.adminLearners]: t.nav.learners, [paths.adminContent]: t.nav.materials,
+    [paths.analytics]: t.nav.analytics, [paths.adminIntegration]: t.nav.integration, [paths.simulator]: t.nav.simulator,
+  };
+  const sections: Record<string,string> = { Kabinet:t.nav.cabinet, 'O‘qish':t.nav.study, Boshqaruv:t.nav.manage, Tahlil:t.nav.analytics, Sayt:t.nav.site };
   const menu = role === 'admin' ? adminMenu : studentMenu;
 
   const initials = user.fullName
@@ -87,7 +98,7 @@ export function DashboardLayout({
           {menu.map((group) => (
             <div key={group.title} className="dash__group">
               <div className="dash__group-title">
-                {group.title}
+                {sections[group.title] ?? group.title}
               </div>
 
               {group.items.map((it) => (
@@ -102,7 +113,7 @@ export function DashboardLayout({
                   {it.icon && (
                     <it.icon size={18} aria-hidden />
                   )}
-                  {it.label}
+                  {labels[it.to] ?? it.label}
                 </NavLink>
               ))}
             </div>
@@ -115,7 +126,7 @@ export function DashboardLayout({
             className="dash__link"
           >
             <ArrowLeft size={18} aria-hidden />
-            Saytga qaytish
+            {t.nav.backToSite}
           </Link>
         </div>
       </aside>
@@ -139,6 +150,7 @@ export function DashboardLayout({
           </button>
 
           <div className="dash__user">
+            <LanguageSelect />
             <span className="avatar" aria-hidden>
               {initials}
             </span>

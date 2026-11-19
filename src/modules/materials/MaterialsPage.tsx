@@ -8,6 +8,8 @@ import { paths } from '@/navigation/paths';
 import { materialsService } from '@/services/materials.service';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/services/auth/AuthContext';
+import { useI18n } from '@/i18n';
+import { glossaryTranslations } from '@/data/glossary-translations';
 import { PresentationViewer } from '@/modules/catalog/TopicDetailPage';
 
 const icons: Record<MaterialCategory['icon'], typeof BookOpen> = { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText };
@@ -120,14 +122,16 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
         description={fullCountReady ? slideTotal + ' ta taqdimot · mavzular bo‘yicha' : 'Mavzular bo‘yicha taqdimotlar'}
         actions={<Button to={paths.materials} variant="secondary">Materiallarga qaytish</Button>}
       />
-          {external && <p>Yopiq fayllar Soliq oliy maktabi talabalari uchun.</p>}
+          {external && <Card title="Taqdimotlarni mavzu bo‘yicha ko‘rish"><div className="stack">
+            {allTopics.map(topic => <Link key={topic.id} to={paths.topic(topic.id)} className="link">{topic.globalOrder}. {topic.title}</Link>)}
+          </div></Card>}
           {!signedIn && !external && <p>Administrator yuklagan fayllarni ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</p>}
           {signedIn && !fullCountReady && !countError && <p role="status">Taqdimotlar yuklanmoqda…</p>}
           {countError && <p role="alert">Yuklangan taqdimotlar ro‘yxatini olib bo‘lmadi.</p>}
           {downloadError && <p role="alert">{downloadError}</p>}
           {fullCountReady && slideTotal === 0 && <p>Hali taqdimot yuklanmagan.</p>}
           <ul className="grid grid--3" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {allTopics.filter((topic) => slideCounts[topic.id]).map((topic) => {
+              {!external && allTopics.filter((topic) => slideCounts[topic.id]).map((topic) => {
               const libraryFiles = (uploaded ?? []).filter((file) => file.topicId === topic.id);
               const repositoryFiles = materialsService.list(topic.id, 'slides').data;
               const multiple = libraryFiles.length + repositoryFiles.length > 1;
@@ -326,6 +330,12 @@ function normalizeGlossaryText(text: string) {
 }
 
 function GlossaryPage() {
+  const { locale, t } = useI18n();
+  const labels = {
+    uz: ['Glossariy', 'Iqtisodiy atamalar va ularning ta’riflari', 'Glossariydan qidirish', 'Atama yoki ta’rifni yozing…', 'Qidiruvga mos atama yoki ta’rif topilmadi.', 'ta atama', 'Glossariy yuklanmoqda…', 'Glossariyni yuklab bo‘lmadi.'],
+    ru: ['Глоссарий', 'Экономические термины и их определения', 'Поиск по глоссарию', 'Введите термин или определение…', 'Ничего не найдено.', 'терминов', 'Загрузка глоссария…', 'Не удалось загрузить глоссарий.'],
+    en: ['Glossary', 'Economic terms and their definitions', 'Search the glossary', 'Enter a term or definition…', 'No matching terms or definitions.', 'terms', 'Loading glossary…', 'Could not load the glossary.'],
+  }[locale];
   const [entries, setEntries] = useState<GlossaryEntry[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState('');
@@ -341,34 +351,37 @@ function GlossaryPage() {
   }, []);
 
   const words = normalizeGlossaryText(query).split(' ').filter(Boolean);
-  const results = (entries ?? []).filter(({ term, definitions }) => {
-    const haystack = normalizeGlossaryText([term, ...definitions].join(' '));
+  const results = (entries ?? []).map(entry => {
+    const translated = locale !== 'uz' ? glossaryTranslations[entry.term]?.[locale] : undefined;
+    return { ...entry, original: entry.term, translated };
+  }).filter(({ term, definitions, translated }) => {
+    const haystack = normalizeGlossaryText([term, ...definitions, ...(translated ?? [])].join(' '));
     return words.every((word) => haystack.includes(word));
   });
 
   return (
     <div className="container page">
-      <PageHeader crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Glossariy' }]}
-        title="Iqtisodiyot glossariysi" description="Iqtisodiy atamalar va ularning ta’riflari" />
+      <PageHeader crumbs={[{ label: t.nav.materials, to: paths.materials }, { label: labels[0] }]}
+        title={labels[0]} description={labels[1]} />
       <div className="stack">
         <label className="stack stack--sm">
-          <strong className="glossary-label">Glossariydan qidirish</strong>
+          <strong className="glossary-label">{labels[2]}</strong>
           <input type="search" value={query} onChange={(event) => setQuery(event.target.value)}
-            className="search-control" placeholder="Atama yoki ta’rifni yozing…" />
+            className="search-control" placeholder={labels[3]} />
         </label>
-        {loadError && <p role="alert">Glossariyni yuklab bo‘lmadi. Sahifani yangilab ko‘ring.</p>}
-        {!entries && !loadError && <p role="status">Glossariy yuklanmoqda…</p>}
+        {loadError && <p role="alert">{labels[7]}</p>}
+        {!entries && !loadError && <p role="status">{labels[6]}</p>}
         {entries && (
           <>
             <p className="small muted" aria-live="polite">
-              {query.trim() ? results.length + ' ta natija · jami ' + entries.length + ' ta atama' : entries.length + ' ta atama'}
+              {query.trim() ? results.length + ' / ' : ''}{entries.length} {labels[5]}
             </p>
-            {results.length === 0 ? <p>Qidiruvga mos atama yoki ta’rif topilmadi.</p> : (
+            {results.length === 0 ? <p>{labels[4]}</p> : (
               <dl className="grid grid--2" style={{ margin: 0 }}>
-                {results.map(({ term, definitions }) => (
+                {results.map(({ term, definitions, translated }) => (
                   <div key={term} className="card card--pad stack stack--sm">
-                    <dt className="glossary-term"><strong>{term}</strong></dt>
-                    {definitions.map((definition) => <dd key={definition} className="muted small" style={{ margin: 0 }}>{definition}</dd>)}
+                    <dt className="glossary-term" lang={translated ? locale : 'uz'}><strong>{translated?.[0] ?? term}</strong></dt>
+                    {(translated ? [translated[1]] : definitions).map((definition) => <dd lang={translated ? locale : 'uz'} key={definition} className="muted small" style={{ margin: 0 }}>{definition}</dd>)}
                   </div>
                 ))}
               </dl>

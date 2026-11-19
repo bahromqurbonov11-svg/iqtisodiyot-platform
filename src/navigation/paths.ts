@@ -11,6 +11,7 @@ export const paths = {
   tests: '/testlar',
   test: (id: string) => `/testlar/${id}`,
   games: '/oyinlar',
+  simulator: '/simulyator',
   game: (slug: string) => `/oyinlar/${slug}`,
   login: '/kirish',
   register: '/royxatdan-otish',

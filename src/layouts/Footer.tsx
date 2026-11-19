@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom';
 import { Brand } from '@/components/Brand';
 import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
+import { useI18n } from '@/i18n';
 
 export function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="site-footer">
       <div className="container site-footer__grid">
@@ -20,26 +22,27 @@ export function Footer() {
           </address>
         </div>
         <div>
-          <h4>O‘qish</h4>
+          <h4>{t.nav.study}</h4>
           <ul>
-            <li><Link to={paths.topics}>Mavzular katalogi</Link></li>
-            <li><Link to={paths.materials}>O‘quv materiallari</Link></li>
-            <li><Link to={paths.about}>Fan haqida</Link></li>
+            <li><Link to={paths.topics}>{t.nav.topics}</Link></li>
+            <li><Link to={paths.materials}>{t.nav.materials}</Link></li>
+            <li><Link to={paths.about}>{t.nav.about}</Link></li>
           </ul>
         </div>
         <div>
-          <h4>Tekshirish</h4>
+          <h4>{t.nav.tests}</h4>
           <ul>
-            <li><Link to={paths.tests}>Diagnostik testlar</Link></li>
-            <li><Link to={paths.games}>Interaktiv o‘yinlar</Link></li>
+            <li><Link to={paths.tests}>{t.nav.tests}</Link></li>
+            <li><Link to={paths.games}>{t.nav.games}</Link></li>
+            <li><Link to={paths.simulator}>{t.nav.simulator}</Link></li>
           </ul>
         </div>
         <div>
-          <h4>Kabinetlar</h4>
+          <h4>{t.nav.cabinet}</h4>
           <ul>
-            <li><Link to={paths.cabinet}>Talaba kabineti</Link></li>
-            <li><Link to={paths.admin}>Administrator paneli</Link></li>
-            <li><Link to={paths.analytics}>Analitika</Link></li>
+            <li><Link to={paths.cabinet}>{t.nav.cabinet}</Link></li>
+            <li><Link to={paths.admin}>{t.nav.admin}</Link></li>
+            <li><Link to={paths.analytics}>{t.nav.analytics}</Link></li>
           </ul>
         </div>
       </div>

@@ -5,6 +5,15 @@
 export const uz = {
   nav: {
     home: 'Bosh sahifa',
+    simulator: 'Simulyator',
+    overview: 'Umumiy ko‘rinish',
+    results: 'Mening natijalarim',
+    profile: 'Profil',
+    learners: 'Talabalar',
+    integration: 'Integratsiya',
+    study: 'O‘qish',
+    manage: 'Boshqaruv',
+    site: 'Sayt',
     about: 'Fan haqida',
     topics: 'Mavzular',
     materials: 'Materiallar',

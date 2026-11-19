@@ -1,3 +1,4 @@
+import { SimulatorPage } from '@/modules/public/SimulatorPage';
 
 import { createHashRouter } from 'react-router-dom';
 
@@ -80,6 +81,7 @@ export const router = createHashRouter([
         path: '/oyinlar',
         element: <GamesPage />,
       },
+      { path: '/simulyator', element: <SimulatorPage /> },
       {
         path: '/oyinlar/:slug',
         element: <GameDetailPage />,
