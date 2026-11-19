@@ -321,3 +321,6 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .test-option { width:100%; text-align:left; border:1px solid #b8d1c4; padding:.75rem 1rem; border-radius:12px; background:#f5faf7; color:inherit; font:inherit; cursor:pointer; }
 .test-option:hover { background:#e1f1e8; }
 .visit-report { display:flex; flex-wrap:wrap; gap:.3rem 1.25rem; padding-block:.4rem; font-size:.8rem; color:#355d50; }
+.analytics-bar { display:grid; gap:.3rem; padding:.8rem; border-radius:12px; background:#f3f8f5; overflow-wrap:anywhere; }
+.analytics-bar progress { width:100%; accent-color:#246b58; }
+.analytics-bar span { color:#355d50; font-size:.85rem; }
