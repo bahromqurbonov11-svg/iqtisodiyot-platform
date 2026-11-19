@@ -15,9 +15,13 @@ export function GamesPage() {
       <PageHeader crumbs={[{ label: 'Bosh sahifa', to: paths.home }, { label: 'O‘yinlar' }]}
         title="Iqtisodiyot o‘yinlari" description="Marraga yuguring yoki mavzu bo‘yicha mashq qiling." />
       <div className="stack">
-        <Card title="Bozor kuryeri">
-          <p>Buyurtmalarni ombordan oling, yo‘ldagi to‘siqlarni aylanib o‘ting va vaqt tugashidan oldin manzilga yetkazing.</p>
-          <Button to={paths.game('bozor-kuryeri')}>O‘ynash</Button>
+        <Card title="Mergan">
+          <p>Harakatlanuvchi nishonni markazda tuting va bonus savollarga javob berib qo‘shimcha o‘q oling.</p>
+          <Button to={paths.game('mergan')}>O‘ynash</Button>
+        </Card>
+        <Card title="Grafikni boshqar">
+          <p>Talab, taklif va narxni o‘zgartirib, bozor muvozanatini toping.</p>
+          <Button to={paths.game('grafikni-boshqar')}>O‘ynash</Button>
         </Card>
         <Card title="Marraga yugurish">
           <p>To‘siqlardan sakrab ball yig‘ing. Har 5 ballik marrada savolga javob bering va talabalar reytingiga kiring.</p>
