@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Search, Shuffle, Clock, ArrowUpRight, ArrowRight, Store, Landmark, Building2, Package,
-  Coins, ShoppingCart, House, Factory, Users, Wallet, Cog, TrendingUp,
-  Globe, Ship, PenTool, CreditCard, Leaf, ShieldCheck, Activity,
-  type LucideIcon,
-} from 'lucide-react';
+import { Search, Shuffle, Clock, ArrowRight } from 'lucide-react';
 import { PageHeader, Badge, Tabs } from '@/components/ui';
+import { Reveal } from '@/components/motion/Motion';
+import { TopicDiagram } from './TopicDiagram';
+import { topicStyle } from './topicStyle';
 import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
 
@@ -62,7 +60,6 @@ export function TopicsPage() {
         eyebrow="Mavzular katalogi"
         title="25 mavzu — ikki qism"
         description="Mavzu nomlari va soatlar rasmiy sillabuslardan olingan. Mavzuni tanlab, uning rejasi, materiallari, testi va o‘yinlariga o‘ting."
-        badges={<Badge tone="primary">Manba: IN sillabus 1 va 2</Badge>}
       />
 
       <div className="toolbar">
@@ -105,32 +102,38 @@ export function TopicsPage() {
                 <h2>{p.title}</h2>
                 <span className="muted small">{list.length} mavzu · {p.credits} kredit · {p.totalHours} soat</span>
               </div>
-              <div className="topic-grid">
+              <div className="topic-tiles">
                 {list.map((t, idx) => {
                   const outcome = progress.topics.get(t.globalOrder);
                   const status = outcome && mastery(outcome.correct, outcome.total);
+                  const style = topicStyle(t.globalOrder);
+                  const Icon = style.icon;
                   return (
-                  <Link key={t.id} to={paths.topic(t.id)} aria-label={t.title} className="topic-card" style={{ ['--i' as string]: Math.min(idx, 10) }}>
-                    <div className="topic-card__top">
-                      <span className="topic-card__num">{String(t.globalOrder).padStart(2, '0')}</span>
-                      <span className="topic-card__part">{p.order}-qism · {t.order}-mavzu</span>
-                      <ArrowUpRight size={18} className="topic-card__arrow" aria-hidden />
-                    </div>
-                    <h3 className="topic-card__title">{t.title}</h3>
-                    {status && <div className="stack stack--sm">
-                      <Badge tone={status.tone}>{status.label} · {status.percent}%</Badge>
-                      <progress aria-label="O‘zlashtirish" value={status.percent} max={100} />
-                    </div>}
-                    <ul className="topic-card__subs">
-                      {t.subtopics.slice(0, 3).map((s) => (
-                        <li key={s}>{s}</li>
-                      ))}
-                    </ul>
-                    <TopicDiagram topicNumber={t.globalOrder} visual={topicVisuals[t.globalOrder - 1]} />
-                    <div className="topic-card__foot">
-                      <span><Clock size={13} /> Ma’ruza {t.lectureHours} s · Amaliy {t.practiceHours} s</span>
-                    </div>
-                  </Link>
+                    <Reveal key={t.id} delay={(idx % 3) * 80}>
+                      <article className="topic-tile" style={{ ['--gc' as string]: style.color }}>
+                        <span className="topic-tile__glow" aria-hidden />
+                        <Link to={paths.topic(t.id)} aria-label={t.globalOrder + '-mavzu. ' + t.title} className="topic-tile__main">
+                          <span className="topic-tile__top">
+                            <span className="topic-tile__icon"><Icon size={24} aria-hidden /></span>
+                            <span className="topic-tile__num">{t.globalOrder}<small>-mavzu</small></span>
+                            <span className="topic-tile__part">{p.order}-qism · {t.order}-bo‘lim</span>
+                          </span>
+                          <h3 className="topic-tile__title">{t.title}</h3>
+                          {status && <span className="topic-tile__status">
+                            <Badge tone={status.tone}>{status.label} · {status.percent}%</Badge>
+                            <progress aria-label="O‘zlashtirish" value={status.percent} max={100} />
+                          </span>}
+                          <ul className="topic-tile__subs">
+                            {t.subtopics.slice(0, 3).map((s) => <li key={s}>{s}</li>)}
+                          </ul>
+                        </Link>
+                        <TopicDiagram topicNumber={t.globalOrder} visual={topicVisuals[t.globalOrder - 1]} />
+                        <Link to={paths.topic(t.id)} className="topic-tile__foot" tabIndex={-1} aria-hidden>
+                          <span><Clock size={13} /> Ma’ruza {t.lectureHours} s · Amaliy {t.practiceHours} s</span>
+                          <span className="topic-tile__cta">Ochish <ArrowRight size={15} /></span>
+                        </Link>
+                      </article>
+                    </Reveal>
                   );
                 })}
               </div>
@@ -142,85 +145,10 @@ export function TopicsPage() {
     </div>
   );
 }
-const diagramIcons: Partial<Record<number, { steps: [LucideIcon, LucideIcon, LucideIcon]; sequence?: boolean }>> = {
-  3: { steps: [Store, Landmark, Building2] },
-  4: { steps: [Package, Coins, ShoppingCart], sequence: true },
-  5: { steps: [House, Factory, Store], sequence: true },
-  7: { steps: [Users, Building2, Store] },
-  10: { steps: [Wallet, Cog, ShoppingCart], sequence: true },
-  14: { steps: [ShoppingCart, TrendingUp, Activity], sequence: true },
-  20: { steps: [Landmark, CreditCard, ShoppingCart], sequence: true },
-  21: { steps: [Factory, ShieldCheck, Leaf], sequence: true },
-  23: { steps: [PenTool, Ship, Globe], sequence: true },
-};
-
-function TopicDiagram({ topicNumber, visual }: { topicNumber: number; visual: TopicVisual }) {
-  const icons = diagramIcons[topicNumber];
-  const selected = visual.kind === 'market' ? 1 : 0;
-  const chart = visual.kind !== 'flow';
-  const chartMax = Math.max(...visual.values, 1);
-  const chartMin = visual.kind === 'line' ? Math.min(...visual.values) : 0;
-  const max = chartMax + (chartMax - chartMin || 1) * 0.1;
-  const x = (index: number) => [51, 150, 249][index];
-  const y = (value: number) => 78 - 61 * (value - chartMin) / (max - chartMin);
-  const line = (values: number[]) => values.map((value, index) => x(index) + ',' + y(value)).join(' ');
-  const fill = (active: boolean) => active ? 'var(--c-primary)' : '#bbdbcb';
-
-  return (
-    <div className="topic-diagram-motion" style={{ background: '#f1f7f3', border: '1px solid #dce9e1', borderRadius: 12, padding: 12, marginTop: 'auto' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'baseline', gap: 4 }}>
-        <strong className="small">{visual.title}</strong>
-        {chart && <span className="xs muted">O‘quv misoli</span>}
-      </div>
-      {chart && (
-        <svg viewBox="0 0 300 88" aria-hidden="true" style={{ display: 'block', width: '100%', height: 'auto', marginBlock: 4 }}>
-          <path d="M22 15V78H278" fill="none" stroke="#b7cec0" />
-          {visual.kind === 'market' && (
-            <polyline className="topic-motion-line" pathLength={1} points={line([...visual.values].reverse())} fill="none" stroke="#a56d22" strokeWidth={2.5} />
-          )}
-          {visual.kind !== 'bars' && <polyline className="topic-motion-line" pathLength={1} points={line(visual.values)} fill="none" stroke="var(--c-primary)" strokeWidth={2.5} />}
-          {visual.values.map((value, i) => visual.kind === 'bars' ? (
-            <rect className="topic-motion-bar" key={i} x={x(i) - 22} y={y(value)} width={44} height={78 - y(value)} rx={4} fill={fill(i === selected)} />
-          ) : (
-            <circle key={i} cx={x(i)} cy={y(value)} r={i === selected ? 6 : 3.5} fill={fill(i === selected)} stroke="var(--c-primary)" strokeWidth={1.5} />
-          ))}
-          {visual.kind === 'market' && <circle cx={x(selected)} cy={y(visual.values[2 - selected])} r={5} fill="white" stroke="#a56d22" strokeWidth={2.5} />}
-        </svg>
-      )}
-      {visual.kind === 'market' && <div className="xs muted">● Talab · ○ Taklif</div>}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5, marginTop: 7 }}>
-        {visual.steps.map(([label], i) => {
-          const Icon = icons?.steps[i];
-          const active = i === selected;
-          return (
-            <div key={label} style={{ position: 'relative', minWidth: 0 }}>
-              <span
-                style={{ width: '100%', minWidth: 0, minHeight: Icon ? 98 : 36, padding: Icon ? '8px 4px' : '4px 3px',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7,
-                  font: 'inherit', fontSize: 11.5, border: '1px solid #b7cec0', borderRadius: 8,
-                  background: active ? '#245d4b' : '#fff', color: active ? '#fff' : '#23473d' }}>
-                {Icon && <span className="topic-motion-icon" aria-hidden="true" style={{ width: 40, height: 40, display: 'grid', placeItems: 'center', borderRadius: 10,
-                  background: active ? 'rgb(255 255 255 / 15%)' : '#e3f0e8' }}><Icon size={23} strokeWidth={1.65} /></span>}
-                <span>{label}</span>
-              </span>
-              {icons?.sequence && i < visual.steps.length - 1 && (
-                <span aria-hidden="true" style={{ position: 'absolute', top: '43%', right: -9, zIndex: 1, pointerEvents: 'none',
-                  borderRadius: 12, background: '#f1f7f3', color: '#416f5c', display: 'grid', placeItems: 'center' }}><ArrowRight size={13} /></span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <p className="xs" style={{ margin: '7px 0 0', minHeight: '3.4em', lineHeight: 1.4 }}>{visual.steps[selected][1]}</p>
-    </div>
-  );
-}
-
-
-type TopicVisual = { kind: 'flow' | 'bars' | 'line' | 'market'; title: string; values: number[]; steps: [string, string][] };
+export type TopicVisual = { kind: 'flow' | 'bars' | 'line' | 'market'; title: string; values: number[]; steps: [string, string][] };
 
 // Sillabusdagi umumiy mavzu tartibi bo‘yicha. Raqamlar o‘quv misollari.
-const topicVisuals: TopicVisual[] = [
+export const topicVisuals: TopicVisual[] = [
   {"kind":"line","title":"Ishlab chiqarish imkoniyatlari","values":[10,8,0],"steps":[["0 dona A","10 dona B. B mahsuloti eng ko‘p ishlab chiqariladi."],["5 dona A","8 dona B. A ko‘paygani uchun B ning bir qismidan voz kechiladi."],["10 dona A","0 dona B. Barcha resurslar A mahsulotiga yo‘naltiriladi."]]},
   {"kind":"bars","title":"Qo‘shimcha ishchi va mahsulot","values":[10,8,5],"steps":[["1-ishchi","Birinchi ishchi ishlab chiqarishni 10 dona oshiradi."],["2-ishchi","Ikkinchi ishchi yana 8 dona qo‘shadi."],["3-ishchi","Uskuna miqdori o‘zgarmaganda uchinchi ishchi yana 5 dona qo‘shadi."]]},
   {"kind":"flow","title":"Qarorlar qanday muvofiqlashadi?","values":[],"steps":[["Bozor","Narx va talab firmalar qaroriga yo‘nalish beradi."],["Markazlashgan","Nimani va qancha ishlab chiqarish markaziy reja orqali belgilanadi."],["Aralash","Bozor qarorlari va davlat tartibga solishi birga ishlaydi."]]},
