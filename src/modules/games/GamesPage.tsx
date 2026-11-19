@@ -16,7 +16,7 @@ export function GamesPage() {
         title="Iqtisodiyot o‘yinlari" description="Marraga yuguring yoki mavzu bo‘yicha mashq qiling." />
       <div className="stack">
         <Card title="Marraga yugurish">
-          <p>To‘siqlardan sakrab ball yig‘ing. Har 15 ballik marrada savolga javob bering va talabalar reytingiga kiring.</p>
+          <p>To‘siqlardan sakrab ball yig‘ing. Har 5 ballik marrada savolga javob bering va talabalar reytingiga kiring.</p>
           <Button to={paths.game('marraga-yugurish')}>O‘yin va reyting</Button>
         </Card>
         <label className="stack stack--sm">

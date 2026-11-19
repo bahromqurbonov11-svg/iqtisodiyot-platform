@@ -355,3 +355,6 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .runner-track { display:block; width:100%; padding:0; border:1px solid #95b7a7; border-radius:14px; overflow:hidden; background:#eef6ed; cursor:pointer; touch-action:manipulation; }
 .runner-track svg { display:block; }
 .runner-track:focus-visible { outline:3px solid #30715d; outline-offset:3px; }
+.runner-page { max-width:1320px; }
+.runner-controls { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.65rem; margin-bottom:.65rem; }
+.runner-controls strong { color:#246b58; }
