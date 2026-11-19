@@ -1,0 +1,159 @@
+/* =========================================================
+   HARAKAT VA INTERAKTIVLIK
+   Yangi animatsiyalar va interaktiv bloklar uchun uslublar.
+   Komponentlar: src/components/motion/Motion.tsx
+   "Harakatni kamaytirish" sozlamasi yoqilgan bo‘lsa, hammasi o‘chadi (pastga qarang).
+   ========================================================= */
+
+/* ---------- Ekranga kirganda paydo bo‘lish ---------- */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); transition-delay: var(--reveal-delay, 0ms); }
+.reveal.is-in { opacity: 1; transform: none; }
+.steps__item, .game-strip > .reveal { display: flex; }
+.steps__item > .step, .game-strip > .reveal > .game-chip { flex: 1; }
+.part-card.reveal { transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1), box-shadow .2s, border-color .2s; }
+
+/* ---------- Sahifa o‘tish effekti ---------- */
+@keyframes page-in { from { opacity: 0; transform: translateY(10px); } }
+.page { animation: page-in .38s ease-out both; }
+
+/* ---------- O‘qish ko‘rsatkichi va "yuqoriga" tugmasi ---------- */
+.scroll-progress { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 60; pointer-events: none; --p: 0; }
+.scroll-progress::after { content: ''; display: block; height: 100%; transform-origin: left; transform: scaleX(var(--p)); background: linear-gradient(90deg, var(--c-primary), var(--c-accent)); }
+.to-top { position: fixed; right: 18px; bottom: 18px; z-index: 50; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--c-line-strong); background: #fff; color: var(--c-primary-dark); display: grid; place-items: center; box-shadow: var(--shadow-md); opacity: 0; transform: translateY(14px) scale(.9); pointer-events: none; transition: opacity .25s, transform .25s, background .15s, color .15s; }
+.to-top.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:hover { background: var(--c-primary); color: #fff; }
+
+/* ---------- Bosh sahifa: sichqonchaga javob beradigan illyustratsiya ---------- */
+.tilt { --mx: 0; --my: 0; --rx: 0deg; --ry: 0deg; }
+.hero-visual__panel { transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .25s ease-out; will-change: transform; }
+.hero-visual__float { translate: calc(var(--mx, 0) * -16px) calc(var(--my, 0) * -12px); transition: translate .25s ease-out; }
+@keyframes float-bob { 50% { transform: translateY(-6px); } }
+.hero-visual__float--a { animation: float-bob 5s ease-in-out infinite; }
+.hero-visual__float--b { animation: float-bob 6s ease-in-out -2s infinite; }
+
+/* ---------- O‘quv sikli: qadam kartalari ---------- */
+.step__icon { transition: transform .25s, background .2s, color .2s; }
+.step:hover .step__icon { transform: rotate(-8deg) scale(1.08); background: var(--c-primary); color: #fff; }
+.step__num { transition: color .2s, transform .25s; }
+.step:hover .step__num { color: var(--c-accent); transform: scale(1.12); }
+
+/* ---------- Bozor laboratoriyasi ---------- */
+.section--lab { background: linear-gradient(180deg, #fff 0%, var(--c-mint-soft) 100%); }
+.lab { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--sp-7); align-items: center; }
+.lab__intro { display: flex; flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
+.lab__intro p { max-width: 46ch; }
+.playground { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--sp-5); background: #fff; border: 1px solid var(--c-line); border-radius: 22px; padding: var(--sp-5); box-shadow: var(--shadow-lg); }
+.playground__chart { align-self: center; }
+.playground__chart svg { width: 100%; height: auto; }
+.pg-line { transition: transform .45s cubic-bezier(.3,.8,.3,1); }
+.pg-move { transition: x1 .45s cubic-bezier(.3,.8,.3,1), x2 .45s cubic-bezier(.3,.8,.3,1), y1 .45s cubic-bezier(.3,.8,.3,1), y2 .45s cubic-bezier(.3,.8,.3,1), cx .45s cubic-bezier(.3,.8,.3,1), cy .45s cubic-bezier(.3,.8,.3,1), x .45s cubic-bezier(.3,.8,.3,1), y .45s cubic-bezier(.3,.8,.3,1); }
+.playground__panel { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+.playground__sliders { display: flex; flex-direction: column; gap: var(--sp-4); }
+.slider { display: flex; flex-direction: column; gap: 6px; }
+.slider__label { display: flex; justify-content: space-between; align-items: baseline; font-size: 13.5px; color: var(--c-ink-soft); }
+.slider__label output { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--c-ink); min-width: 3ch; text-align: right; }
+.slider input[type='range'] { width: 100%; height: 28px; accent-color: var(--c-primary); cursor: pointer; }
+.playground__presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.playground__presets button { border: 1px solid var(--c-line-strong); background: #fff; border-radius: var(--r-pill); padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--c-ink-soft); display: inline-flex; align-items: center; gap: 5px; transition: background .15s, color .15s, border-color .15s, transform .15s; }
+.playground__presets button:hover { background: var(--c-mint); color: var(--c-primary-dark); border-color: #a9cdb9; transform: translateY(-1px); }
+.playground__presets .is-reset { border-style: dashed; }
+.playground__result { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric { background: var(--c-mint-soft); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
+.metric span { font-size: 12px; color: var(--c-muted); }
+.metric strong { font-family: var(--font-serif); font-size: 28px; line-height: 1.1; color: var(--c-primary-dark); display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.metric .up { color: var(--c-success); } .metric .down { color: var(--c-danger); }
+.playground__note { font-size: 14px; color: var(--c-ink); min-height: 3em; line-height: 1.5; }
+.playground__demo { font-size: 12px; color: var(--c-demo); background: var(--c-demo-soft); border-radius: 8px; padding: 6px 10px; }
+
+/* ---------- Mavzular katalogi ---------- */
+@keyframes card-rise { from { opacity: 0; transform: translateY(16px) scale(.98); } }
+.topic-card { animation: card-rise .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i, 0) * 45ms); position: relative; overflow: hidden; }
+.topic-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--c-primary), var(--c-accent)); transform: scaleX(0); transform-origin: left; transition: transform .35s ease; }
+.topic-card:hover::before, .topic-card:focus-visible::before { transform: scaleX(1); }
+.topic-card:hover .topic-card__num { color: var(--c-accent); }
+.topic-card__num { transition: color .2s, transform .25s; }
+.topic-card:hover .topic-card__num { transform: scale(1.1); transform-origin: left center; }
+.topic-card__arrow { transition: color .15s, transform .25s; }
+.topic-card:hover .topic-card__arrow { transform: translate(3px, -3px); }
+.toolbar__tools { display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: center; }
+.random-btn { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border-radius: var(--r-pill); border: 1px dashed var(--c-primary); background: var(--c-mint-soft); color: var(--c-primary-dark); font-weight: 650; font-size: 13.5px; transition: background .15s, transform .15s, box-shadow .15s; }
+.random-btn:hover { background: var(--c-mint); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.random-btn:hover svg { animation: shuffle-wiggle .5s ease; }
+@keyframes shuffle-wiggle { 30% { transform: rotate(-14deg); } 60% { transform: rotate(10deg); } }
+.topics-count { margin: calc(var(--sp-3) * -1) 0 var(--sp-4); font-size: 13px; color: var(--c-muted); }
+.topics-count b { color: var(--c-primary-dark); }
+
+/* ---------- Tushunchalar: ro‘yxat / kartochkalar ---------- */
+.concepts__switch { display: inline-flex; padding: 3px; gap: 2px; background: var(--c-mint-soft); border: 1px solid var(--c-line); border-radius: var(--r-pill); margin-bottom: var(--sp-4); }
+.concepts__switch button { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; padding: 6px 14px; border-radius: var(--r-pill); font-size: 13px; font-weight: 650; color: var(--c-ink-soft); transition: background .2s, color .2s, box-shadow .2s; }
+.concepts__switch button.is-active { background: #fff; color: var(--c-primary-dark); box-shadow: var(--shadow-sm); }
+.concept-row { padding: 8px 12px; border-radius: 10px; border-left: 3px solid transparent; transition: background .15s, border-color .15s; }
+.concept-row:hover { background: var(--c-mint-soft); border-left-color: var(--c-primary); }
+.flashdeck { display: flex; flex-direction: column; gap: var(--sp-3); outline: none; }
+.flashdeck__meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--c-muted); }
+.flashdeck__known { display: inline-flex; gap: 4px; align-items: center; color: var(--c-success); font-weight: 650; }
+.flashdeck__bar { height: 5px; border-radius: 3px; background: var(--c-line); overflow: hidden; }
+.flashdeck__bar i { display: block; height: 100%; background: var(--c-success); transition: width .4s ease; }
+.flashcard { all: unset; box-sizing: border-box; display: block; cursor: pointer; perspective: 1100px; border-radius: 18px; }
+.flashcard:focus-visible { outline: 3px solid #58b395; outline-offset: 3px; }
+.flashcard__inner { display: grid; min-height: 210px; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.3,.8,.3,1); }
+.flashcard.is-flipped .flashcard__inner { transform: rotateY(180deg); }
+.flashcard__face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; justify-content: center; gap: 10px; text-align: center; align-items: center; border: 1px solid var(--c-line); }
+.flashcard__front { background: linear-gradient(145deg, #fff, var(--c-mint-soft)); }
+.flashcard__front small, .flashcard__back small { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--c-muted); }
+.flashcard__front strong { font-family: var(--font-serif); font-size: 24px; line-height: 1.25; color: var(--c-primary-dark); }
+.flashcard__front em { font-style: normal; font-size: 12.5px; color: var(--c-muted); display: inline-flex; gap: 6px; align-items: center; }
+.flashcard__back { background: var(--c-primary-dark); color: #fff; transform: rotateY(180deg); }
+.flashcard__back small { color: #9fc3b3; }
+.flashcard__def { font-size: 15.5px; line-height: 1.6; max-width: 56ch; }
+.flashcard.is-known .flashcard__front { border-color: var(--c-success); box-shadow: inset 0 0 0 1px var(--c-success); }
+.flashdeck__actions { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.pill-btn { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--c-line-strong); background: #fff; font-size: 13px; font-weight: 650; color: var(--c-ink-soft); transition: background .15s, color .15s, border-color .15s; }
+.pill-btn:hover { background: var(--c-mint); color: var(--c-primary-dark); }
+.pill-btn.is-on { background: var(--c-success-soft); border-color: var(--c-success); color: var(--c-success); }
+.flashdeck__hint { text-align: center; margin: 0; }
+
+/* ---------- O‘yinlar sahifasi ---------- */
+.games-section { margin-bottom: var(--sp-7); }
+.games-section__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+.game-tiles { display: grid; gap: var(--sp-4); }
+.game-tiles--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.game-tiles--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.game-tiles > .reveal { display: flex; }
+.game-tile { --gc: var(--g-teal); position: relative; overflow: hidden; flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 24px; border-radius: 22px; background: color-mix(in srgb, var(--gc) 8%, #fff); border: 1px solid color-mix(in srgb, var(--gc) 24%, #fff); transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s, border-color .25s; }
+.game-tile:hover { transform: translateY(-5px) rotate(-.5deg); box-shadow: 0 18px 36px color-mix(in srgb, var(--gc) 26%, transparent); border-color: var(--gc); }
+.game-tile__glow { position: absolute; right: -40px; top: -40px; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--gc) 30%, transparent), transparent 70%); transition: transform .4s; }
+.game-tile:hover .game-tile__glow { transform: scale(1.5); }
+.game-tile__icon { position: relative; width: 56px; height: 56px; border-radius: 18px; background: var(--gc); color: #fff; display: grid; place-items: center; box-shadow: 0 8px 18px color-mix(in srgb, var(--gc) 40%, transparent); transition: transform .3s; }
+.game-tile:hover .game-tile__icon { transform: rotate(-10deg) scale(1.1); }
+.game-tile h3 { position: relative; font-size: 18px; margin-top: 6px; }
+.game-tile p { position: relative; font-size: 14px; color: var(--c-ink-soft); flex: 1; line-height: 1.55; }
+.game-tile__foot { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.game-tile__cta { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; color: color-mix(in srgb, var(--gc) 70%, #000); }
+.game-tile__cta svg { transition: transform .25s; }
+.game-tile:hover .game-tile__cta svg { transform: translateX(5px); }
+.topic-picker { display: flex; flex-direction: column; gap: 6px; max-width: 640px; margin-bottom: var(--sp-4); }
+.topic-picker__label { font-weight: 650; font-size: 14px; }
+
+/* ---------- Moslashuvchanlik ---------- */
+@media (max-width: 960px) {
+  .lab { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+  .game-tiles--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .playground { grid-template-columns: minmax(0, 1fr); padding: var(--sp-4); }
+  .game-tiles--3, .game-tiles--2 { grid-template-columns: minmax(0, 1fr); }
+  .toolbar__tools { width: 100%; }
+  .toolbar__tools .search { flex: 1; min-width: 0; }
+  .flashcard__inner { min-height: 240px; }
+  .flashdeck__actions { gap: 6px; flex-wrap: nowrap; }
+  .pill-btn { padding: 0 10px; font-size: 12.5px; }
+  .to-top { right: 12px; bottom: 12px; }
+}
+
+/* ---------- Harakatni kamaytirish ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+  .hero-visual__panel, .hero-visual__float { transform: none; translate: none; }
+  .flashcard__inner { transition: none; }
+}
