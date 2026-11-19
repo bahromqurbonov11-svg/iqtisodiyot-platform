@@ -106,7 +106,6 @@ export function MarketPlayground() {
           </div>
         </div>
         <p className="playground__note">{describe(dP, dQ, d, s)}</p>
-        <p className="playground__demo">O‘quv namunasi: soddalashtirilgan chiziqli model, haqiqiy bozor ma’lumoti emas.</p>
       </div>
     </div>
   );
