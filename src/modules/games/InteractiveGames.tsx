@@ -17,7 +17,8 @@ function bonusQuestion() {
     const j = Math.floor(Math.random() * (i + 1));
     [options[i], options[j]] = [options[j], options[i]];
   }
-  const reward = [2, 3, 5][Math.floor(Math.random() * 3)];
+  const rewardRoll = Math.random();
+  const reward = rewardRoll < 0.05 ? 5 : rewardRoll < 0.30 ? 3 : 2;
   return { prompt: bank[answer][1], options, reward, answer: bank[answer][0], topic };
 }
 
@@ -43,7 +44,7 @@ export function TargetGamePage() {
   const modal = useRef<HTMLDialogElement>(null);
   const feedbackPanel = useRef<HTMLParagraphElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const speed = 0.9 * 1.15 ** Math.floor(shots / 15);
+  const speed = 0.9 * 1.01 ** shots;
 
   useEffect(() => {
     if (!user) return;
@@ -109,7 +110,7 @@ export function TargetGamePage() {
     setShots(shots + 1);
     setImpact({ offset, points });
     setNote(points ? '+' + points + ' ball · 1 ta o‘q qaytarildi.' : 'Nishonga tegmadi.');
-    if ((shots + 1) % 5 === 0) {
+    if ((shots + 1) % 10 === 0) {
       setQuestion(bonusQuestion());
       setPhase('question');
     } else if (!remaining) setPhase('over');
@@ -131,7 +132,7 @@ export function TargetGamePage() {
 
   return <div className="container page runner-page">
     <PageHeader title="Mergan" crumbs={[{ label: 'O‘yinlar', to: paths.games }, { label: 'Mergan' }]}
-      description="Nishon markaz chizig‘iga yaqinlashganda tugmani bosing. Har beshinchi urinishda bonus savol chiqadi." />
+      description="Nishon markaz chizig‘iga yaqinlashganda tugmani bosing. Har o‘ninchi otishda bonus savol chiqadi." />
     <div className="stack">
       <Card>
         <div className="target-hud"><strong>{score} ball</strong><strong>{arrows} ta o‘q</strong><strong>{shots} ta urinish</strong>
@@ -160,8 +161,8 @@ export function TargetGamePage() {
       <Card title={phase === 'over' ? 'Yakuniy natija' : 'O‘yin qoidalari'}>
         {phase === 'over' ? <strong>{score} ball · {shots} ta urinish</strong> : (
           <ul className="dots"><li>Boshlanishida 10 ta o‘q.</li><li>Nishonga tegsa, 10, 5 yoki 2 ball va 1 ta o‘q beriladi.</li>
-            <li>Har 5 otishda bonus savol. Mukofot 2, 3 yoki 5 ta o‘q.</li>
-            <li>Har 15 otishda nishon 15% tezlashadi.</li></ul>
+            <li>Har 10 otishda bonus savol. Mukofot 2 yoki 3 ta o‘q, kamdan-kam 5 ta.</li>
+            <li>Har otishdan keyin nishon 1% tezlashadi.</li></ul>
         )}
       </Card>
       {rankError && <p role="status">{rankError}</p>}

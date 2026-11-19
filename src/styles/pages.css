@@ -439,3 +439,5 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .admin-roster { list-style:none; padding:0; display:grid; gap:.5rem; }
 .admin-roster li { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr) auto; gap:.6rem; align-items:center; background:#f4faf6; border-radius:10px; padding:.75rem; overflow-wrap:anywhere; }
 @media(max-width:520px) { .admin-roster li { grid-template-columns:minmax(0,1fr); } }
+.admin-report-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr)); gap:.85rem; }
+.admin-report-filters label { display:grid; gap:.35rem; min-width:0; font-weight:650; }

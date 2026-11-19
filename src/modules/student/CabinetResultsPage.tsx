@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button, Card, PageHeader } from '@/components/ui';
+import { Button, Card, PageHeader, Tabs } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
@@ -28,8 +28,11 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const activity = useAdminActivity(admin);
   const [group, setGroup] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
+  const [report, setReport] = useState('tests');
+  const [limit, setLimit] = useState(12);
   const [practice, setPractice] = useState<string>();
   const topics = catalogService.getTopics().data;
+  const showTests = !admin || report === 'tests';
 
   useEffect(() => {
     let active = true;
@@ -119,25 +122,30 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   return (
     <>
       <PageHeader title={admin ? 'Talabalar natijalari' : 'Mening natijalarim'} />
+      {admin && <Tabs ariaLabel="Hisobot turi" value={report} onChange={setReport}
+        items={[{ value: 'tests', label: 'Test natijalari' }, { value: 'games', label: 'O‘yinlar statistikasi' }]} />}
       <Card title="Natijalarni filtrlash" className="mt-5">
-        <div className="stack">
+        <div className={admin ? 'admin-report-filters' : 'stack'}>
           {admin && <>
-            <label>Guruh<select className="search-control" value={group} onChange={event => { setGroup(event.target.value); setStudent(''); }}>
+            <label>Guruh<select className="search-control" value={group} onChange={event => { setGroup(event.target.value); setStudent(''); setLimit(12); }}>
               <option value="">Barcha guruhlar</option>
               {[...groups].map(([id, name]) => <option key={id} value={id}>{name || id}</option>)}
             </select></label>
-            <label>Talaba<select className="search-control" value={student} onChange={event => setStudent(event.target.value)}>
+            <label>Talaba<select className="search-control" value={student} onChange={event => { setStudent(event.target.value); setLimit(12); }}>
               <option value="">Barcha talabalar</option>
               {[...students].map(([id, name]) => <option key={id} value={id}>{name || id}</option>)}
             </select></label>
           </>}
-          <label>Mavzu<select className="search-control" value={topicFilter} onChange={event => setTopicFilter(event.target.value)}>
+          <label>Mavzu<select className="search-control" value={topicFilter} onChange={event => { setTopicFilter(event.target.value); setLimit(12); }}>
             <option value="">Barcha mavzular</option>
             {topics.map(topic => <option key={topic.id} value={topic.globalOrder}>{topic.title}</option>)}
           </select></label>
         </div>
+        {admin && (group || student || topicFilter) && <Button className="mt-3" variant="secondary" onClick={() => {
+          setGroup(''); setStudent(''); setTopicFilter(''); setLimit(12);
+        }}>Filtrlarni tozalash</Button>}
       </Card>
-      {results && <>
+      {showTests && results && <>
         {admin && <Card title="Testlar · guruhlar bo‘yicha" className="mt-5">
           <div className="admin-summary"><strong>{filtered.length} ta test urinish</strong><strong>{new Set(filtered.map(row => row.student_id)).size} ta qatnashgan talaba</strong></div>
           {testGroups.size ? bars([...testGroups.values()].filter(row => row.total > 0)
@@ -169,12 +177,12 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
           {difficult.length ? bars(difficult) : <p>Bu tanlov uchun xato qayd etilgan savol yo‘q.</p>}
         </Card>
       </>}
-      <Card title="Topshirilgan testlar" className="mt-5">
+      {showTests && <Card title="Topshirilgan testlar" className="mt-5">
         {failed && <p role="alert">Natijalarni yuklab bo‘lmadi.</p>}
         {!results && !failed && <p role="status">Natijalar yuklanmoqda…</p>}
         {results && filtered.length === 0 && <p>Bu tanlov bo‘yicha topshirilgan testlar yo‘q.</p>}
         <div className="stack">
-          {filtered.map(result => {
+          {filtered.slice(0, admin ? limit : undefined).map(result => {
             const mode = result.test_scope === -1 ? '1-semestr' : result.test_scope === -2 ? '2-semestr' :
               topics.find(topic => topic.globalOrder === result.test_scope)?.title ?? 'Test';
             return (
@@ -186,10 +194,13 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
             );
           })}
         </div>
+        {admin && filtered.length > limit && <Button className="mt-3" variant="secondary"
+          onClick={() => setLimit(value => value + 12)}>Yana 12 ta ko‘rish</Button>}
         {!admin && <Button to={paths.tests} className="mt-3">Testlarga o‘tish</Button>}
-      </Card>
+      </Card>}
       {admin && activity.error && <p role="alert">O‘yin va guruh ma’lumotlarini yuklab bo‘lmadi.</p>}
-      {admin && activity.data && <AdminGameCharts games={activity.data.games} students={gameStudents}
+      {!showTests && !activity.data && !activity.error && <p role="status">O‘yin natijalari yuklanmoqda…</p>}
+      {!showTests && activity.data && <AdminGameCharts games={activity.data.games} students={gameStudents}
         groups={activity.data.groups} topic={topicFilter} />}
     </>
   );
