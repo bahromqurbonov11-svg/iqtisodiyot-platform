@@ -187,12 +187,12 @@ function UploadedMaterials({ topicId, topicTitle }: { topicId: string; topicTitl
 
   if (user?.external) return <div className="topic-slide-anchor" ref={section}><ReadOnlySlides key={topicId} number={catalogService.getTopic(topicId)?.globalOrder ?? 0} /></div>;
 
-  return <div className="topic-slide-anchor" ref={section}>{user ? (
-    <MaterialFiles key={topicId + ':' + user.id} topicId={topicId} topicTitle={topicTitle} />
-  ) : <ReadOnlySlides key={topicId} number={catalogService.getTopic(topicId)?.globalOrder ?? 0} />}</div>;
+  return <div className="topic-slide-anchor" ref={section}>
+    <MaterialFiles key={topicId + ':' + (user?.id ?? 'guest')} topicId={topicId} topicTitle={topicTitle} guest={!user} />
+  </div>;
 }
 
-function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {
+function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string; topicTitle: string; guest?: boolean }) {
   const [files, setFiles] = useState<UploadedMaterial[] | null>(null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -268,6 +268,9 @@ function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: s
         </ul>
     );
   }
+
+  const number = catalogService.getTopic(topicId)?.globalOrder ?? 0;
+  if (guest && (error || !files || (slides.length === 0 && repositoryCount === 0))) return <ReadOnlySlides number={number} />;
 
   return (
     <>
