@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, ClipboardCheck, Gamepad2, LineChart as LineIcon, Target, Layers, GraduationCap, Clock } from 'lucide-react';
-import { Button, Badge } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
 import { games } from '@/data/games';
-import { roadmap } from '@/data/roadmap';
 import { appConfig } from '@/config/app.config';
 import { GameIcon } from '@/modules/games/GameIcon';
 
@@ -64,7 +63,6 @@ export function HomePage() {
                 <span className="step__icon"><s.icon size={22} /></span>
                 <h3>{s.title}</h3>
                 <p className="muted">{s.text}</p>
-                {s.stage > 0 && <Badge tone="info">{s.stage}-bosqichda to‘liq ishlaydi</Badge>}
               </Link>
             ))}
           </div>
@@ -160,29 +158,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* YO‘L XARITASI */}
-      <section className="section">
-        <div className="container">
-          <div className="section__head">
-            <div>
-              <div className="eyebrow">Rivojlanish rejasi</div>
-              <h2>Platforma bosqichma-bosqich quriladi</h2>
-            </div>
-          </div>
-          <ol className="roadmap">
-            {roadmap.map((r) => (
-              <li key={r.stage} className={`roadmap__item${r.stage === appConfig.stage ? ' is-current' : r.stage < appConfig.stage ? ' is-done' : ''}`}>
-                <span className="roadmap__num">{r.stage}</span>
-                <div>
-                  <strong>{r.title}</strong>
-                  <p className="muted small">{r.text}</p>
-                </div>
-                {r.stage === appConfig.stage && <Badge tone="primary">Hozir</Badge>}
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+
     </>
   );
 }
@@ -226,10 +202,7 @@ function HeroVisual() {
       <div className="hero-visual__float hero-visual__float--b">
         <span className="dot dot--danger" /> Egiluvchanlik <b>bo‘shliq</b>
       </div>
-      <div className="hero-visual__float hero-visual__float--c">
-        <small>Ishonch: 4/5 · Natija: 2/5</small>
-        <strong>Qayta ko‘rish tavsiya etiladi</strong>
-      </div>
+
     </div>
   );
 }

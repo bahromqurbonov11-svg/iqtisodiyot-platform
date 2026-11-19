@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Card, PageHeader } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
 import { useAuth } from '@/services/auth/AuthContext';
@@ -13,6 +13,10 @@ interface Attempt {
 export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   const { user } = useAuth();
   const [topic, setTopic] = useState(initialTopic?.toString() ?? '');
+  const [index, setIndex] = useState(0);
+  const [deadline, setDeadline] = useState(0);
+  const [seconds, setSeconds] = useState(90);
+  const [query, setQuery] = useState('');
   const [attempt, setAttempt] = useState<Attempt>();
   const [answers, setAnswers] = useState<number[]>([]);
   const [score, setScore] = useState<number>();
@@ -20,6 +24,24 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   const [message, setMessage] = useState('');
   const [file, setFile] = useState<File>();
   const topics = catalogService.getTopics().data;
+
+  useEffect(() => {
+    if (!attempt || index >= attempt.questions.length || !deadline) return;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setSeconds(remaining);
+      if (!remaining) advance(4);
+    };
+    const timer = window.setInterval(tick, 200);
+    return () => window.clearInterval(timer);
+  }, [attempt, index, deadline]);
+
+  function advance(choice: number) {
+    setAnswers((previous) => previous.map((value, position) => position === index ? choice : value));
+    setIndex(index + 1);
+    setDeadline(Date.now() + 90_000);
+    setSeconds(90);
+  }
 
   async function startTest() {
     setBusy(true);
@@ -37,6 +59,9 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
       return;
     }
     setAttempt(data);
+    setIndex(0);
+    setSeconds(90);
+    setDeadline(Date.now() + 90_000);
     setAnswers(data.questions.map(() => -1));
     setScore(undefined);
   }
@@ -81,9 +106,10 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
           <Card title="Testni boshlash">
             <div className="stack">
               <label htmlFor="test-topic">Savollar banki</label>
-              <select id="test-topic" value={topic} onChange={(event) => setTopic(event.target.value)}>
+              <input className="search-control" type="search" aria-label="Mavzu qidirish" placeholder="Mavzu nomi yoki raqami" value={query} onChange={event => { setQuery(event.target.value); setTopic(''); }} />
+              <select className="search-control" id="test-topic" value={topic} onChange={(event) => setTopic(event.target.value)}>
                 <option value="">Umumiy test</option>
-                {topics.map((item) => <option key={item.id} value={item.globalOrder}>{item.globalOrder}. {item.title}</option>)}
+                {topics.filter(item => (item.globalOrder + ' ' + item.title).toLowerCase().includes(query.trim().toLowerCase())).map((item) => <option key={item.id} value={item.globalOrder}>{item.globalOrder}. {item.title}</option>)}
               </select>
               <Button disabled={busy} onClick={() => void startTest()}>Boshlash</Button>
             </div>
@@ -91,27 +117,23 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
         )}
         {attempt && score === undefined && (
           <>
-            {attempt.questions.map((item, index) => (
-              <Card key={index}>
-                <fieldset className="stack">
-                  <legend>{index + 1}. {item.question}</legend>
-                  {item.options.map((option, choice) => (
-                    <label key={choice}>
-                      <input type="radio" name={`item-${index}`} checked={answers[index] === choice}
-                        disabled={busy}
-                        onChange={() => setAnswers((previous) => previous.map((value, position) => position === index ? choice : value))} />
-                      {' '}{option}
-                    </label>
+            {index < attempt.questions.length ? (
+              <Card className="test-question">
+                <div className="test-meta"><strong>{index + 1} / {attempt.questions.length}</strong><span aria-label="Qolgan vaqt">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
+                <h2>{attempt.questions[index].question}</h2>
+                <div className="stack">
+                  {attempt.questions[index].options.map((option, choice) => (
+                    <button className="test-option" key={choice} onClick={() => advance(Date.now() >= deadline ? 4 : choice)}>{option}</button>
                   ))}
-                </fieldset>
+                </div>
               </Card>
-            ))}
-            <Button disabled={busy || answers.includes(-1)} onClick={() => void submitTest()}>Natijani hisoblash</Button>
+            ) : <Button disabled={busy} onClick={() => void submitTest()}>Natijani hisoblash</Button>}
           </>
         )}
         {attempt && score !== undefined && (
           <Card title="Natija">
-            <p>{attempt.questions.length} savoldan {score} tasi to‘g‘ri.</p>
+            <p>{score} ta to‘g‘ri · {attempt.questions.length - score} ta xato</p>
+            <p>{answers.filter(choice => choice === 4).length} ta belgilanmagan (xato hisoblandi)</p>
             <Button onClick={() => setAttempt(undefined)}>Yangi test</Button>
           </Card>
         )}

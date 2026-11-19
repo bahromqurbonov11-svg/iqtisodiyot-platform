@@ -23,9 +23,7 @@ export function DemoBadge({ label = 'DEMO' }: { label?: string }) {
   );
 }
 
-export function StageBadge({ stage }: { stage: number }) {
-  return <Badge tone="info">{stage}-bosqichda</Badge>;
-}
+export function StageBadge(_: { stage: number }) { return null; }
 
 const statusMap: Record<AccountStatus, { label: string; tone: Tone }> = {
   pending: { label: 'Kutilmoqda', tone: 'warning' },

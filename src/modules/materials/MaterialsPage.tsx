@@ -332,9 +332,9 @@ function GlossaryPage() {
         title="Iqtisodiyot glossariysi" description="Iqtisodiy atamalar va ularning ta’riflari" />
       <div className="stack">
         <label className="stack stack--sm">
-          <strong>Glossariydan qidirish</strong>
-          <input className="input" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
-            placeholder="Atama yoki ta’rifni yozing…" />
+          <strong className="glossary-label">Glossariydan qidirish</strong>
+          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+            className="search-control" placeholder="Atama yoki ta’rifni yozing…" />
         </label>
         {loadError && <p role="alert">Glossariyni yuklab bo‘lmadi. Sahifani yangilab ko‘ring.</p>}
         {!entries && !loadError && <p role="status">Glossariy yuklanmoqda…</p>}
@@ -347,7 +347,7 @@ function GlossaryPage() {
               <dl className="grid grid--2" style={{ margin: 0 }}>
                 {results.map(({ term, definitions }) => (
                   <div key={term} className="card card--pad stack stack--sm">
-                    <dt><strong>{term}</strong></dt>
+                    <dt className="glossary-term"><strong>{term}</strong></dt>
                     {definitions.map((definition) => <dd key={definition} className="muted small" style={{ margin: 0 }}>{definition}</dd>)}
                   </div>
                 ))}

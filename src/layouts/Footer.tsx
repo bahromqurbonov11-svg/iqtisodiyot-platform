@@ -48,7 +48,7 @@ export function Footer() {
           <p>© 2026 Qurbonov Baxromjon. Barcha huquqlar himoyalangan.</p>
           <p>Sayt materiallaridan foydalanganda «Iqtisodiyot nazariyasi — ta’lim va analitika» saytini manba sifatida ko‘rsating.</p>
         </div>
-        <span>v{appConfig.version} · {appConfig.stage}-bosqich</span>
+        <span>v{appConfig.version}</span>
       </div>
     </footer>
   );

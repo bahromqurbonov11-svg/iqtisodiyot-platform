@@ -7,7 +7,7 @@ import { publicMenu } from '@/navigation/menus';
 import { paths } from '@/navigation/paths';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/services/auth/AuthContext';
-import { StageStrip } from './StageStrip';
+import { VisitReport } from './VisitReport';
 import { Footer } from './Footer';
 
 export function PublicLayout() {
@@ -25,7 +25,7 @@ export function PublicLayout() {
   return (
     <div className="site">
       <a href="#main" className="skip-link">Asosiy mazmunga o‘tish</a>
-      <StageStrip />
+
       <header className="site-header">
         <div className="container site-header__inner">
           <Brand showSchool />
@@ -64,6 +64,7 @@ export function PublicLayout() {
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
+        <VisitReport />
       </header>
       <main id="main" className="site-main">
         <Outlet />

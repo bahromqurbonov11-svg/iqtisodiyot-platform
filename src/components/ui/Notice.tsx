@@ -24,10 +24,4 @@ export function DemoNotice({ children }: { children?: ReactNode }) {
   );
 }
 
-export function StageNotice({ stage, children }: { stage: number; children?: ReactNode }) {
-  return (
-    <Notice kind="stage" title={`Bu funksiya ${stage}-bosqichda ishga tushadi`}>
-      {children}
-    </Notice>
-  );
-}
+export function StageNotice(_: { stage: number; children?: ReactNode }) { return null; }
