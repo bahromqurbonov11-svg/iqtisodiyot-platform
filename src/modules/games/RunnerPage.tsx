@@ -176,15 +176,36 @@ export function RunnerPage() {
           if (event.key === 'ArrowUp') { event.preventDefault(); jump(); }
         }}>
           <svg viewBox="0 0 590 190" preserveAspectRatio="xMidYMax meet" width="100%" aria-hidden="true">
-            <rect width="590" height="190" fill="#eef6ed" />
-            <circle cx="475" cy="45" r="22" fill="#e0bb6e" />
-            <path d="M0 152Q75 78 160 152T310 152T460 152T610 152V190H0Z" fill="#c4ddca" />
-            <path d="M0 157H590" stroke="#467660" strokeWidth="3" />
+            <defs>
+              <linearGradient id="rn-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7cc8ff" /><stop offset="1" stopColor="#e9f7ff" /></linearGradient>
+              <linearGradient id="rn-ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9a066" /><stop offset="1" stopColor="#a8683a" /></linearGradient>
+              <linearGradient id="rn-bar" x1="0" x2="1"><stop offset="0" stopColor="#b97a49" /><stop offset="1" stopColor="#7a4626" /></linearGradient>
+            </defs>
+            <rect width="590" height="190" fill="url(#rn-sky)" />
+            <circle className="rn-sun" cx="500" cy="42" r="24" fill="#ffe08a" />
+            <g className="rn-cloud rn-cloud--a"><ellipse cx="120" cy="38" rx="34" ry="10" fill="#fff" /><ellipse cx="140" cy="30" rx="20" ry="10" fill="#fff" /></g>
+            <g className="rn-cloud rn-cloud--b"><ellipse cx="330" cy="58" rx="28" ry="8" fill="#fff" opacity=".9" /><ellipse cx="346" cy="51" rx="16" ry="8" fill="#fff" opacity=".9" /></g>
+            <path d="M0 120 Q70 70 150 118 T300 112 T450 116 T610 108 V190H0Z" fill="#a8d5ab" />
+            <path d="M0 138 Q90 100 190 136 T380 132 T610 134 V190H0Z" fill="#6fb376" />
+            <rect y="157" width="590" height="33" fill="url(#rn-ground)" />
+            <rect y="157" width="590" height="5" fill="#ecb47b" />
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <rect key={i} className="rn-lane" x={i * 80} y="176" width="40" height="3" rx="1.5" fill="#fff" opacity=".75" />)}
             {frame.heights.map((height, i) => (
-              <rect key={i} x={frame.x + i * 31} y={157 - height} width="23" height={height} rx="4" fill="#945633" />
+              <g key={i}>
+                <ellipse cx={frame.x + i * 31 + 11} cy="158" rx="15" ry="3" fill="#000" opacity=".2" />
+                <rect x={frame.x + i * 31} y={157 - height} width="23" height={height} rx="4" fill="url(#rn-bar)" />
+                <rect x={frame.x + i * 31} y={157 - height} width="23" height="6" rx="3" fill="#fff" opacity=".85" />
+              </g>
             ))}
-            <rect x="72" y={126-frame.y} width="29" height="31" rx="7" fill="#1b5f4d" />
-            <circle cx="93" cy={134-frame.y} r="2" fill="white" />
+            <ellipse cx="86" cy="158" rx={16 - Math.min(frame.y / 6, 8)} ry="3.5" fill="#000" opacity=".22" />
+            <g transform={'translate(0 ' + (-frame.y) + ')'}>
+              <circle cx="87" cy="108" r="8" fill="#f2c18d" />
+              <path d="M79 103 q8 -10 17 0" fill="#3a2a1d" />
+              <rect x="78" y="116" width="19" height="24" rx="8" fill="#1b5f4d" />
+              <path className={frame.y > 0 ? '' : 'rn-leg rn-leg--a'} d="M84 138 L93 156" stroke="#25344d" strokeWidth="6" strokeLinecap="round" />
+              <path className={frame.y > 0 ? '' : 'rn-leg rn-leg--b'} d="M90 138 L78 156" stroke="#25344d" strokeWidth="6" strokeLinecap="round" />
+              <path d="M92 122 L103 128" stroke="#f2c18d" strokeWidth="5" strokeLinecap="round" />
+            </g>
           </svg>
         </button>
         <div className="stack mt-3">
