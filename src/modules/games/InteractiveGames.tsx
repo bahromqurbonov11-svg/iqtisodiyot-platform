@@ -3,6 +3,9 @@ import { Target } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components/ui';
 import { topicGameBank } from '@/data/topicGames';
 import { paths } from '@/navigation/paths';
+import { useAuth } from '@/services/auth/AuthContext';
+import { supabase } from '@/services/supabase';
+import { GameTopThree, type RankedPlayer } from './GameTopThree';
 
 function bonusQuestion() {
   const bank = topicGameBank[Math.floor(Math.random() * topicGameBank.length)];
@@ -17,6 +20,10 @@ function bonusQuestion() {
 }
 
 export function TargetGamePage() {
+  const { user } = useAuth();
+  const [rank, setRank] = useState<RankedPlayer[]>();
+  const [rankError, setRankError] = useState('');
+  const roundId = useRef<string | undefined>(undefined);
   const [phase, setPhase] = useState<'ready' | 'playing' | 'question' | 'over'>('ready');
   const [score, setScore] = useState(0);
   const [arrows, setArrows] = useState(10);
@@ -34,6 +41,27 @@ export function TargetGamePage() {
   const feedbackPanel = useRef<HTMLParagraphElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const speed = 0.9 * 1.15 ** Math.floor(shots / 15);
+
+  useEffect(() => {
+    if (!user) return;
+    let current = true;
+    async function loadResults() {
+      setRankError('');
+      if (phase === 'over' && roundId.current && user?.role === 'student' && !user.external) {
+        const { error } = await supabase.rpc('econ_finish_target', {
+          round_id: roundId.current, round_points: score, round_shots: shots,
+        });
+        if (current && error) setRankError('Raund natijasini saqlab bo‘lmadi.');
+      }
+      const { data, error } = await supabase.rpc('econ_target_rank');
+      if (!current) return;
+      if (error) setRankError('Reytingni yuklab bo‘lmadi.');
+      else setRank(data);
+    }
+    // During play, the current score stays local until the round ends.
+    if (phase === 'ready' || phase === 'over') void loadResults();
+    return () => { current = false; };
+  }, [user, phase, score, shots]);
 
   useEffect(() => {
     const dialog = modal.current;
@@ -59,6 +87,7 @@ export function TargetGamePage() {
   }, [phase, speed]);
 
   function start() {
+    roundId.current = crypto.randomUUID();
     setScore(0); setArrows(10); setShots(0); setNote(''); setQuestion(undefined); setFeedback(undefined); setImpact(undefined);
     motion.current = -650;
     setPhase('playing');
@@ -131,6 +160,9 @@ export function TargetGamePage() {
             <li>Har 15 otishda nishon 15% tezlashadi.</li></ul>
         )}
       </Card>
+      {rankError && <p role="status">{rankError}</p>}
+      <GameTopThree players={user ? rank : undefined} signedIn={Boolean(user)}
+        description="Har bir talabaning yakunlangan raundlardagi eng yuqori bali." />
     </div>
     <dialog ref={modal} className="target-dialog" aria-labelledby="target-quiz-title" onCancel={event => event.preventDefault()}>
       {question && <div className="stack">

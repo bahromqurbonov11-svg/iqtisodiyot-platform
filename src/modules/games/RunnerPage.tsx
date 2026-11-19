@@ -4,8 +4,8 @@ import { useAuth } from '@/services/auth/AuthContext';
 import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
 import { paths } from '@/navigation/paths';
+import { GameTopThree, type RankedPlayer } from './GameTopThree';
 
-type Player = { name: string; points: number };
 type Quiz = { question: string; options: string[] };
 type Phase = 'ready' | 'running' | 'loading' | 'quiz' | 'over';
 const initial = () => ({ x: 520, y: 0, velocity: 0, counted: false, score: 0, heights: [30] });
@@ -20,7 +20,7 @@ export function RunnerPage() {
   const [quizResult, setQuizResult] = useState<'correct' | 'wrong' | 'error'>();
   const [score, setScore] = useState(0);
   const [frame, setFrame] = useState(initial);
-  const [rank, setRank] = useState<Player[]>();
+  const [rank, setRank] = useState<RankedPlayer[]>();
   const [message, setMessage] = useState('');
   const [missedTopic, setMissedTopic] = useState<number>();
   const [busy, setBusy] = useState(false);
@@ -197,14 +197,8 @@ export function RunnerPage() {
           {topic && <Button variant="secondary" to={paths.topic(topic.id)}>{topic.title}</Button>}
         </div>
       </Card>
-      <Card title="Talabalar reytingi">
-        <p className="small muted">To‘g‘ri javob bilan tasdiqlangan eng yuqori marra hisoblanadi.</p>
-        {!user && <p>Reytingni ko‘rish uchun tizimga kiring.</p>}
-        {rank?.length === 0 && <p>Hozircha tasdiqlangan marra yo‘q.</p>}
-        <ol className="stack stack--sm">
-          {rank?.map((player, i) => <li key={i}><strong>{player.name}</strong> · {player.points} ball</li>)}
-        </ol>
-      </Card>
+      <GameTopThree players={user ? rank : undefined} signedIn={Boolean(user)}
+        description="To‘g‘ri javob bilan tasdiqlangan eng yuqori marra hisoblanadi." />
     </div>
     <dialog ref={quizDialog} className="target-dialog" aria-labelledby="runner-quiz-heading" onCancel={event => event.preventDefault()}>
       {quiz && <div className="stack">

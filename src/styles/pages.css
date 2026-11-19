@@ -431,3 +431,6 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .situation-card[aria-pressed="true"] { border-color:#318565; background:#dfefe6; }
 .situation-card:disabled { cursor:default; }
 .runner-track svg { min-height:clamp(14rem,40svh,26rem); }
+.game-podium { display:grid; gap:.55rem; list-style:none; padding:0; }
+.game-podium li { display:grid; grid-template-columns:3rem minmax(0,1fr) auto; align-items:center; gap:.65rem; padding:.7rem; border-radius:10px; background:#eef6f0; overflow-wrap:anywhere; }
+.game-podium__place { display:flex; align-items:center; gap:.25rem; font-weight:700; color:#286451; }
