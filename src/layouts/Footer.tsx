@@ -13,7 +13,7 @@ export function Footer() {
           <Brand />
           <p className="muted small">
             {appConfig.organization.name}. Fan kodi {appConfig.subject.code}. Platforma talabalar bilimidagi bo‘shliqlarni aniqlash
-            va o‘qituvchiga tahliliy ma’lumot berish uchun ishlab chiqilmoqda.
+            va o‘qituvchiga tahliliy ma’lumot berish uchun ishlab chiqilgan.
           </p>
           <address className="small" style={{ fontStyle: 'normal', marginTop: 12, lineHeight: 1.65 }}>
             <div>Muallif: <strong>Qurbonov Baxromjon</strong></div>
@@ -51,7 +51,6 @@ export function Footer() {
           <p>© 2026 Qurbonov Baxromjon. Barcha huquqlar himoyalangan.</p>
           <p>Sayt materiallaridan foydalanganda «Iqtisodiyot nazariyasi — ta’lim va analitika» saytini manba sifatida ko‘rsating.</p>
         </div>
-        <span>v{appConfig.version}</span>
       </div>
     </footer>
   );
