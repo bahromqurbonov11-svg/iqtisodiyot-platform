@@ -10,6 +10,7 @@ import { useI18n } from '@/i18n';
 import { useAuth } from '@/services/auth/AuthContext';
 import { VisitReport } from './VisitReport';
 import { Footer } from './Footer';
+import { BackToTop, ScrollProgress } from '@/components/motion/Motion';
 
 export function PublicLayout() {
   const { t } = useI18n();
@@ -25,6 +26,7 @@ export function PublicLayout() {
 
   return (
     <div className="site">
+      <ScrollProgress />
       <a href="#main" className="skip-link">Asosiy mazmunga o‘tish</a>
 
       <header className="site-header">
@@ -71,6 +73,7 @@ export function PublicLayout() {
         <Outlet />
       </main>
       <Footer />
+      <BackToTop />
       <VisitReport />
     </div>
   );
