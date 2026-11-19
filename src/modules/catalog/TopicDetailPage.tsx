@@ -9,6 +9,9 @@ import { catalogService } from '@/services/catalog.service';
 import { references } from '@/data/subject';
 import { topicConcepts } from '@/data/topicConcepts';
 import { ConceptCards } from './ConceptCards';
+import { TopicDiagram } from './TopicDiagram';
+import { topicVisuals } from './TopicsPage';
+import { topicStyle } from './topicStyle';
 import { paths } from '@/navigation/paths';
 import { NotFoundPage } from '@/modules/public/NotFoundPage';
 import { SlidesList } from '@/modules/materials/SlidesList';
@@ -52,13 +55,18 @@ export function TopicDetailPage() {
           <>
             <Badge tone="neutral" icon={<Clock size={12} />}>Ma’ruza {topic.lectureHours} soat</Badge>
             <Badge tone="neutral" icon={<Clock size={12} />}>Amaliy {topic.practiceHours} soat</Badge>
-            <Badge tone="primary">Manba: {topic.source.document}</Badge>
           </>
         }
       />
 
       <div className="topic-layout">
         <div className="stack">
+          <div style={{ ['--gc' as string]: topicStyle(topic.globalOrder).color }}>
+            <Card title={topic.globalOrder + '-mavzu · tasvir'} subtitle="Qadamni bossangiz, tushuntirish almashadi">
+              <TopicDiagram topicNumber={topic.globalOrder} visual={topicVisuals[topic.globalOrder - 1]} />
+            </Card>
+          </div>
+
           <Card title="Mavzu rejasi" subtitle="Sillabusdagi asosiy masalalar">
             <ol className="plan">
               {topic.subtopics.map((s, i) => (
