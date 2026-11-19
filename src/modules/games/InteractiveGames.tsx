@@ -28,10 +28,12 @@ export function TargetGamePage() {
   const [impact, setImpact] = useState<{ offset: number; points: number }>();
   const current = useRef(20);
   const motion = useRef(0);
+  const field = useRef<HTMLDivElement>(null);
+  const disc = useRef<HTMLDivElement>(null);
   const modal = useRef<HTMLDialogElement>(null);
   const feedbackPanel = useRef<HTMLParagraphElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const speed = 1.15 ** Math.floor(shots / 15);
+  const speed = 0.9 * 1.15 ** Math.floor(shots / 15);
 
   useEffect(() => {
     const dialog = modal.current;
@@ -65,14 +67,16 @@ export function TargetGamePage() {
   function shoot() {
     if (phase !== 'playing' || arrows <= 0) return;
     const offset = 50 - current.current;
-    const distance = Math.abs(offset);
-    const points = distance <= 2 ? 10 : distance <= 5 ? 5 : distance <= 8 ? 2 : 0;
-    const remaining = arrows - 1;
+    const fieldWidth = field.current?.clientWidth ?? 0;
+    const radius = (disc.current?.offsetWidth ?? 0) / 2;
+    const distance = radius > 0 ? Math.abs(offset) * fieldWidth / (100 * radius) : Infinity;
+    const points = distance <= 0.3 ? 10 : distance <= 0.65 ? 5 : distance <= 1 ? 2 : 0;
+    const remaining = arrows - 1 + Number(points > 0);
     setScore(value => value + points);
     setArrows(remaining);
     setShots(shots + 1);
     setImpact({ offset, points });
-    setNote(points ? '+' + points + ' ball' : 'Nishonga tegmadi.');
+    setNote(points ? '+' + points + ' ball · 1 ta o‘q qaytarildi.' : 'Nishonga tegmadi.');
     if ((shots + 1) % 5 === 0) {
       setQuestion(bonusQuestion());
       setPhase('question');
@@ -100,9 +104,9 @@ export function TargetGamePage() {
         <div className="target-hud"><strong>{score} ball</strong><strong>{arrows} ta o‘q</strong><strong>{shots} ta urinish</strong>
           <strong>Tezlik {Math.round(speed * 100)}%</strong></div>
         <div className="target-ammo" aria-hidden="true">{Array.from({ length: arrows }, (_, index) => <i key={index} />)}</div>
-        <div className="target-field" aria-label="Harakatlanuvchi nishon maydoni">
+        <div ref={field} className="target-field" aria-label="Harakatlanuvchi nishon maydoni">
           <div className="target-marker" aria-hidden="true" />
-          <div className="target-disc" style={{ left: position + '%' }} aria-hidden="true"><span /></div>
+          <div ref={disc} className="target-disc" style={{ left: position + '%' }} aria-hidden="true"><span /></div>
           <svg className="target-launcher" viewBox="0 0 48 75" aria-hidden="true">
             <path d="M18 6h12v24h7v16H28l-3 24H13l2-26h-5V30h8Z" fill="#265948" />
             <path d="M18 6h12v6H18Z" fill="#e6a84d" />
@@ -122,7 +126,7 @@ export function TargetGamePage() {
       </Card>
       <Card title={phase === 'over' ? 'Yakuniy natija' : 'O‘yin qoidalari'}>
         {phase === 'over' ? <strong>{score} ball · {shots} ta urinish</strong> : (
-          <ul className="dots"><li>Boshlanishida 10 ta o‘q.</li><li>Markazga yaqinlikka qarab 10, 5 yoki 2 ball.</li>
+          <ul className="dots"><li>Boshlanishida 10 ta o‘q.</li><li>Nishonga tegsa, 10, 5 yoki 2 ball va 1 ta o‘q beriladi.</li>
             <li>Har 5 otishda bonus savol. Mukofot 2, 3 yoki 5 ta o‘q.</li>
             <li>Har 15 otishda nishon 15% tezlashadi.</li></ul>
         )}

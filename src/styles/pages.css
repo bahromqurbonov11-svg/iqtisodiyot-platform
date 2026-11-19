@@ -361,7 +361,7 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .target-hud { display:flex; flex-wrap:wrap; gap:.75rem; justify-content:space-between; margin-bottom:.75rem; }
 .target-field { position:relative; height:clamp(16rem,50svh,29rem); background:linear-gradient(#dcece6,#f3f7e9); border:1px solid #a5bdb0; border-radius:14px; overflow:hidden; }
 .target-marker { position:absolute; inset:0 auto 0 50%; width:4%; transform:translateX(-50%); border-inline:1px dashed #2e6352; background:#38856520; }
-.target-disc { position:absolute; top:50%; width:clamp(2rem,8vw,4.5rem); aspect-ratio:1; transform:translate(-50%,-50%); border:5px solid #9b5536; border-radius:50%; background:#f8e8cc; display:grid; place-items:center; }
+.target-disc { position:absolute; top:50%; width:clamp(2.25rem,9vw,5rem); aspect-ratio:1; transform:translate(-50%,-50%); border:5px solid #9b5536; border-radius:50%; background:#f8e8cc; display:grid; place-items:center; }
 .target-disc span { width:30%; aspect-ratio:1; border-radius:50%; background:#9b5536; }
 .target-ammo { display:flex; flex-wrap:wrap; gap:.28rem; margin-bottom:.65rem; }
 .target-ammo i { width:.46rem; height:1rem; background:linear-gradient(#8a5a29 25%,#d8a956 25%); border-radius:50% 50% 2px 2px; }
@@ -393,6 +393,26 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 @keyframes hero-chart-ring { 0% { transform:scale(.5); opacity:0; } 30% { opacity:.65; } 90%,100% { transform:scale(1.6); opacity:0; } }
 @keyframes topic-bar-grow { from { transform:scaleY(0); } }
 @keyframes topic-icon-rise { 45%,55% { transform:translateY(-3px); } }
+@keyframes site-icon-in { from { opacity:.45; scale:.86; } }
+@keyframes site-chart-in { from { opacity:.55; } }
+@keyframes site-meter-in { from { opacity:.65; transform:scaleX(.15); } }
+@media (prefers-reduced-motion:no-preference) {
+  :where(.site, .dash) :where(nav,.page,.dash__content,.site-footer,.site-header) .lucide {
+    transition:transform .18s ease, color .18s ease;
+    animation:site-icon-in .32s ease-out both;
+  }
+  :where(.site, .dash) :is(a,button):is(:hover,:focus-visible) > .lucide { transform:translateY(-2px); }
+  :where(.site, .dash) :is(a,button):active > .lucide { transform:scale(.9); }
+  :where(.site, .dash) :where(.card,.page,.dash__content) svg[role="img"] {
+    animation:site-chart-in .55s ease-out;
+  }
+  :where(.site, .dash) svg[role="img"] circle { transition:cx .22s ease-out, cy .22s ease-out; }
+  :where(.site, .dash) progress::-webkit-progress-value { transform-origin:left; animation:site-meter-in .55s ease-out both; }
+  :where(.site, .dash) progress::-moz-progress-bar { transform-origin:left; animation:site-meter-in .55s ease-out both; }
+  :where(.site, .dash) meter { animation:site-chart-in .55s ease-out; }
+  .target-impact { animation:site-icon-in .16s ease-out; }
+  .matching-arrows path[marker-end] { animation:site-chart-in .28s ease-out; }
+}
 @media (prefers-reduced-motion:reduce) {
   .hero-chart-line,.hero-chart-point,.hero-chart-shade,.hero-chart-guides,.topic-motion-line,.topic-motion-bar,.topic-motion-icon,.target-shot { animation:none; }
   .hero-chart-ring,.hero-chart-tracers,.target-shot { display:none; }

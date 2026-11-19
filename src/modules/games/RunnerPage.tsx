@@ -76,7 +76,7 @@ export function RunnerPage() {
       const dt = last ? Math.min((time - last) / 1000, 0.035) : 0;
       last = time;
       const w = world.current;
-      w.x -= (205 + Math.min(w.score * 2, 65)) * pace.current * dt;
+      w.x -= (205 + Math.min(w.score * 2, 65)) * 1.2 * pace.current * dt;
       w.y = Math.max(0, w.y + w.velocity * dt);
       w.velocity = w.y > 0 ? w.velocity - 920 * dt : 0;
       setFrame({ ...w });
