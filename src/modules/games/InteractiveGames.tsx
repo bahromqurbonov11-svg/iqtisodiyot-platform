@@ -8,8 +8,8 @@ import { supabase } from '@/services/supabase';
 import { GameTopThree, type RankedPlayer } from './GameTopThree';
 import { useRecordGame } from './recordGame';
 
-function bonusQuestion() {
-  const topic = Math.floor(Math.random() * topicGameBank.length) + 1;
+function bonusQuestion(maxTopic: number) {
+  const topic = Math.floor(Math.random() * Math.min(maxTopic, topicGameBank.length)) + 1;
   const bank = topicGameBank[topic - 1];
   const answer = Math.floor(Math.random() * bank.length);
   const options = bank.map(([label], index) => ({ label, correct: index === answer }));
@@ -35,6 +35,7 @@ export function TargetGamePage() {
   const [position, setPosition] = useState(20);
   const [note, setNote] = useState('');
   const [question, setQuestion] = useState<ReturnType<typeof bonusQuestion>>();
+  const [questionError, setQuestionError] = useState(false);
   const [feedback, setFeedback] = useState<boolean>();
   const [impact, setImpact] = useState<{ offset: number; points: number }>();
   const current = useRef(20);
@@ -97,6 +98,16 @@ export function TargetGamePage() {
     setPhase('playing');
   }
 
+  async function loadBonusQuestion() {
+    setQuestionError(false);
+    const { data, error } = await supabase.rpc('econ_game_topic_limit');
+    if (error || !Number.isInteger(data) || data < 1) {
+      setQuestionError(true);
+      return;
+    }
+    setQuestion(bonusQuestion(data));
+  }
+
   function shoot() {
     if (phase !== 'playing' || arrows <= 0) return;
     const offset = 50 - current.current;
@@ -111,8 +122,8 @@ export function TargetGamePage() {
     setImpact({ offset, points });
     setNote(points ? '+' + points + ' ball · 1 ta o‘q qaytarildi.' : 'Nishonga tegmadi.');
     if ((shots + 1) % 10 === 0) {
-      setQuestion(bonusQuestion());
       setPhase('question');
+      void loadBonusQuestion();
     } else if (!remaining) setPhase('over');
   }
 
@@ -170,8 +181,13 @@ export function TargetGamePage() {
         description="Har bir talabaning yakunlangan raundlardagi eng yuqori bali." />
     </div>
     <dialog ref={modal} className="target-dialog" aria-labelledby="target-quiz-title" onCancel={event => event.preventDefault()}>
-      {question && <div className="stack">
+      <div className="stack">
         <h2 id="target-quiz-title">Bonus savol</h2>
+        {!question && (questionError ? <>
+          <p role="alert">Savol mavzulari chegarasini yuklab bo‘lmadi.</p>
+          <Button onClick={() => void loadBonusQuestion()}>Qayta urinish</Button>
+        </> : <p role="status">Savol yuklanmoqda…</p>)}
+        {question && <>
         <strong>To‘g‘ri javob uchun {question.reward} ta o‘q</strong>
         <p>{question.prompt}</p>
         {feedback === undefined ? question.options.map((option, index) => (
@@ -182,7 +198,8 @@ export function TargetGamePage() {
           </p>
           <Button onClick={continueRound}>{arrows > 0 ? 'Davom etish' : 'Natijani ko‘rish'}</Button>
         </>}
-      </div>}
+        </>}
+      </div>
     </dialog>
   </div>;
 }

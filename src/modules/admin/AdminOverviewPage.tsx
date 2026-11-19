@@ -35,7 +35,7 @@ export function AdminOverviewPage() {
         actions={<Button to={paths.analytics} iconRight={<ArrowRight size={16} />}>Analitika</Button>}
       />
 
-      <Card title="Marraga yugurish · Savollar" className="mt-5">
+      <Card title="Marraga yugurish va Mergan · Savollar" className="mt-5">
         <div className="stack">
           <label htmlFor="runner-topic-limit">Savol chiqadigan oxirgi mavzu</label>
           <select id="runner-topic-limit" className="search-control" value={limit ?? ''} disabled={limit === undefined || saving}
