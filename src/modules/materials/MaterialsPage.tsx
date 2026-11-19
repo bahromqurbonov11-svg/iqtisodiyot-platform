@@ -48,6 +48,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
   const [countError, setCountError] = useState(false);
   const [presentation, setPresentation] = useState<ListedPresentation | null>(null);
   const [downloadError, setDownloadError] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
   async function download(file: ListedPresentation) {
     setDownloadError('');
     try {
@@ -179,7 +180,11 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
       />
 
       <div className="cat-grid mt-5">
-        {materialCategories.map((c) => {
+        <label className="material-category-search">
+          <span>Material turini topish</span>
+          <input className="search-control" type="search" value={categorySearch} onChange={event => setCategorySearch(event.target.value)} placeholder="Masalan, keys yoki sillabus" />
+        </label>
+        {materialCategories.filter(c => (c.title + ' ' + c.description).toLowerCase().includes(categorySearch.trim().toLowerCase())).map((c) => {
           const Icon = icons[c.icon];
           if (c.id === 'cases' || c.id === 'syllabus' || c.id === 'slides' || c.id === 'glossary') return (
             <Link key={c.id} to={paths.materials + (c.id === 'cases' ? '?tur=keyslar' : c.id === 'syllabus' ? '?tur=sillabus' : c.id === 'slides' ? '?tur=taqdimotlar' : '?tur=glossariy')} className="card card--pad cat-card"

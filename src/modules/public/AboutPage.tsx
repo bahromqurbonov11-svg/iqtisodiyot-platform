@@ -11,6 +11,7 @@ const kindLabel = { knowledge: 'Bilim', skill: 'Ko‘nikma', competence: 'Malaka
 export function AboutPage() {
   const subject = catalogService.getSubject().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
+  const [outcomeFilter, setOutcomeFilter] = useState<keyof typeof kindLabel | 'all'>('all');
   const part = subject.parts.find((p) => p.id === partId)!;
 
   return (
@@ -36,8 +37,11 @@ export function AboutPage() {
             <p>{part.goal}</p>
           </Card>
           <Card title="Ta’lim natijalari" subtitle="Fanni o‘zlashtirgan talaba…">
+            <Tabs ariaLabel="Ta’lim natijasi turi" value={outcomeFilter}
+              onChange={value => setOutcomeFilter(value as typeof outcomeFilter)}
+              items={[{ value: 'all', label: 'Barchasi' }, ...Object.entries(kindLabel).map(([value, label]) => ({ value, label }))]} />
             <ul className="outcomes">
-              {part.outcomes.map((o) => (
+              {part.outcomes.filter(o => outcomeFilter === 'all' || o.kind === outcomeFilter).map((o) => (
                 <li key={o.code}>
                   <span className={`outcomes__code outcomes__code--${o.kind}`}>{o.code}</span>
                   <div>
@@ -51,6 +55,14 @@ export function AboutPage() {
         </div>
         <div className="stack">
           <Card title="O‘quv yuklamasi">
+            <div className="stack stack--sm">
+              {[['Ma’ruza', part.lectureHours], ['Amaliy', part.practiceHours], ['Mustaqil', part.selfStudyHours]].map(([label, hours]) => (
+                <div className="analytics-bar" key={label}>
+                  <strong>{label} · {hours} soat</strong>
+                  <progress aria-label={String(label)} value={Number(hours)} max={part.totalHours} />
+                </div>
+              ))}
+            </div>
             <dl className="kv">
               <div><dt>ECTS kreditlar</dt><dd>{part.credits}</dd></div>
               <div><dt>Jami yuklama</dt><dd>{part.totalHours} soat</dd></div>

@@ -61,6 +61,9 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     percent: Math.round(100 * answers.filter(item => item.correct).length / answers.length),
   })).filter(item => item.percent < 100).sort((a, b) => a.percent - b.percent || b.total - a.total).slice(0, 10);
   const groups = new Map((results ?? []).filter(row => row.group_id != null).map(row => [String(row.group_id), row.group_name]));
+  const trend = (topicFilter ? [] : filtered).slice(0, 12).reverse();
+  const answeredCount = visibleItems.length;
+  const correctCount = visibleItems.filter(item => item.correct).length;
   const students = new Map((results ?? []).filter(row => !group || String(row.group_id) === group).map(row => [row.student_id, row.student]));
 
   function bars(rows: typeof topicStats) {
@@ -95,6 +98,25 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
         </div>
       </Card>
       {results && <>
+        {trend.length > 0 && <Card title="Oxirgi urinishlar dinamikasi" className="mt-5">
+          <ol className="analytics-trend">
+            {trend.map(result => {
+              const percent = Math.round(100 * result.points / result.total);
+              return <li key={result.attempt_id}>
+                <strong>{percent}%</strong>
+                <meter min={0} max={100} value={percent} aria-label={result.points + ' / ' + result.total} />
+                <small>{new Date(result.taken_at).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent' })}</small>
+              </li>;
+            })}
+          </ol>
+        </Card>}
+        {answeredCount > 0 && <Card title="Savollar bo‘yicha natija" className="mt-5">
+          <div className="analytics-bar">
+            <strong>{Math.round(100 * correctCount / answeredCount)}% to‘g‘ri</strong>
+            <progress aria-label="To‘g‘ri javoblar ulushi" value={correctCount} max={answeredCount} />
+            <span>{correctCount} ta to‘g‘ri · {answeredCount - correctCount} ta xato yoki belgilanmagan</span>
+          </div>
+        </Card>}
         <Card title="Mavzular bo‘yicha o‘zlashtirish" className="mt-5">
           {topicStats.length ? bars(topicStats) : <p>Bu tanlov uchun mavzu bo‘yicha ma’lumot yo‘q.</p>}
         </Card>

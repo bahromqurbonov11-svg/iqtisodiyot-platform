@@ -343,3 +343,7 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .dash--admin .dash__nav { gap:1.25rem; }
 .dash--admin .dash__group { padding:.45rem; border:1px solid #ffffff20; border-radius:12px; }
 .dash--admin .dash__link { min-height:42px; }
+.material-category-search { grid-column:1/-1; display:grid; gap:.45rem; font-weight:700; }
+.analytics-trend { display:grid; grid-template-columns:repeat(auto-fit,minmax(5rem,1fr)); gap:.75rem; padding:0; list-style:none; }
+.analytics-trend li { display:grid; justify-items:center; gap:.25rem; padding:.55rem; border-radius:10px; background:#f3f8f5; }
+.analytics-trend meter { width:100%; }

@@ -75,8 +75,11 @@ export function RegisterPage() {
       if (
         !firstName ||
         !lastName ||
-        !username ||
-        password.length < 8 ||
+        !/^[a-z0-9_]{4,30}$/.test(username) ||
+        firstName.length < 2 ||
+        lastName.length < 2 ||
+        password.length < 10 ||
+        password.length > 128 ||
         !groups.some((group) => group.id === groupId)
       ) {
         throw new Error(
@@ -96,8 +99,12 @@ export function RegisterPage() {
         });
 
       if (requestError || !data?.success) {
+        const response = requestError?.context;
+        const payload = response instanceof Response
+          ? await response.json().catch(() => null)
+          : null;
         throw new Error(
-          data?.error ??
+          payload?.error ?? data?.error ??
           'Ro‘yxatdan o‘tishda xatolik yuz berdi.'
         );
       }
@@ -199,6 +206,8 @@ export function RegisterPage() {
             name="username"
             autoComplete="username"
             required
+            pattern="[A-Za-z0-9_]{4,30}"
+            title="4–30 ta lotin harfi, raqam yoki pastki chiziq"
             placeholder="talaba01"
           />
         </label>
@@ -210,10 +219,12 @@ export function RegisterPage() {
             name="password"
             type="password"
             autoComplete="new-password"
-            minLength={8}
+            minLength={10}
+            maxLength={128}
             required
           />
         </label>
+        <p className="small muted">Parol kamida 10 ta belgidan iborat bo‘lsin.</p>
 
         {error && (
           <Notice kind="stage" title="Xatolik">
