@@ -11,7 +11,7 @@ export function GuestTest({ initialTopic }: { initialTopic?: number }) {
   const topics = catalogService.getTopics().data;
   const bank = topicGameBank[topic - 1];
   const question = bank[index];
-  return <Card title="3 savollik sinov">
+  return <Card title="3 savollik qisqa test">
     <div className="stack">
       {index < 0 ? <>
         <label>Mavzu<select className="search-control" value={topic} onChange={event => setTopic(Number(event.target.value))}>
