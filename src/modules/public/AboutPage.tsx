@@ -71,7 +71,6 @@ export function AboutPage() {
               <div><dt>Mustaqil ta’lim</dt><dd>{part.selfStudyHours} soat</dd></div>
               <div><dt>Ta’lim tili</dt><dd>O‘zbek / rus</dd></div>
             </dl>
-            <p className="xs muted mt-3">Manba: {part.source.document}</p>
           </Card>
           <Card title="Diagnostik yondashuv">
             <p className="small muted">Platformada har bir savol quyidagi zanjirga bog‘lanadi:</p>
