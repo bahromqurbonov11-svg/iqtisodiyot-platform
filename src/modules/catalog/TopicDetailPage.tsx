@@ -2,7 +2,7 @@ import { ReadOnlySlides } from '@/modules/materials/ReadOnlySlides';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, Download, ClipboardCheck, Gamepad2, Lightbulb, Clock,
+  ArrowLeft, ArrowRight, Download, ClipboardCheck, Gamepad2, Clock,
 } from 'lucide-react';
 import { PageHeader, Card, Badge, Button, StageBadge } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
@@ -20,6 +20,15 @@ import { useAuth } from '@/services/auth/AuthContext';
  * Mazmun bloklari 2-bosqichda (materiallar, tushunchalar) to‘ldiriladi.
  */
 export function TopicDetailPage() {
+  const progress = useOwnProgress();
+  const [sectionParams] = useSearchParams();
+  const conceptsSection = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (sectionParams.get('tab') === 'tushunchalar') {
+      const frame = requestAnimationFrame(() => conceptsSection.current?.scrollIntoView());
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [sectionParams]);
   const { topicId = '' } = useParams();
   const topic = catalogService.getTopic(topicId);
   if (!topic) return <NotFoundPage />;
@@ -59,7 +68,7 @@ export function TopicDetailPage() {
 
           <UploadedMaterials topicId={topic.id} topicTitle={topic.title} />
 
-          <Card title="Asosiy tushunchalar">
+          <div ref={conceptsSection} className="topic-slide-anchor"><Card title="Asosiy tushunchalar">
             <dl className="stack stack--sm" aria-label="Mavzuning asosiy tushunchalari">
               {topicConcepts[topic.globalOrder - 1].map(([term, definition]) => (
                 <div key={term}>
@@ -68,7 +77,7 @@ export function TopicDetailPage() {
                 </div>
               ))}
             </dl>
-          </Card>
+          </Card></div>
 
           <div className="grid grid--2">
             <Card title="Diagnostik test" actions={<StageBadge stage={4} />}>
@@ -127,9 +136,18 @@ export function TopicDetailPage() {
               ))}
             </ol>
           </Card>
-          <Card className="tip">
-            <Lightbulb size={18} aria-hidden />
-            <p className="small">Kelajakda bu yerda sizning shu mavzu bo‘yicha natijangiz va tavsiyalar ko‘rinadi.</p>
+          <Card title="Mavzu natijasi">
+            {(() => {
+              const result = progress.topics.get(topic.globalOrder);
+              if (!result) return <p>{progress.loading ? 'Natija yuklanmoqda…' : progress.error ? 'Natijani yuklab bo‘lmadi.' : 'Bu mavzu bo‘yicha hali natija yo‘q.'}</p>;
+              const status = mastery(result.correct, result.total);
+              return <div className="stack stack--sm">
+                <Badge tone={status.tone}>{status.label} · {status.percent}%</Badge>
+                <progress value={result.correct} max={result.total} aria-label="Mavzu o‘zlashtirish darajasi" />
+                <small>{result.correct} / {result.total} ta to‘g‘ri</small>
+              </div>;
+            })()}
+            <Button className="mt-3" variant="secondary" to={paths.test('test-' + topic.id)}>Mavzu testini ishlash</Button>
           </Card>
         </aside>
       </div>
@@ -169,12 +187,7 @@ function UploadedMaterials({ topicId, topicTitle }: { topicId: string; topicTitl
 
   return <div className="topic-slide-anchor" ref={section}>{user ? (
     <MaterialFiles key={topicId + ':' + user.id} topicId={topicId} topicTitle={topicTitle} />
-  ) : (
-    <Card title="Taqdimotlar" subtitle="Ma’ruza slaydlari — ko‘rish va yuklab olish">
-      {materialsService.list(topicId).data.length > 0 && <SlidesList topicId={topicId} />}
-      <Button to="/kirish" variant="secondary">Yuklangan materiallarni ko‘rish uchun kiring</Button>
-    </Card>
-  )}</div>;
+  ) : <ReadOnlySlides key={topicId} number={catalogService.getTopic(topicId)?.globalOrder ?? 0} />}</div>;
 }
 
 function MaterialFiles({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {
@@ -448,3 +461,4 @@ async function readSlideLinks(bytes: ArrayBuffer) {
   }));
   return { width, height, slides };
 }
+import { useOwnProgress, mastery } from '@/modules/student/useOwnProgress';

@@ -123,10 +123,11 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
         description={fullCountReady ? slideTotal + ' ta taqdimot · mavzular bo‘yicha' : 'Mavzular bo‘yicha taqdimotlar'}
         actions={<Button to={paths.materials} variant="secondary">Materiallarga qaytish</Button>}
       />
-          {external && <Card title="Taqdimotlarni mavzu bo‘yicha ko‘rish"><div className="stack">
-            {allTopics.map(topic => <Link key={topic.id} to={paths.topic(topic.id)} className="link">{topic.globalOrder}. {topic.title}</Link>)}
+          {!signedIn && <Card title="Taqdimotlarni mavzu bo‘yicha ko‘rish"><div className="stack">
+            {allTopics.filter(topic => Object.hasOwn(slidePreviews, topic.globalOrder)).map(topic =>
+              <Link key={topic.id} to={paths.topic(topic.id) + '?tab=taqdimot'} className="link">{topic.globalOrder}. {topic.title}</Link>)}
           </div></Card>}
-          {!signedIn && !external && <p>Administrator yuklagan fayllarni ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</p>}
+          {!signedIn && !external && <p>Yopiq taqdimotlarning asl shaklini ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</p>}
           {signedIn && !fullCountReady && !countError && <p role="status">Taqdimotlar yuklanmoqda…</p>}
           {countError && <p role="alert">Yuklangan taqdimotlar ro‘yxatini olib bo‘lmadi.</p>}
           {downloadError && <p role="alert">{downloadError}</p>}
@@ -199,7 +200,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
               <span className="cat-card__foot">
-                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? '80 ta keys' : c.id === 'syllabus' ? '2 ta PDF' : c.id === 'lectures' ? '25 ta ma’ruza' : c.id === 'tests' ? 'Test ishlash' : 'Atamalarni ko‘rish'}</Badge>}
+                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? caseEntries.length + ' ta keys' : c.id === 'syllabus' ? '2 ta PDF' : c.id === 'lectures' ? allTopics.length + ' ta ma’ruza' : c.id === 'tests' ? 'Test ishlash' : 'Atamalarni ko‘rish'}</Badge>}
               </span>
             </Link>
           );
@@ -237,7 +238,6 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               <th className="center">Taqdimot</th>
               <th className="center">Glossariy</th>
               <th className="center">Keys</th>
-              <th className="center">RU</th>
             </tr>
           </thead>
           <tbody>
@@ -245,23 +245,23 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               <tr key={t.id}>
                 <td className="muted">{t.globalOrder}</td>
                 <td><Link to={paths.topic(t.id)} className="link">{t.title}</Link></td>
-                <td className="center"><span className="slot-dot" title="Fayl hali ulanmagan">—</span></td>
+                <td className="center"><Link className="link" to={paths.materials + '?tur=maruzalar&mavzu=' + t.globalOrder}>O‘qish</Link></td>
                 <td className="center">
-                  {slideCounts[t.id] ? (
-                    <Link to={paths.topic(t.id)} className="count-pill" title="Taqdimotlarni ko‘rish">{slideCounts[t.id]}</Link>
+                  {(signedIn && slideCounts[t.id]) || Object.hasOwn(slidePreviews, t.globalOrder) ? (
+                    <Link to={paths.topic(t.id) + '?tab=taqdimot'} className="link">Ko‘rish</Link>
                   ) : (
-                    <span className="slot-dot" title={fullCountReady ? 'Taqdimot hali yuklanmagan' : 'Yuklangan taqdimotlar soni hozir ko‘rinmaydi'}>{fullCountReady ? '—' : '…'}</span>
+                    <span className="muted small">{signedIn && !fullCountReady ? 'Yuklanmoqda…' : 'Tez orada'}</span>
                   )}
                 </td>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <td key={i} className="center"><span className="slot-dot" title="Fayl hali ulanmagan">—</span></td>
-                ))}
+                <td className="center"><Link className="link" to={paths.topic(t.id) + '?tab=tushunchalar'}>Atamalar</Link></td>
+                <td className="center">{caseEntries.some(item => item.topic === t.globalOrder)
+                  ? <Link className="link" to={paths.materials + '?tur=keyslar&mavzu=' + t.globalOrder}>{caseEntries.filter(item => item.topic === t.globalOrder).length} ta</Link>
+                  : <span className="muted small">Tez orada</span>}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="xs muted mt-3">Raqamni bossangiz, mavzu sahifasi ochiladi.</p>
     </div>
   );
 }
@@ -396,3 +396,5 @@ function GlossaryPage() {
 }
 import { CasesPage } from './CasesPage';
 import { LecturesPage } from './LecturesPage';
+import caseEntries from '@/data/cases.json';
+import slidePreviews from '@/data/slide-previews.json';

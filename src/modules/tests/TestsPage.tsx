@@ -111,7 +111,7 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
         description="Umumiy testni boshlang yoki bir mavzu bo‘yicha mashq qiling."
       />
       <div className="stack">
-        {!user && <Card><p>Test boshlash uchun kabinetingizga kiring.</p></Card>}
+        {!user && <GuestTest initialTopic={initialTopic} />}
         {user && !attempt && (
           <Card title="Testni boshlash">
             <div className="stack">
@@ -174,3 +174,4 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
     </div>
   );
 }
+import { GuestTest } from './GuestTest';

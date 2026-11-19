@@ -7,7 +7,7 @@
   /* Asosiy ranglar */
   --c-ink: #1f3832;
   --c-ink-soft: #3d5650;
-  --c-muted: #6f817a;
+  --c-muted: #566b62;
   --c-primary: #276e59;
   --c-primary-600: #1f5b49;
   --c-primary-dark: #153a32;
@@ -81,5 +81,5 @@
 
   --container: 1200px;
   --sidebar-w: 248px;
-  --header-h: 68px;
+  --header-h: 64px;
 }

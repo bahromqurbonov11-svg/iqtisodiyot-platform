@@ -5,6 +5,7 @@ import { paths } from '@/navigation/paths';
 
 const key = 'econ-registration-reminder-seen';
 let shown = false;
+const week = 7 * 24 * 60 * 60 * 1000;
 
 export function RegistrationReminder() {
   const { user, ready } = useAuth();
@@ -17,10 +18,14 @@ export function RegistrationReminder() {
       return;
     }
     if (!ready || !element || shown) return;
-    try { if (localStorage.getItem(key)) return; } catch { /* Use the in-memory marker. */ }
-    element.showModal();
-    shown = true;
-    try { localStorage.setItem(key, '1'); } catch { /* The marker lasts for this page load. */ }
+    try { if (Date.now() - Number(localStorage.getItem(key)) < week) return; } catch { /* Use the in-memory marker. */ }
+    const timer = window.setTimeout(() => {
+      if (document.hidden || element.open || !element.isConnected) return;
+      element.showModal();
+      shown = true;
+      try { localStorage.setItem(key, String(Date.now())); } catch { /* Keep the in-memory marker. */ }
+    }, 30_000);
+    return () => clearTimeout(timer);
   }, [ready, user]);
 
   return <dialog ref={dialog} className="target-dialog" aria-labelledby="registration-reminder-title">

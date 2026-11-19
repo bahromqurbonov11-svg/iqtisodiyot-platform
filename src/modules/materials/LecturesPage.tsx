@@ -36,6 +36,7 @@ export function LecturesPage() {
 function LectureReader({ number }: { number: number }) {
   const [blocks, setBlocks] = useState<Block[]>();
   const [failed, setFailed] = useState(false);
+  const [fontSize, setFontSize] = useState(16);
   useEffect(() => {
     const request = new AbortController();
     void fetch(assets + number + '.json', { signal: request.signal }).then(async response => {
@@ -45,9 +46,16 @@ function LectureReader({ number }: { number: number }) {
     return () => request.abort();
   }, [number]);
   return <Card className="lecture-reader">
+    <div className="presentation-actions lecture-reading-tools" role="group" aria-label="Matn kattaligi">
+      <button type="button" className="btn btn--secondary" aria-label="Matnni kichraytirish" disabled={fontSize <= 14}
+        onClick={() => setFontSize(size => size - 2)}>A−</button>
+      <button type="button" className="btn btn--secondary" aria-label="Matnni kattalashtirish" disabled={fontSize >= 24}
+        onClick={() => setFontSize(size => size + 2)}>A+</button>
+      <span aria-live="polite">{fontSize} px</span>
+    </div>
     {failed && <p role="alert">Ma’ruzani yuklab bo‘lmadi. Sahifani yangilang.</p>}
     {!failed && !blocks && <p role="status">Ma’ruza yuklanmoqda…</p>}
-    {blocks?.map((block, i) => {
+    <div style={{ fontSize }}>{blocks?.map((block, i) => {
       if (block.type === 'heading') return <h2 key={i}>{block.text}</h2>;
       if (block.type === 'image') return <img key={i} src={assets + block.src} alt="Ma’ruzadagi chizma" loading="lazy" />;
       if (block.type === 'table') return <div key={i} className="lecture-table-scroll" tabIndex={0} aria-label="Ma’ruza jadvali">
@@ -56,6 +64,6 @@ function LectureReader({ number }: { number: number }) {
         ))}</tr>)}</tbody></table>
       </div>;
       return <p key={i}>{block.text}</p>;
-    })}
+    })}</div>
   </Card>;
 }

@@ -449,3 +449,17 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .lecture-table-scroll table { width:100%; min-width:26rem; border-collapse:collapse; }
 .lecture-table-scroll td { padding:.6rem .75rem; border:1px solid #dcebe3; white-space:pre-line; vertical-align:top; }
 .lecture-table-scroll tr:nth-child(odd) { background:#f2f8f4; }
+.mastery-map { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr)); gap:.65rem; }
+.mastery-cell { display:grid; gap:.3rem; padding:.7rem; border-radius:8px; background:#f1f4f0; overflow-wrap:anywhere; }
+.mastery-cell.success { background:#d9eee3; color:#144f3a; }
+.mastery-cell.warning { background:#f8edc9; color:#674704; }
+.mastery-cell.danger { background:#f7e6e1; color:#7a3128; }
+.lecture-reader p { max-width:70ch; margin-inline:auto; }
+.lecture-table-scroll td { font-size:max(14px, .9em); }
+.lecture-reading-tools .btn { min-height:44px; min-width:44px; }
+.site-header__inner > .site-language-select { min-width:0; max-width:7rem; }
+.table-wrap { overflow-x:auto; }
+:where(a,button,input,select,summary,[tabindex]):focus-visible { outline:3px solid #a86b16; outline-offset:2px; }
+@media (pointer:coarse) {
+  :where(.hero__actions,.site-header__inner,.site-nav,.dash__nav,.presentation-actions,.toolbar) :is(button,a,select) { min-height:44px; }
+}

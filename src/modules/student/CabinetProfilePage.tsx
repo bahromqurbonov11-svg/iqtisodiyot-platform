@@ -1,4 +1,5 @@
-import { PageHeader, Card, StatusBadge, StageNotice, Button } from '@/components/ui';
+import { PageHeader, Card, StatusBadge } from '@/components/ui';
+import { LanguageSelect } from '@/components/LanguageSelect';
 import { useAuth } from '@/services/auth/AuthContext';
 
 export function CabinetProfilePage() {
@@ -14,12 +15,8 @@ export function CabinetProfilePage() {
             <div><dt>Guruh</dt><dd>{user.group}</dd></div>
             <div><dt>Rol</dt><dd>Talaba</dd></div>
             <div><dt>Akkaunt holati</dt><dd><StatusBadge status={user.status} /></dd></div>
-            <div><dt>Interfeys tili</dt><dd>O‘zbekcha (rus tili keyinroq)</dd></div>
+            <div><dt>Interfeys menyulari tili</dt><dd><LanguageSelect /></dd></div>
           </dl>
-        </Card>
-        <Card title="Xavfsizlik">
-          <StageNotice stage={3}>Parolni o‘zgartirish va sessiyalarni boshqarish haqiqiy kirish tizimi bilan birga qo‘shiladi.</StageNotice>
-          <Button disabled className="mt-4">Parolni o‘zgartirish</Button>
         </Card>
       </div>
     </>

@@ -1,4 +1,3 @@
-import { SimulatorPage } from '@/modules/public/SimulatorPage';
 
 import { createHashRouter } from 'react-router-dom';
 
@@ -9,18 +8,9 @@ import { HomePage } from '@/modules/public/HomePage';
 import { AboutPage } from '@/modules/public/AboutPage';
 import { NotFoundPage } from '@/modules/public/NotFoundPage';
 
-import { TopicsPage } from '@/modules/catalog/TopicsPage';
-import { TopicDetailPage } from '@/modules/catalog/TopicDetailPage';
 
-import { MaterialsPage } from '@/modules/materials/MaterialsPage';
 
-import { TestsPage } from '@/modules/tests/TestsPage';
-import { TestDetailPage } from '@/modules/tests/TestDetailPage';
 
-import { GamesPage } from '@/modules/games/GamesPage';
-import { RunnerPage } from '@/modules/games/RunnerPage';
-import { GraphGamePage, TargetGamePage } from '@/modules/games/InteractiveGames';
-import { GameDetailPage } from '@/modules/games/GameDetailPage';
 
 import { LoginPage } from '@/modules/auth/LoginPage';
 import { RegisterPage } from '@/modules/auth/RegisterPage';
@@ -61,35 +51,35 @@ export const router = createHashRouter([
       },
       {
         path: '/mavzular',
-        element: <TopicsPage />,
+        lazy: async () => ({ Component: (await import('@/modules/catalog/TopicsPage')).TopicsPage }),
       },
       {
         path: '/mavzular/:topicId',
-        element: <TopicDetailPage />,
+        lazy: async () => ({ Component: (await import('@/modules/catalog/TopicDetailPage')).TopicDetailPage }),
       },
       {
         path: '/materiallar',
-        element: <MaterialsPage />,
+        lazy: async () => ({ Component: (await import('@/modules/materials/MaterialsPage')).MaterialsPage }),
       },
       {
         path: '/testlar',
-        element: <TestsPage />,
+        lazy: async () => ({ Component: (await import('@/modules/tests/TestsPage')).TestsPage }),
       },
       {
         path: '/testlar/:testId',
-        element: <TestDetailPage />,
+        lazy: async () => ({ Component: (await import('@/modules/tests/TestDetailPage')).TestDetailPage }),
       },
       {
         path: '/oyinlar',
-        element: <GamesPage />,
+        lazy: async () => ({ Component: (await import('@/modules/games/GamesPage')).GamesPage }),
       },
-      { path: '/simulyator', element: <SimulatorPage /> },
-      { path: '/oyinlar/marraga-yugurish', element: <RunnerPage /> },
-      { path: '/oyinlar/mergan', element: <TargetGamePage /> },
-      { path: '/oyinlar/grafikni-boshqar', element: <GraphGamePage /> },
+      { path: '/simulyator', lazy: async () => ({ Component: (await import('@/modules/public/SimulatorPage')).SimulatorPage }) },
+      { path: '/oyinlar/marraga-yugurish', lazy: async () => ({ Component: (await import('@/modules/games/RunnerPage')).RunnerPage }) },
+      { path: '/oyinlar/mergan', lazy: async () => ({ Component: (await import('@/modules/games/InteractiveGames')).TargetGamePage }) },
+      { path: '/oyinlar/grafikni-boshqar', lazy: async () => ({ Component: (await import('@/modules/games/InteractiveGames')).GraphGamePage }) },
       {
         path: '/oyinlar/:slug',
-        element: <GameDetailPage />,
+        lazy: async () => ({ Component: (await import('@/modules/games/GameDetailPage')).GameDetailPage }),
       },
       {
         path: '*',

@@ -17,14 +17,17 @@ export function GamesPage() {
       <div className="stack">
         <Card title="Mergan">
           <p>Harakatlanuvchi nishonni markazda tuting va bonus savollarga javob berib qo‘shimcha o‘q oling.</p>
+          <p className="small muted">Vaqt o‘qlar soniga bog‘liq · iqtisodiy atamalar</p>
           <Button to={paths.game('mergan')}>O‘ynash</Button>
         </Card>
         <Card title="Grafikni boshqar">
           <p>Talab, taklif va narxni o‘zgartirib, bozor muvozanatini toping.</p>
+          <p className="small muted">8 topshiriq · taxminan 5–8 daqiqa</p>
           <Button to={paths.game('grafikni-boshqar')}>O‘ynash</Button>
         </Card>
         <Card title="Marraga yugurish">
           <p>To‘siqlardan sakrab ball yig‘ing. Har 5 ballik marrada savolga javob bering va talabalar reytingiga kiring.</p>
+          <p className="small muted">Raund davomiyligi o‘yin natijasiga bog‘liq · iqtisodiy test savollari</p>
           <Button to={paths.game('marraga-yugurish')}>O‘yin va reyting</Button>
         </Card>
         <label className="stack stack--sm">

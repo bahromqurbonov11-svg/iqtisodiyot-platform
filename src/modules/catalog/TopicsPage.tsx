@@ -11,13 +11,16 @@ import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
 
 export function TopicsPage() {
+  const { user } = useAuth();
+  const progress = useOwnProgress();
+  const [statusFilter, setStatusFilter] = useState('all');
   const subject = catalogService.getSubject().data;
   const all = catalogService.getTopics().data;
   const [params, setParams] = useSearchParams();
   const part = params.get('qism') ?? 'all';
   const [q, setQ] = useState('');
 
-  const filtered = useMemo(() => {
+  const matchingTopics = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return all.filter(
       (t) =>
@@ -25,6 +28,10 @@ export function TopicsPage() {
         (!needle || t.title.toLowerCase().includes(needle) || t.subtopics.some((s) => s.toLowerCase().includes(needle))),
     );
   }, [all, part, q]);
+  const filtered = matchingTopics.filter(topic => {
+    const result = progress.topics.get(topic.globalOrder);
+    return statusFilter === 'all' || (statusFilter === 'untested' ? !result : result && mastery(result.correct, result.total).tone === 'danger');
+  });
 
   const setPart = (v: string) => {
     const next = new URLSearchParams(params);
@@ -59,6 +66,10 @@ export function TopicsPage() {
           <input type="search" placeholder="Mavzu yoki tushuncha…" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
       </div>
+      {user?.role === 'student' && !user.external && progress.attempts && <div className="mt-3">
+        <Tabs ariaLabel="O‘zlashtirish holati" value={statusFilter} onChange={setStatusFilter}
+          items={[{ value: 'all', label: 'Barcha holatlar' }, { value: 'gap', label: 'Bo‘shliq bor' }, { value: 'untested', label: 'Test ishlanmagan' }]} />
+      </div>}
 
       {subject.parts
         .filter((p) => part === 'all' || p.id === part)
@@ -72,7 +83,10 @@ export function TopicsPage() {
                 <span className="muted small">{list.length} mavzu · {p.credits} kredit · {p.totalHours} soat</span>
               </div>
               <div className="topic-grid">
-                {list.map((t) => (
+                {list.map((t) => {
+                  const outcome = progress.topics.get(t.globalOrder);
+                  const status = outcome && mastery(outcome.correct, outcome.total);
+                  return (
                   <Link key={t.id} to={paths.topic(t.id)} aria-label={t.title} className="topic-card">
                     <div className="topic-card__top">
                       <span className="topic-card__num">{String(t.globalOrder).padStart(2, '0')}</span>
@@ -80,6 +94,10 @@ export function TopicsPage() {
                       <ArrowUpRight size={18} className="topic-card__arrow" aria-hidden />
                     </div>
                     <h3 className="topic-card__title">{t.title}</h3>
+                    {status && <div className="stack stack--sm">
+                      <Badge tone={status.tone}>{status.label} · {status.percent}%</Badge>
+                      <progress aria-label="O‘zlashtirish" value={status.percent} max={100} />
+                    </div>}
                     <ul className="topic-card__subs">
                       {t.subtopics.slice(0, 3).map((s) => (
                         <li key={s}>{s}</li>
@@ -90,13 +108,14 @@ export function TopicsPage() {
                       <span><Clock size={13} /> Ma’ruza {t.lectureHours} s · Amaliy {t.practiceHours} s</span>
                     </div>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             </section>
           );
         })}
 
-      {!filtered.length && <p className="muted center mt-6">“{q}” bo‘yicha mavzu topilmadi.</p>}
+      {!filtered.length && <p className="muted center mt-6">Bu tanlov bo‘yicha mavzu topilmadi.</p>}
     </div>
   );
 }
@@ -205,3 +224,5 @@ const topicVisuals: TopicVisual[] = [
   {"kind":"bars","title":"Eksport, import va savdo balansi","values":[80,65,15],"steps":[["Eksport","Xorijga 80 birlik qiymatida tovar sotildi."],["Import","Chet eldan 65 birlik qiymatida tovar olindi."],["Balans","Eksportdan import ayirilganda 15 birlik ijobiy saldo qoldi."]]},
   {"kind":"line","title":"Valyuta kursi va import qiymati","values":[12,12.5,13],"steps":[["12 ming","Bir dollar 12 ming so‘m bo‘lsa, 100 dollarlik buyum 1,2 mln so‘m turadi."],["12,5 ming","Bir dollar 12,5 ming so‘m bo‘lsa, xarajat 1,25 mln so‘m."],["13 ming","Bir dollar 13 ming so‘m bo‘lsa, xarajat 1,3 mln so‘mga chiqadi."]]},
 ];
+import { useOwnProgress, mastery } from '@/modules/student/useOwnProgress';
+import { useAuth } from '@/services/auth/AuthContext';

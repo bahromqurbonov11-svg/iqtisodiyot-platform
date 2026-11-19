@@ -61,17 +61,17 @@ export function PublicLayout() {
               </>
             )}
           </div>
+          <LanguageSelect />
           <button className="icon-btn site-header__burger" aria-expanded={open} aria-label={t.nav.menu} onClick={() => setOpen((o) => !o)}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
-        <div className="container site-language"><LanguageSelect /></div>
-        <VisitReport />
       </header>
       <main id="main" className="site-main">
         <Outlet />
       </main>
       <Footer />
+      <VisitReport />
     </div>
   );
 }

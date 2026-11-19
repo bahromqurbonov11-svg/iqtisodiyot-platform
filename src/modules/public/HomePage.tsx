@@ -9,6 +9,7 @@ import { GameIcon } from '@/modules/games/GameIcon';
 
 export function HomePage() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const subject = catalogService.getSubject().data;
   const topics = catalogService.getTopics().data;
   const totalHours = subject.parts.reduce((s, p) => s + p.totalHours, 0);
@@ -31,10 +32,7 @@ export function HomePage() {
             </p>
             <div className="hero__actions">
               <Button to={paths.topics} size="lg" iconRight={<ArrowRight size={18} />}>Mavzularni ko‘rish</Button>
-              <Button to={paths.about} size="lg" variant="secondary">Fan haqida</Button>
-              <Button to={paths.materials} size="lg" variant="secondary">{t.nav.materials}</Button>
-              <Button to={paths.tests} size="lg" variant="secondary">{t.nav.tests}</Button>
-              <Button to={paths.games} size="lg" variant="secondary">{t.nav.games}</Button>
+              <Button to={paths.tests} size="lg" variant="secondary">{user ? t.nav.tests : 'Testni sinab ko‘rish'}</Button>
             </div>
             <dl className="hero__facts">
               <div><dt>25</dt><dd>mavzu</dd></div>
@@ -158,7 +156,7 @@ export function HomePage() {
               <li><Target size={16} /> Topshirilmagan ish “0 bilim” deb hisoblanmaydi</li>
               <li><Target size={16} /> Guruh va individual hisobotlar</li>
             </ul>
-            <Button to={paths.analytics} variant="light" iconRight={<ArrowRight size={16} />}>Analitika panelini ko‘rish</Button>
+            {user && <Button to={user.role === 'admin' ? paths.analytics : paths.cabinetResults} variant="light" iconRight={<ArrowRight size={16} />}>Natijalarni ko‘rish</Button>}
           </div>
         </div>
       </section>
@@ -224,3 +222,4 @@ function HeroVisual() {
 }
 import { RegistrationReminder } from './RegistrationReminder';
 import { useI18n } from '@/i18n';
+import { useAuth } from '@/services/auth/AuthContext';
