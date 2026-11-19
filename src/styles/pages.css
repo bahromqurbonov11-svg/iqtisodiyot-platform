@@ -441,3 +441,11 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 @media(max-width:520px) { .admin-roster li { grid-template-columns:minmax(0,1fr); } }
 .admin-report-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr)); gap:.85rem; }
 .admin-report-filters label { display:grid; gap:.35rem; min-width:0; font-weight:650; }
+.lecture-reader { max-width:62rem; margin-inline:auto; min-width:0; line-height:1.72; overflow-wrap:anywhere; }
+.lecture-reader h2 { margin-block:1.65rem .75rem; font-size:clamp(1.2rem,3vw,1.65rem); color:#245e4b; }
+.lecture-reader p { white-space:pre-line; margin-block:.8rem; }
+.lecture-reader img { display:block; max-width:100%; height:auto; margin:1rem auto; }
+.lecture-table-scroll { overflow:auto; border:1px solid #b7d1c2; border-radius:10px; margin-block:1rem; }
+.lecture-table-scroll table { width:100%; min-width:26rem; border-collapse:collapse; }
+.lecture-table-scroll td { padding:.6rem .75rem; border:1px solid #dcebe3; white-space:pre-line; vertical-align:top; }
+.lecture-table-scroll tr:nth-child(odd) { background:#f2f8f4; }

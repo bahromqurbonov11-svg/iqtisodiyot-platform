@@ -8,12 +8,14 @@ import { appConfig } from '@/config/app.config';
 import { GameIcon } from '@/modules/games/GameIcon';
 
 export function HomePage() {
+  const { t } = useI18n();
   const subject = catalogService.getSubject().data;
   const topics = catalogService.getTopics().data;
   const totalHours = subject.parts.reduce((s, p) => s + p.totalHours, 0);
 
   return (
     <>
+      <RegistrationReminder />
       {/* HERO */}
       <section className="hero">
         <div className="container hero__grid">
@@ -30,6 +32,9 @@ export function HomePage() {
             <div className="hero__actions">
               <Button to={paths.topics} size="lg" iconRight={<ArrowRight size={18} />}>Mavzularni ko‘rish</Button>
               <Button to={paths.about} size="lg" variant="secondary">Fan haqida</Button>
+              <Button to={paths.materials} size="lg" variant="secondary">{t.nav.materials}</Button>
+              <Button to={paths.tests} size="lg" variant="secondary">{t.nav.tests}</Button>
+              <Button to={paths.games} size="lg" variant="secondary">{t.nav.games}</Button>
             </div>
             <dl className="hero__facts">
               <div><dt>25</dt><dd>mavzu</dd></div>
@@ -217,3 +222,5 @@ function HeroVisual() {
     </div>
   );
 }
+import { RegistrationReminder } from './RegistrationReminder';
+import { useI18n } from '@/i18n';

@@ -20,6 +20,7 @@ export function MaterialsPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const category = params.get('tur');
+  if (category === 'maruzalar') return <LecturesPage />;
   if (category === 'keyslar') return <CasesPage />;
   if (category === 'sillabus' && user?.external) return <div className="container page"><PageHeader title="Sillabuslar" /><p>PDF havolalari ushbu hisobda ko‘rsatilmaydi.</p></div>;
   if (category === 'sillabus') return (
@@ -190,14 +191,15 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
         </label>
         {materialCategories.filter(c => (c.title + ' ' + c.description).toLowerCase().includes(categorySearch.trim().toLowerCase())).map((c) => {
           const Icon = icons[c.icon];
-          if (c.id === 'cases' || c.id === 'syllabus' || c.id === 'slides' || c.id === 'glossary') return (
-            <Link key={c.id} to={paths.materials + (c.id === 'cases' ? '?tur=keyslar' : c.id === 'syllabus' ? '?tur=sillabus' : c.id === 'slides' ? '?tur=taqdimotlar' : '?tur=glossariy')} className="card card--pad cat-card"
+          const categories: Record<string, string> = { cases: 'keyslar', syllabus: 'sillabus', slides: 'taqdimotlar', glossary: 'glossariy', lectures: 'maruzalar' };
+          if (c.id === 'tests' || categories[c.id]) return (
+            <Link key={c.id} to={c.id === 'tests' ? paths.tests : paths.materials + '?tur=' + categories[c.id]} className="card card--pad cat-card"
               style={{ color: 'inherit' }}>
               <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
               <span className="cat-card__foot">
-                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? '80 ta keys' : c.id === 'syllabus' ? '2 ta PDF' : 'Atamalarni ko‘rish'}</Badge>}
+                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? '80 ta keys' : c.id === 'syllabus' ? '2 ta PDF' : c.id === 'lectures' ? '25 ta ma’ruza' : c.id === 'tests' ? 'Test ishlash' : 'Atamalarni ko‘rish'}</Badge>}
               </span>
             </Link>
           );
@@ -393,3 +395,4 @@ function GlossaryPage() {
   );
 }
 import { CasesPage } from './CasesPage';
+import { LecturesPage } from './LecturesPage';

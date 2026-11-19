@@ -19,5 +19,4 @@ export const materialCategories: MaterialCategory[] = [
   { id: 'cases', title: 'Keyslar', description: 'Amaliy vaziyatlar va infografikalar.', icon: 'Briefcase', knownInProject: '1-keys (matn + infografika)' },
   { id: 'tests', title: 'Test to‘plamlari', description: 'Diagnostik testlar uchun asos bo‘ladigan savollar banki.', icon: 'FileQuestion', knownInProject: '4 ta to‘plam + kalitlar' },
   { id: 'glossary', title: 'Glossariy', description: 'Asosiy iqtisodiy tushunchalar lug‘ati.', icon: 'BookA' },
-  { id: 'russian', title: 'Ruscha materiallar', description: 'Rus guruhlari uchun materiallar (rus tili interfeysi bilan birga).', icon: 'Languages', knownInProject: 'Ma’ruzalar va slaydlar' },
 ];

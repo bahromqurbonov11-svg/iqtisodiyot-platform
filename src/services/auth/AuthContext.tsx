@@ -18,6 +18,7 @@ import { supabase } from '../supabase';
 interface AuthValue {
   provider: AuthProvider;
   user: SessionUser | null;
+  ready: boolean;
   exitPreview: () => void;
 }
 
@@ -33,6 +34,7 @@ export function AuthProviderRoot({
   const [user, setUser] = useState<SessionUser | null>(
     provider.getSession()
   );
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -42,6 +44,7 @@ export function AuthProviderRoot({
 
       if (active) {
         setUser(sessionUser);
+        setReady(true);
       }
     }
 
@@ -73,13 +76,14 @@ export function AuthProviderRoot({
     () => ({
       provider,
       user,
+      ready,
 
       exitPreview: () => {
         setUser(null);
         void provider.signOut();
       },
     }),
-    [provider, user]
+    [provider, user, ready]
   );
 
   return (
