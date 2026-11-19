@@ -2,7 +2,6 @@ import { ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PageHeader, Card, Button } from '@/components/ui';
 import { paths } from '@/navigation/paths';
-import { roadmap } from '@/data/roadmap';
 import { appConfig } from '@/config/app.config';
 import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
@@ -49,15 +48,12 @@ export function AdminOverviewPage() {
           {message && <p role="status">{message}</p>}
         </div>
       </Card>
-      <Card title="Platforma holati" className="mt-5">
-        <ol className="roadmap roadmap--compact">
-          {roadmap.map((r) => (
-            <li key={r.stage} className={`roadmap__item${r.stage === appConfig.stage ? ' is-current' : ''}`}>
-              <span className="roadmap__num">{r.stage}</span>
-              <div><strong>{r.title}</strong></div>
-            </li>
-          ))}
-        </ol>
+      <Card title="Tezkor o‘tish" className="mt-5">
+        <div className="presentation-actions">
+          <Button to={paths.analytics} variant="secondary">Natijalar va analitika</Button>
+          <Button to={paths.topics} variant="secondary">Mavzular</Button>
+          <Button to={paths.games} variant="secondary">O‘yinlar</Button>
+        </div>
       </Card>
     </>
   );
