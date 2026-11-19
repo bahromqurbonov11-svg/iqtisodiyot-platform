@@ -6,6 +6,8 @@ import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
 import { useAdminActivity } from '@/modules/admin/adminActivity';
 import { AdminGameCharts } from '@/modules/admin/AdminGameCharts';
+import { Activity, Gauge, ListChecks, ShieldAlert } from 'lucide-react';
+import { HardList, KpiTiles, TopicMap, TopicPanel, TopicRanking, TrendChart, type Stat } from '@/modules/analytics/AnalyticsViews';
 
 interface Result {
   attempt_id: string;
@@ -62,14 +64,6 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const filtered = matching.filter(result => !topicFilter || result.test_scope === Number(topicFilter) ||
     result.items?.some(item => item.topic === Number(topicFilter)));
   const visibleItems = items.filter(item => !topicFilter || item.topic === Number(topicFilter));
-  const topicStats = topics.flatMap(topic => {
-    const answers = visibleItems.filter(item => item.topic === topic.globalOrder);
-    const legacy = matching.filter(row => !row.items && row.test_scope === topic.globalOrder &&
-      (!topicFilter || topic.globalOrder === Number(topicFilter)));
-    const total = answers.length + legacy.reduce((sum, row) => sum + row.total, 0);
-    const points = answers.filter(item => item.correct).length + legacy.reduce((sum, row) => sum + row.points, 0);
-    return total ? [{ label: topic.title, total, wrong: total - points, percent: Math.round(100 * points / total), topicId: topic.id, topicNumber: topic.globalOrder }] : [];
-  }).sort((a, b) => a.percent - b.percent);
   const questionGroups = new Map<string, typeof visibleItems>();
   visibleItems.forEach(item => {
     const key = item.bank + ':' + item.number + ':' + item.question;
@@ -81,6 +75,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     label: answers[0].question, total: answers.length,
     wrong: answers.filter(item => !item.correct).length,
     percent: Math.round(100 * answers.filter(item => item.correct).length / answers.length),
+    topic: answers[0].topic,
   })).filter(item => item.wrong > 0).sort((a, b) => b.wrong - a.wrong || a.percent - b.percent).slice(0, 10);
   const groups = new Map((results ?? []).filter(row => row.group_id != null).map(row => [String(row.group_id), row.group_name]));
   activity.data?.groups.forEach(entry => groups.set(String(entry.id), entry.name));
@@ -100,6 +95,28 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     category.points += answers ? answers.filter(item => item.correct).length : attempt.points;
     testGroups.set(key, category);
   }
+
+  const mapStats = new Map<number, Stat>();
+  const addStat = (topic: number, total: number, correct: number) => {
+    const old = mapStats.get(topic) ?? { total: 0, correct: 0 };
+    mapStats.set(topic, { total: old.total + total, correct: old.correct + correct });
+  };
+  for (const item of items) if (item.topic) addStat(item.topic, 1, Number(item.correct));
+  for (const row of matching) if (!row.items && row.test_scope && row.test_scope > 0) addStat(row.test_scope, row.total, row.points);
+  const selectedTopic = topicFilter ? topics.find(topic => topic.globalOrder === Number(topicFilter)) : undefined;
+  const toggleTopic = (n: number) => { setTopicFilter(current => current === String(n) ? '' : String(n)); setLimit(12); };
+  const mapParts = catalogService.getSubject().data.parts.map(part => ({
+    id: part.id, title: part.title, topics: topics.filter(topic => topic.partId === part.id),
+  }));
+  const gapCount = [...mapStats.values()].filter(stat => stat.total > 0 && 100 * stat.correct / stat.total < 60).length;
+  const sumTotal = filtered.reduce((sum, row) => sum + row.total, 0);
+  const sumPoints = filtered.reduce((sum, row) => sum + row.points, 0);
+  const overall = answeredCount > 0 ? Math.round(100 * correctCount / answeredCount) : sumTotal > 0 ? Math.round(100 * sumPoints / sumTotal) : 0;
+  const trendPoints = trend.map(result => ({
+    label: new Date(result.taken_at).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent' }),
+    percent: Math.round(100 * result.points / result.total),
+    detail: result.points + ' / ' + result.total,
+  }));
 
   function bars(rows: { label: string; total: number; percent: number; wrong?: number; topicId?: string; topicNumber?: number }[]) {
     return <div className="stack">{rows.map(row => (
@@ -121,7 +138,8 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
 
   return (
     <>
-      <PageHeader title={admin ? 'Talabalar natijalari' : 'Mening natijalarim'} />
+      <PageHeader eyebrow={admin ? 'Analitika' : 'Shaxsiy natijalar'} title={admin ? 'Talabalar natijalari' : 'Mening natijalarim'}
+        description="Mavzuni xaritadan tanlang: shu mavzu bo‘yicha natija, xatolar va tavsiyalar ochiladi." />
       {admin && <Tabs ariaLabel="Hisobot turi" value={report} onChange={setReport}
         items={[{ value: 'tests', label: 'Test natijalari' }, { value: 'games', label: 'O‘yinlar statistikasi' }]} />}
       <Card title="Natijalarni filtrlash" className="mt-5">
@@ -138,19 +156,42 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
           </>}
           <label>Mavzu<select className="search-control" value={topicFilter} onChange={event => { setTopicFilter(event.target.value); setLimit(12); }}>
             <option value="">Barcha mavzular</option>
-            {topics.map(topic => <option key={topic.id} value={topic.globalOrder}>{topic.title}</option>)}
+            {topics.map(topic => <option key={topic.id} value={topic.globalOrder}>{topic.globalOrder}-mavzu · {topic.title}</option>)}
           </select></label>
         </div>
-        {admin && (group || student || topicFilter) && <Button className="mt-3" variant="secondary" onClick={() => {
+        {(group || student || topicFilter) && <Button className="mt-3" variant="secondary" onClick={() => {
           setGroup(''); setStudent(''); setTopicFilter(''); setLimit(12);
         }}>Filtrlarni tozalash</Button>}
       </Card>
       {showTests && results && <>
-        {admin && <Card title="Testlar · guruhlar bo‘yicha" className="mt-5">
+        <div className="mt-5"><KpiTiles tiles={[
+          { label: 'Test urinishlari', value: filtered.length, hint: admin ? new Set(filtered.map(row => row.student_id)).size + ' ta talaba qatnashgan' : 'topshirilgan testlar', tone: 'primary', icon: <ListChecks size={20} /> },
+          { label: 'O‘rtacha natija', value: overall, suffix: '%', hint: answeredCount + ' ta javob asosida', tone: overall >= 80 ? 'success' : overall >= 60 ? 'warning' : 'danger', icon: <Gauge size={20} /> },
+          { label: 'Natijasi bor mavzular', value: mapStats.size, suffix: ' / ' + topics.length, hint: 'qolganlarida ma’lumot hali yo‘q', tone: 'info', icon: <Activity size={20} /> },
+          { label: 'Bo‘shliq kuzatilgan mavzu', value: gapCount, hint: '60% dan past natija', tone: gapCount ? 'danger' : 'success', icon: <ShieldAlert size={20} /> },
+        ]} /></div>
+        <Card title={topics.length + ' mavzu xaritasi'} subtitle="Rang o‘zlashtirish darajasini bildiradi. Mavzuni bossangiz, tahlil pastda ochiladi." className="mt-5">
+          <TopicMap parts={mapParts} stats={mapStats} selected={selectedTopic?.globalOrder} onSelect={toggleTopic} />
+        </Card>
+        {selectedTopic && <div className="mt-5"><TopicPanel topic={selectedTopic} stat={mapStats.get(selectedTopic.globalOrder)} hard={difficult}
+          student={!admin} onClose={() => setTopicFilter('')} /></div>}
+        <div className="grid grid--2 mt-5">
+          <Card title="Mavzular reytingi" subtitle="Mavzu raqami, natija va xatolar soni">
+            <TopicRanking topics={topics} stats={mapStats} selected={selectedTopic?.globalOrder} onSelect={toggleTopic} />
+          </Card>
+          <Card title="Natijalar dinamikasi" subtitle="So‘nggi urinishlar, foizda">
+            <TrendChart points={trendPoints} />
+          </Card>
+        </div>
+                {admin && <Card title="Testlar · guruhlar bo‘yicha" className="mt-5">
           <div className="admin-summary"><strong>{filtered.length} ta test urinish</strong><strong>{new Set(filtered.map(row => row.student_id)).size} ta qatnashgan talaba</strong></div>
           {testGroups.size ? bars([...testGroups.values()].filter(row => row.total > 0)
             .map(row => ({ ...row, percent: Math.round(100 * row.points / row.total), wrong: row.total - row.points }))) : <p>Bu tanlov uchun test natijasi yo‘q.</p>}
         </Card>}
+        <Card title="Ko‘proq xato qilingan savollar" subtitle={selectedTopic ? selectedTopic.globalOrder + '-mavzu bo‘yicha' : 'Barcha mavzular bo‘yicha'} className="mt-5">
+          <HardList rows={difficult} />
+        </Card>
+      </>}
         {trend.length > 0 && <Card title="Oxirgi urinishlar dinamikasi" className="mt-5">
           <ol className="analytics-trend">
             {trend.map(result => {
