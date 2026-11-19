@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, ClipboardCheck, Gamepad2, LineChart as LineIcon, Target, Layers, GraduationCap, Clock } from 'lucide-react';
+import { ArrowRight, BookOpen, ClipboardCheck, Gamepad2, LineChart as LineIcon, Target, Layers, GraduationCap, Clock, Library, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
@@ -9,6 +9,7 @@ import { GameIcon } from '@/modules/games/GameIcon';
 import { CountUp, Reveal, Tilt } from '@/components/motion/Motion';
 import { MarketPlayground } from './MarketPlayground';
 import { HeroChart } from './HeroChart';
+import { SiteStatTiles } from '@/layouts/VisitReport';
 
 export function HomePage() {
   const { t } = useI18n();
@@ -45,6 +46,31 @@ export function HomePage() {
             </dl>
           </div>
           <HeroVisual />
+        </div>
+      </section>
+
+      {/* BO‘LIMLAR: tezkor kirish */}
+      <section className="section section--quick">
+        <div className="container">
+          <div className="quick-tiles">
+            {[
+              { to: paths.topics, title: 'Mavzular', text: '25 mavzu, tushunchalar va jonli grafiklar', icon: BookOpen, color: 'var(--g-teal)' },
+              { to: paths.materials, title: 'Materiallar', text: 'Ma’ruza, taqdimot, keys va glossariy', icon: Library, color: 'var(--g-blue)' },
+              { to: paths.tests, title: 'Testlar', text: 'Bilimingizni tushuncha darajasida tekshiring', icon: ClipboardCheck, color: 'var(--g-violet)' },
+              { to: paths.games, title: 'O‘yinlar', text: 'Marraga yugurish, Mergan va boshqalar', icon: Gamepad2, color: 'var(--g-coral)' },
+              { to: paths.simulator, title: 'Simulyator', text: 'Talab va taklifni o‘zingiz siljiting', icon: SlidersHorizontal, color: 'var(--g-amber)' },
+            ].map((q, i) => (
+              <Reveal key={q.title} delay={i * 70}>
+                <Link to={q.to} className="quick-tile" style={{ ['--gc' as string]: q.color }}>
+                  <span className="quick-tile__glow" aria-hidden />
+                  <span className="quick-tile__icon"><q.icon size={28} aria-hidden /></span>
+                  <strong>{q.title}</strong>
+                  <small>{q.text}</small>
+                  <ArrowRight className="quick-tile__arrow" size={18} aria-hidden />
+                </Link>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -160,6 +186,19 @@ export function HomePage() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* SAYT STATISTIKASI */}
+      <section className="section section--stats">
+        <div className="container">
+          <div className="section__head">
+            <div>
+              <div className="eyebrow">Sayt faolligi</div>
+              <h2>Platformadan foydalanish</h2>
+            </div>
+          </div>
+          <SiteStatTiles />
         </div>
       </section>
 
