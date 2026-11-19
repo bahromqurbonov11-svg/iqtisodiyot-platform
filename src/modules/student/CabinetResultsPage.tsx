@@ -192,32 +192,6 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
           <HardList rows={difficult} />
         </Card>
       </>}
-        {trend.length > 0 && <Card title="Oxirgi urinishlar dinamikasi" className="mt-5">
-          <ol className="analytics-trend">
-            {trend.map(result => {
-              const percent = Math.round(100 * result.points / result.total);
-              return <li key={result.attempt_id}>
-                <strong>{percent}%</strong>
-                <meter min={0} max={100} value={percent} aria-label={result.points + ' / ' + result.total} />
-                <small>{new Date(result.taken_at).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent' })}</small>
-              </li>;
-            })}
-          </ol>
-        </Card>}
-        {answeredCount > 0 && <Card title="Savollar bo‘yicha natija" className="mt-5">
-          <div className="analytics-bar">
-            <strong>{Math.round(100 * correctCount / answeredCount)}% to‘g‘ri</strong>
-            <progress aria-label="To‘g‘ri javoblar ulushi" value={correctCount} max={answeredCount} />
-            <span>{correctCount} ta to‘g‘ri · {answeredCount - correctCount} ta xato yoki belgilanmagan</span>
-          </div>
-        </Card>}
-        <Card title="Mavzular bo‘yicha o‘zlashtirish" className="mt-5">
-          {topicStats.length ? bars(admin ? [...topicStats].sort((a, b) => b.wrong - a.wrong || a.percent - b.percent) : topicStats) : <p>Bu tanlov uchun mavzu bo‘yicha ma’lumot yo‘q.</p>}
-        </Card>
-        <Card title="Ko‘proq xato qilingan savollar" className="mt-5">
-          {difficult.length ? bars(difficult) : <p>Bu tanlov uchun xato qayd etilgan savol yo‘q.</p>}
-        </Card>
-      </>}
       {showTests && <Card title="Topshirilgan testlar" className="mt-5">
         {failed && <p role="alert">Natijalarni yuklab bo‘lmadi.</p>}
         {!results && !failed && <p role="status">Natijalar yuklanmoqda…</p>}
@@ -225,7 +199,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
         <div className="stack">
           {filtered.slice(0, admin ? limit : undefined).map(result => {
             const mode = result.test_scope === -1 ? '1-semestr' : result.test_scope === -2 ? '2-semestr' :
-              topics.find(topic => topic.globalOrder === result.test_scope)?.title ?? 'Test';
+              (result.test_scope && result.test_scope > 0 ? result.test_scope + '-mavzu · ' : '') + (topics.find(topic => topic.globalOrder === result.test_scope)?.title ?? 'Test');
             return (
               <div key={result.attempt_id} className="card card--pad">
                 <strong>{admin ? result.student + ' · ' : ''}{mode}</strong>
