@@ -17,7 +17,7 @@ export function GamesPage() {
       <div className="stack">
         <label className="stack stack--sm">
           <strong>Mavzu</strong>
-          <select className="input" value={topic.id} onChange={(event) => setParams({ mavzu: event.target.value })}>
+          <select className="search-control" value={topic.id} onChange={(event) => setParams({ mavzu: event.target.value })}>
             {topics.map((item) => <option key={item.id} value={item.id}>{item.globalOrder}. {item.title}</option>)}
           </select>
         </label>

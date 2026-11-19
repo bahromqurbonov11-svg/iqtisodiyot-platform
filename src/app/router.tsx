@@ -32,7 +32,6 @@ import { AdminLearnersPage } from '@/modules/admin/AdminLearnersPage';
 import { AdminContentPage } from '@/modules/admin/AdminContentPage';
 import { AdminIntegrationPage } from '@/modules/admin/AdminIntegrationPage';
 
-import { AnalyticsPage } from '@/modules/analytics/AnalyticsPage';
 
 /**
  * Platforma GitHub Pages orqali ishlaydi.
@@ -147,7 +146,7 @@ export const router = createHashRouter([
       },
       {
         path: 'analitika',
-        element: <AnalyticsPage />,
+        element: <CabinetResultsPage admin />,
       },
       {
         path: 'integratsiya',

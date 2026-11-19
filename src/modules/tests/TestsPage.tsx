@@ -16,7 +16,16 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   const [index, setIndex] = useState(0);
   const [deadline, setDeadline] = useState(0);
   const [seconds, setSeconds] = useState(90);
-  const [query, setQuery] = useState('');
+  const [count, setCount] = useState('20');
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const broad = !topic || topic.startsWith('-');
+  const available = counts[topic || 'all'];
+  const selectedCount = count === 'all' ? available : Number(count);
+  const totalSeconds = (selectedCount ?? 0) * 90;
+
+  useEffect(() => {
+    if (user) void supabase.rpc('econ_test_counts').then(({ data }) => { if (data) setCounts(data); });
+  }, [user]);
   const [attempt, setAttempt] = useState<Attempt>();
   const [answers, setAnswers] = useState<number[]>([]);
   const [score, setScore] = useState<number>();
@@ -46,7 +55,8 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   async function startTest() {
     setBusy(true);
     setMessage('');
-    const { data, error } = await supabase.rpc('econ_start_test', {
+    const { data, error } = await supabase.rpc('econ_start_selected_test', {
+      question_limit: broad ? (count === 'all' ? null : Number(count)) : 20,
       wanted_topic: topic ? Number(topic) : null,
     });
     setBusy(false);
@@ -106,11 +116,24 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
           <Card title="Testni boshlash">
             <div className="stack">
               <label htmlFor="test-topic">Savollar banki</label>
-              <input className="search-control" type="search" aria-label="Mavzu qidirish" placeholder="Mavzu nomi yoki raqami" value={query} onChange={event => { setQuery(event.target.value); setTopic(''); }} />
-              <select className="search-control" id="test-topic" value={topic} onChange={(event) => setTopic(event.target.value)}>
+              <select className="search-control" id="test-topic" value={topic} onChange={(event) => { setTopic(event.target.value); setCount('20'); }}>
                 <option value="">Umumiy test</option>
-                {topics.filter(item => (item.globalOrder + ' ' + item.title).toLowerCase().includes(query.trim().toLowerCase())).map((item) => <option key={item.id} value={item.globalOrder}>{item.globalOrder}. {item.title}</option>)}
+                <option value="-1">1-semestr</option>
+                <option value="-2">2-semestr</option>
+                <optgroup label="Mavzular">
+                {topics.map((item) => <option key={item.id} value={item.globalOrder}>{item.globalOrder}. {item.title}</option>)}
+                </optgroup>
               </select>
+              {broad && (
+                <>
+                  <label htmlFor="question-count">Savollar soni</label>
+                  <select className="search-control" id="question-count" value={count} onChange={event => setCount(event.target.value)}>
+                    {[10, 15, 20, 30, 50, 100, 200].filter(size => available === undefined || size <= available).map(size => <option key={size}>{size}</option>)}
+                    <option value="all">Barcha savollar{available !== undefined ? ` (${available} ta)` : ""}</option>
+                  </select>
+                  <p className="small muted">Jami vaqt: {Math.floor(totalSeconds / 60)} daqiqa {totalSeconds % 60 ? ` ${totalSeconds % 60} soniya` : ""}</p>
+                </>
+              )}
               <Button disabled={busy} onClick={() => void startTest()}>Boshlash</Button>
             </div>
           </Card>

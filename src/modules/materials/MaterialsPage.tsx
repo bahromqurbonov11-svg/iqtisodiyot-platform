@@ -18,6 +18,18 @@ export function MaterialsPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const category = params.get('tur');
+  if (category === 'sillabus') return (
+    <div className="container page">
+      <PageHeader title="Sillabuslar" crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Sillabuslar' }]} />
+      <div className="stack">
+        {[1, 2].map(part => (
+          <a className="card card--pad cat-card" key={part} href={import.meta.env.BASE_URL + 'sillabus/in-' + part + '.pdf'} target="_blank" rel="noopener">
+            Iqtisodiyot nazariyasi {part} · Sillabus (PDF)
+          </a>
+        ))}
+      </div>
+    </div>
+  );
   if (category === 'glossariy') return <GlossaryPage />;
   const showPresentations = category === 'taqdimotlar';
   return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user)}
@@ -166,14 +178,14 @@ function MaterialsLibrary({ signedIn, showPresentations }: {
       <div className="cat-grid mt-5">
         {materialCategories.map((c) => {
           const Icon = icons[c.icon];
-          if (c.id === 'slides' || c.id === 'glossary') return (
-            <Link key={c.id} to={paths.materials + (c.id === 'slides' ? '?tur=taqdimotlar' : '?tur=glossariy')} className="card card--pad cat-card"
+          if (c.id === 'syllabus' || c.id === 'slides' || c.id === 'glossary') return (
+            <Link key={c.id} to={paths.materials + (c.id === 'syllabus' ? '?tur=sillabus' : c.id === 'slides' ? '?tur=taqdimotlar' : '?tur=glossariy')} className="card card--pad cat-card"
               style={{ color: 'inherit' }}>
               <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
               <span className="cat-card__foot">
-                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">Atamalarni ko‘rish</Badge>}
+                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === "syllabus" ? "2 ta PDF" : "Atamalarni ko‘rish"}</Badge>}
               </span>
             </Link>
           );
