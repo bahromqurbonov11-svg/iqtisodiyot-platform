@@ -19,6 +19,7 @@ import { TestDetailPage } from '@/modules/tests/TestDetailPage';
 
 import { GamesPage } from '@/modules/games/GamesPage';
 import { RunnerPage } from '@/modules/games/RunnerPage';
+import { CourierPage } from '@/modules/games/CourierPage';
 import { GameDetailPage } from '@/modules/games/GameDetailPage';
 
 import { LoginPage } from '@/modules/auth/LoginPage';
@@ -84,6 +85,7 @@ export const router = createHashRouter([
       },
       { path: '/simulyator', element: <SimulatorPage /> },
       { path: '/oyinlar/marraga-yugurish', element: <RunnerPage /> },
+      { path: '/oyinlar/bozor-kuryeri', element: <CourierPage /> },
       {
         path: '/oyinlar/:slug',
         element: <GameDetailPage />,

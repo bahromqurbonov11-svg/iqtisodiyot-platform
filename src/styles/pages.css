@@ -358,3 +358,12 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .runner-page { max-width:1320px; }
 .runner-controls { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.65rem; margin-bottom:.65rem; }
 .runner-controls strong { color:#246b58; }
+.courier-hud { display:flex; flex-wrap:wrap; gap:.75rem; justify-content:space-between; margin-bottom:.75rem; }
+.courier-hud strong { display:flex; align-items:center; gap:.35rem; }
+.courier-board { display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:3px; background:#d0ded5; border:1px solid #b0c6b8; border-radius:12px; padding:4px; }
+.courier-cell { display:grid; place-items:center; aspect-ratio:1.2; background:#f5faf5; border-radius:4px; min-width:0; color:#205a48; }
+.courier-cell svg { width:65%; max-width:30px; height:auto; }
+.courier-cell.is-blocked { background:repeating-linear-gradient(135deg,#af7245 0 5px,#f2dbb1 5px 10px); }
+.courier-cell.is-target { background:#c7e7d4; box-shadow:inset 0 0 0 2px #388565; }
+.courier-arrows { display:flex; flex-wrap:wrap; justify-content:center; gap:.3rem; margin-top:.75rem; }
+.courier-arrows .btn { min-width:44px; min-height:44px; padding-inline:.5rem; }
