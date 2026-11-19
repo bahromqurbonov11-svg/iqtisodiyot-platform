@@ -8,6 +8,7 @@ import { PageHeader, Card, Badge, Button, StageBadge } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
 import { references } from '@/data/subject';
 import { topicConcepts } from '@/data/topicConcepts';
+import { ConceptCards } from './ConceptCards';
 import { paths } from '@/navigation/paths';
 import { NotFoundPage } from '@/modules/public/NotFoundPage';
 import { SlidesList } from '@/modules/materials/SlidesList';
@@ -69,14 +70,7 @@ export function TopicDetailPage() {
           <UploadedMaterials topicId={topic.id} topicTitle={topic.title} />
 
           <div ref={conceptsSection} className="topic-slide-anchor"><Card title="Asosiy tushunchalar">
-            <dl className="stack stack--sm" aria-label="Mavzuning asosiy tushunchalari">
-              {topicConcepts[topic.globalOrder - 1].map(([term, definition]) => (
-                <div key={term}>
-                  <dt><strong>{term}</strong></dt>
-                  <dd className="small muted" style={{ margin: 0 }}>{definition}</dd>
-                </div>
-              ))}
-            </dl>
+            <ConceptCards concepts={topicConcepts[topic.globalOrder - 1]} />
           </Card></div>
 
           <div className="grid grid--2">
