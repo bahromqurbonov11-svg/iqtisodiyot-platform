@@ -26,8 +26,8 @@ export function HeroChart() {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     let raf = 0;
     const draw = (t: number) => {
-      const o1 = Math.sin(t / 1700) * 22 + Math.sin(t / 3100 + 1) * 8;      // talab siljishi
-      const o2 = Math.sin(t / 2300 + 2) * 20 + Math.sin(t / 3700) * 8;       // taklif siljishi
+      const o1 = Math.sin(t / 1100) * 34 + Math.sin(t / 2300 + 1) * 10;      // talab siljishi
+      const o2 = Math.sin(t / 1500 + 2) * 30 + Math.sin(t / 2700) * 10;       // taklif siljishi
       const a = A + o1;
       const b = B + o2;
       const dx = (b - a) / (2 * M);
@@ -39,7 +39,7 @@ export function HeroChart() {
       dot.current?.setAttribute('cy', ey.toFixed(2));
       ring.current?.setAttribute('cx', ex.toFixed(2));
       ring.current?.setAttribute('cy', ey.toFixed(2));
-      ring.current?.setAttribute('r', (13 + Math.sin(t / 380) * 4).toFixed(2));
+      ring.current?.setAttribute('r', (15 + Math.sin(t / 260) * 6).toFixed(2));
       vLine.current?.setAttribute('x1', ex.toFixed(2));
       vLine.current?.setAttribute('x2', ex.toFixed(2));
       vLine.current?.setAttribute('y1', ey.toFixed(2));
