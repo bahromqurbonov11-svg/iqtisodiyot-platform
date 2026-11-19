@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Search, Clock, ArrowUpRight, ArrowRight, Store, Landmark, Building2, Package,
+  Search, Shuffle, Clock, ArrowUpRight, ArrowRight, Store, Landmark, Building2, Package,
   Coins, ShoppingCart, House, Factory, Users, Wallet, Cog, TrendingUp,
   Globe, Ship, PenTool, CreditCard, Leaf, ShieldCheck, Activity,
   type LucideIcon,
@@ -19,6 +19,21 @@ export function TopicsPage() {
   const [params, setParams] = useSearchParams();
   const part = params.get('qism') ?? 'all';
   const [q, setQ] = useState('');
+  const navigate = useNavigate();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const randomTopic = () => navigate(paths.topic(all[Math.floor(Math.random() * all.length)].id));
+  // "/" tugmasi qidiruvga o‘tkazadi
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      if (e.key === '/' && !(el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const matchingTopics = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -60,12 +75,20 @@ export function TopicsPage() {
             ...subject.parts.map((p) => ({ value: p.id, label: p.title, count: all.filter((t) => t.partId === p.id).length })),
           ]}
         />
-        <label className="search">
-          <Search size={16} aria-hidden />
-          <span className="sr-only">Mavzu qidirish</span>
-          <input type="search" placeholder="Mavzu yoki tushuncha…" value={q} onChange={(e) => setQ(e.target.value)} />
-        </label>
+        <div className="toolbar__tools">
+          <label className="search">
+            <Search size={16} aria-hidden />
+            <span className="sr-only">Mavzu qidirish</span>
+            <input ref={searchRef} type="search" placeholder="Mavzu yoki tushuncha…  ( / )" value={q} onChange={(e) => setQ(e.target.value)} />
+          </label>
+          <button type="button" className="random-btn" onClick={randomTopic} title="Tasodifiy mavzuni ochish">
+            <Shuffle size={15} aria-hidden /> Tasodifiy mavzu
+          </button>
+        </div>
       </div>
+      <p className="topics-count" aria-live="polite">
+        {q.trim() ? <>Qidiruv bo‘yicha <b>{filtered.length}</b> ta mavzu topildi</> : <>Jami <b>{filtered.length}</b> ta mavzu</>}
+      </p>
       {user?.role === 'student' && !user.external && progress.attempts && <div className="mt-3">
         <Tabs ariaLabel="O‘zlashtirish holati" value={statusFilter} onChange={setStatusFilter}
           items={[{ value: 'all', label: 'Barcha holatlar' }, { value: 'gap', label: 'Bo‘shliq bor' }, { value: 'untested', label: 'Test ishlanmagan' }]} />
@@ -83,11 +106,11 @@ export function TopicsPage() {
                 <span className="muted small">{list.length} mavzu · {p.credits} kredit · {p.totalHours} soat</span>
               </div>
               <div className="topic-grid">
-                {list.map((t) => {
+                {list.map((t, idx) => {
                   const outcome = progress.topics.get(t.globalOrder);
                   const status = outcome && mastery(outcome.correct, outcome.total);
                   return (
-                  <Link key={t.id} to={paths.topic(t.id)} aria-label={t.title} className="topic-card">
+                  <Link key={t.id} to={paths.topic(t.id)} aria-label={t.title} className="topic-card" style={{ ['--i' as string]: Math.min(idx, 10) }}>
                     <div className="topic-card__top">
                       <span className="topic-card__num">{String(t.globalOrder).padStart(2, '0')}</span>
                       <span className="topic-card__part">{p.order}-qism · {t.order}-mavzu</span>
