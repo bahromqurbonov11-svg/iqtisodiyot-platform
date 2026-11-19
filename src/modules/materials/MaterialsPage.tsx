@@ -18,6 +18,7 @@ export function MaterialsPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const category = params.get('tur');
+  if (category === 'keyslar') return <CasesPage />;
   if (category === 'sillabus') return (
     <div className="container page">
       <PageHeader title="Sillabuslar" crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Sillabuslar' }]} />
@@ -178,14 +179,14 @@ function MaterialsLibrary({ signedIn, showPresentations }: {
       <div className="cat-grid mt-5">
         {materialCategories.map((c) => {
           const Icon = icons[c.icon];
-          if (c.id === 'syllabus' || c.id === 'slides' || c.id === 'glossary') return (
-            <Link key={c.id} to={paths.materials + (c.id === 'syllabus' ? '?tur=sillabus' : c.id === 'slides' ? '?tur=taqdimotlar' : '?tur=glossariy')} className="card card--pad cat-card"
+          if (c.id === 'cases' || c.id === 'syllabus' || c.id === 'slides' || c.id === 'glossary') return (
+            <Link key={c.id} to={paths.materials + (c.id === 'cases' ? '?tur=keyslar' : c.id === 'syllabus' ? '?tur=sillabus' : c.id === 'slides' ? '?tur=taqdimotlar' : '?tur=glossariy')} className="card card--pad cat-card"
               style={{ color: 'inherit' }}>
               <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
               <span className="cat-card__foot">
-                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === "syllabus" ? "2 ta PDF" : "Atamalarni ko‘rish"}</Badge>}
+                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? '80 ta keys' : c.id === 'syllabus' ? '2 ta PDF' : 'Atamalarni ko‘rish'}</Badge>}
               </span>
             </Link>
           );
@@ -371,3 +372,4 @@ function GlossaryPage() {
     </div>
   );
 }
+import { CasesPage } from './CasesPage';

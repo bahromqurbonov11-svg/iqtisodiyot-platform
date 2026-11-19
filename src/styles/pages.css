@@ -324,3 +324,13 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .analytics-bar { display:grid; gap:.3rem; padding:.8rem; border-radius:12px; background:#f3f8f5; overflow-wrap:anywhere; }
 .analytics-bar progress { width:100%; accent-color:#246b58; }
 .analytics-bar span { color:#355d50; font-size:.85rem; }
+.case-layout { display:grid; gap:1rem; max-width:56rem; margin-inline:auto; }
+.case-filter { background:#f4faf6; }
+.case-filter label { display:block; font-weight:700; margin-bottom:.45rem; }
+.case-filter p { margin:.55rem 0 0; }
+.case-tile { display:grid; align-content:start; gap:.75rem; border-top:3px solid #84ad9b; min-width:0; overflow-wrap:anywhere; }
+.case-tile:hover { border-color:#246b58; background:#f4faf6; }
+.case-tile__number { display:flex; align-items:center; gap:.45rem; color:#246b58; font-weight:750; }
+.case-text { overflow-wrap:anywhere; line-height:1.7; }
+.case-text p { white-space:pre-line; margin-block:0 .85rem; }
+.case-text h3 { display:flex; align-items:center; gap:.4rem; margin:1.4rem 0 .65rem; color:#246b58; }
