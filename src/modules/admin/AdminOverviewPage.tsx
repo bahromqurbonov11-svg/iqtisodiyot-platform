@@ -5,6 +5,7 @@ import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
 import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
+import { SiteStatTiles } from '@/layouts/VisitReport';
 
 export function AdminOverviewPage() {
   const [limit, setLimit] = useState<number>();
@@ -48,6 +49,10 @@ export function AdminOverviewPage() {
           {message && <p role="status">{message}</p>}
         </div>
       </Card>
+      <Card title="Sayt statistikasi" subtitle="Barcha tashriflar va saytda o‘tkazilgan vaqt" className="mt-5">
+        <SiteStatTiles />
+      </Card>
+
       <Card title="Tezkor o‘tish" className="mt-5">
         <div className="presentation-actions">
           <Button to={paths.analytics} variant="secondary">Natijalar va analitika</Button>
