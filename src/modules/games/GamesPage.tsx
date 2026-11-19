@@ -42,7 +42,7 @@ export function GamesPage() {
           </Card>
           <Card title="Vaziyatni tahlil qiling" actions={<Badge tone="info">10 ta vaziyat</Badge>}>
             <div className="stack">
-              <p>Amaliy misollar uchun mos iqtisodiy tushunchani va tushunchalar uchun mos vaziyatni tanlang.</p>
+              <p>Tahlil doskasiga tushuncha va uni asoslaydigan kartani joylashtiring.</p>
               <div><Button icon={<Lightbulb size={16} />} to={paths.game('vaziyatli-qaror') + topicQuery}>O‘yinni ochish</Button></div>
             </div>
           </Card>

@@ -371,3 +371,16 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 @media (prefers-reduced-motion:reduce) {
   .hero-chart-line, .hero-chart-point { animation:none; }
 }
+.matching-board { position:relative; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(1.5rem,9vw,6rem); }
+.matching-board .btn { overflow-wrap:anywhere; }
+.matching-arrows { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+.situation-desk { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr)); gap:1rem; }
+.situation-clue,.situation-slot { background:#f4faf6; border-radius:12px; padding:1rem; overflow-wrap:anywhere; }
+.situation-clue { border-inline-start:4px solid #318565; }
+.situation-slot { min-height:6.25rem; border:2px dashed #90aaa0; }
+.situation-slot.is-correct { border-color:#26735b; background:#e6f6ed; }
+.situation-slot.is-wrong { border-color:#a54e32; background:#fbefe9; }
+.situation-clue p,.situation-slot p { margin:.3rem 0 0; }
+.situation-card { cursor:grab; }
+.situation-card[aria-pressed="true"] { border-color:#318565; background:#dfefe6; }
+.situation-card:disabled { cursor:default; }
