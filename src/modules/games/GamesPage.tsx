@@ -1,8 +1,51 @@
-import { useSearchParams } from 'react-router-dom';
-import { BookOpen, GitCompareArrows, Lightbulb } from 'lucide-react';
-import { Badge, Button, Card, PageHeader } from '@/components/ui';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, BookOpen, Crosshair, Flag, GitCompareArrows, Lightbulb, SlidersHorizontal, Timer, type LucideIcon } from 'lucide-react';
+import { Badge, Button, PageHeader } from '@/components/ui';
+import { Reveal } from '@/components/motion/Motion';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
+
+interface GameCard {
+  slug: string;
+  title: string;
+  text: string;
+  meta: string;
+  cta: string;
+  color: string;
+  icon: LucideIcon;
+  perTopic?: boolean;
+}
+
+/** Tezkor o‘yinlar (mavzuga bog‘liq emas) */
+const arcade: GameCard[] = [
+  { slug: 'mergan', title: 'Mergan', text: 'Harakatlanuvchi nishonni markazda tuting va bonus savollarga javob berib qo‘shimcha o‘q oling.', meta: 'Vaqt o‘qlar soniga bog‘liq', cta: 'O‘ynash', color: 'var(--g-coral)', icon: Crosshair },
+  { slug: 'grafikni-boshqar', title: 'Grafikni boshqar', text: 'Talab, taklif va narxni o‘zgartirib, bozor muvozanatini toping.', meta: '8 topshiriq · 5–8 daqiqa', cta: 'O‘ynash', color: 'var(--g-blue)', icon: SlidersHorizontal },
+  { slug: 'marraga-yugurish', title: 'Marraga yugurish', text: 'To‘siqlardan sakrab ball yig‘ing. Har 5 ballik marrada savolga javob bering va talabalar reytingiga kiring.', meta: 'Reyting bor', cta: 'O‘yin va reyting', color: 'var(--g-amber)', icon: Flag },
+];
+
+/** Mavzu bo‘yicha o‘yinlar */
+const byTopic: GameCard[] = [
+  { slug: 'moslashtirish', title: 'Tushunchalarni moslashtirish', text: 'Ikki bosqichda atama va ta’riflarni to‘g‘ri juftlang.', meta: '10 ta juftlik', cta: 'O‘yinni ochish', color: 'var(--g-teal)', icon: GitCompareArrows, perTopic: true },
+  { slug: 'vaziyatli-qaror', title: 'Vaziyatni tahlil qiling', text: 'Tahlil doskasiga tushuncha va uni asoslaydigan kartani joylashtiring.', meta: '10 ta vaziyat', cta: 'O‘yinni ochish', color: 'var(--g-violet)', icon: Lightbulb, perTopic: true },
+];
+
+function GameTile({ g, query, index }: { g: GameCard; query: string; index: number }) {
+  const Icon = g.icon;
+  return (
+    <Reveal delay={index * 70}>
+      <Link to={paths.game(g.slug) + (g.perTopic ? query : '')} className="game-tile" style={{ ['--gc' as string]: g.color }}>
+        <span className="game-tile__glow" aria-hidden />
+        <span className="game-tile__icon"><Icon size={26} aria-hidden /></span>
+        <h3>{g.title}</h3>
+        <p>{g.text}</p>
+        <span className="game-tile__foot">
+          <Badge tone="neutral" icon={<Timer size={12} />}>{g.meta}</Badge>
+          <span className="game-tile__cta">{g.cta} <ArrowRight size={15} aria-hidden /></span>
+        </span>
+      </Link>
+    </Reveal>
+  );
+}
 
 export function GamesPage() {
   const [params, setParams] = useSearchParams();
@@ -14,44 +57,35 @@ export function GamesPage() {
     <div className="container page">
       <PageHeader crumbs={[{ label: 'Bosh sahifa', to: paths.home }, { label: 'O‘yinlar' }]}
         title="Iqtisodiyot o‘yinlari" description="Marraga yuguring yoki mavzu bo‘yicha mashq qiling." />
-      <div className="stack">
-        <Card title="Mergan">
-          <p>Harakatlanuvchi nishonni markazda tuting va bonus savollarga javob berib qo‘shimcha o‘q oling.</p>
-          <p className="small muted">Vaqt o‘qlar soniga bog‘liq · iqtisodiy atamalar</p>
-          <Button to={paths.game('mergan')}>O‘ynash</Button>
-        </Card>
-        <Card title="Grafikni boshqar">
-          <p>Talab, taklif va narxni o‘zgartirib, bozor muvozanatini toping.</p>
-          <p className="small muted">8 topshiriq · taxminan 5–8 daqiqa</p>
-          <Button to={paths.game('grafikni-boshqar')}>O‘ynash</Button>
-        </Card>
-        <Card title="Marraga yugurish">
-          <p>To‘siqlardan sakrab ball yig‘ing. Har 5 ballik marrada savolga javob bering va talabalar reytingiga kiring.</p>
-          <p className="small muted">Raund davomiyligi o‘yin natijasiga bog‘liq · iqtisodiy test savollari</p>
-          <Button to={paths.game('marraga-yugurish')}>O‘yin va reyting</Button>
-        </Card>
-        <label className="stack stack--sm">
-          <strong>Mavzu</strong>
+
+      <section className="games-section" aria-labelledby="arcade-h">
+        <div className="games-section__head">
+          <h2 id="arcade-h">Tezkor o‘yinlar</h2>
+          <span className="muted small">Istalgan vaqtda o‘ynang</span>
+        </div>
+        <div className="game-tiles game-tiles--3">
+          {arcade.map((g, i) => <GameTile key={g.slug} g={g} query="" index={i} />)}
+        </div>
+      </section>
+
+      <section className="games-section" aria-labelledby="topic-games-h">
+        <div className="games-section__head">
+          <h2 id="topic-games-h">Mavzu bo‘yicha mashq</h2>
+          <span className="muted small">Avval mavzuni tanlang</span>
+        </div>
+        <label className="topic-picker">
+          <span className="topic-picker__label">Mavzu</span>
           <select className="search-control" value={topic.id} onChange={(event) => setParams({ mavzu: event.target.value })}>
             {topics.map((item) => <option key={item.id} value={item.id}>{item.globalOrder}. {item.title}</option>)}
           </select>
         </label>
-        <div className="grid grid--2">
-          <Card title="Tushunchalarni moslashtirish" actions={<Badge tone="info">10 ta juftlik</Badge>}>
-            <div className="stack">
-              <p>Ikki bosqichda atama va ta’riflarni to‘g‘ri juftlang.</p>
-              <div><Button icon={<GitCompareArrows size={16} />} to={paths.game('moslashtirish') + topicQuery}>O‘yinni ochish</Button></div>
-            </div>
-          </Card>
-          <Card title="Vaziyatni tahlil qiling" actions={<Badge tone="info">10 ta vaziyat</Badge>}>
-            <div className="stack">
-              <p>Tahlil doskasiga tushuncha va uni asoslaydigan kartani joylashtiring.</p>
-              <div><Button icon={<Lightbulb size={16} />} to={paths.game('vaziyatli-qaror') + topicQuery}>O‘yinni ochish</Button></div>
-            </div>
-          </Card>
+        <div className="game-tiles game-tiles--2">
+          {byTopic.map((g, i) => <GameTile key={g.slug + topic.id} g={g} query={topicQuery} index={i} />)}
         </div>
-        <div><Button variant="secondary" icon={<BookOpen size={16} />} to={paths.topic(topic.id)}>Mavzu sahifasi</Button></div>
-      </div>
+        <div className="mt-4">
+          <Button variant="secondary" icon={<BookOpen size={16} />} to={paths.topic(topic.id)}>Mavzu sahifasi</Button>
+        </div>
+      </section>
     </div>
   );
 }
