@@ -6,9 +6,11 @@ import { paths } from '@/navigation/paths';
 import { useAuth } from '@/services/auth/AuthContext';
 import { supabase } from '@/services/supabase';
 import { GameTopThree, type RankedPlayer } from './GameTopThree';
+import { useRecordGame } from './recordGame';
 
 function bonusQuestion() {
-  const bank = topicGameBank[Math.floor(Math.random() * topicGameBank.length)];
+  const topic = Math.floor(Math.random() * topicGameBank.length) + 1;
+  const bank = topicGameBank[topic - 1];
   const answer = Math.floor(Math.random() * bank.length);
   const options = bank.map(([label], index) => ({ label, correct: index === answer }));
   for (let i = options.length - 1; i > 0; i--) {
@@ -16,10 +18,11 @@ function bonusQuestion() {
     [options[i], options[j]] = [options[j], options[i]];
   }
   const reward = [2, 3, 5][Math.floor(Math.random() * 3)];
-  return { prompt: bank[answer][1], options, reward, answer: bank[answer][0] };
+  return { prompt: bank[answer][1], options, reward, answer: bank[answer][0], topic };
 }
 
 export function TargetGamePage() {
+  const record = useRecordGame();
   const { user } = useAuth();
   const [rank, setRank] = useState<RankedPlayer[]>();
   const [rankError, setRankError] = useState('');
@@ -115,6 +118,7 @@ export function TargetGamePage() {
   function answer(correct: boolean) {
     if (phase !== 'question' || !question || feedback !== undefined) return;
     setFeedback(correct);
+    record('target-answer', question.topic, [{ question: question.prompt, correct }]);
     if (correct) setArrows(value => value + question.reward);
   }
 
@@ -194,6 +198,7 @@ const scenarios = [
 ];
 
 export function GraphGamePage() {
+  const record = useRecordGame();
   const [index, setIndex] = useState(0);
   const [values, setValues] = useState([0, 0, 0]);
   const [checked, setChecked] = useState(false);
@@ -242,7 +247,7 @@ export function GraphGamePage() {
                 <option value={1}>{field === 2 ? 'Muvozanatdan yuqori' : 'O‘ngga'}</option>
               </select>
             </label>)}
-            {!checked ? <Button onClick={() => { if (correct) setScore(value => value + 1); setChecked(true); }}>Tekshirish</Button> : <>
+            {!checked ? <Button onClick={() => { if (correct) setScore(value => value + 1); record('graph', 6, [{ question: scenario.prompt, correct: Boolean(correct) }]); setChecked(true); }}>Tekshirish</Button> : <>
               <p role="status"><strong>{correct ? 'To‘g‘ri.' : 'Xato.'}</strong> {scenario.reason}</p>
               <Button onClick={next}>{index === scenarios.length - 1 ? 'Natijani ko‘rish' : 'Keyingi topshiriq'}</Button>
             </>}

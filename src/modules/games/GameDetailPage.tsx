@@ -4,6 +4,7 @@ import { Badge, Button, Card, Notice, PageHeader } from '@/components/ui';
 import { topicGameBank, type GameConcept } from '@/data/topicGames';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
+import { useRecordGame } from './recordGame';
 
 const gameTypes = {
   moslashtirish: { title: 'Tushunchalarni moslashtirish', other: 'vaziyatli-qaror' },
@@ -42,7 +43,7 @@ export function GameDetailPage() {
         actions={<Button variant="secondary" to={paths.topic(topic.id)}>Mavzuga qaytish</Button>}
       />
       <div className="stack">
-        <GameSession key={topic.id + ':' + slug} concepts={concepts} matching={matching} />
+        <GameSession key={topic.id + ':' + slug} concepts={concepts} matching={matching} topic={topic.globalOrder} />
         <div><Button variant="secondary" to={paths.game(mode.other) + '?mavzu=' + topic.id}>
           {gameTypes[mode.other].title}
         </Button></div>
@@ -51,12 +52,12 @@ export function GameDetailPage() {
   );
 }
 
-function GameSession({ concepts, matching }: { concepts: readonly GameConcept[]; matching: boolean }) {
+function GameSession({ concepts, matching, topic }: { concepts: readonly GameConcept[]; matching: boolean; topic: number }) {
   const [attempt, setAttempt] = useState(0);
   return matching ? (
-    <MatchingGame key={attempt} concepts={concepts} restart={() => setAttempt((n) => n + 1)} />
+    <MatchingGame key={attempt} topic={topic} concepts={concepts} restart={() => setAttempt((n) => n + 1)} />
   ) : (
-    <SituationGame key={attempt} concepts={concepts} restart={() => setAttempt((n) => n + 1)} />
+    <SituationGame key={attempt} topic={topic} concepts={concepts} restart={() => setAttempt((n) => n + 1)} />
   );
 }
 
@@ -72,7 +73,8 @@ function Score({ score, restart }: { score: number; restart: () => void }) {
   );
 }
 
-function MatchingGame({ concepts, restart }: { concepts: readonly GameConcept[]; restart: () => void }) {
+function MatchingGame({ concepts, restart, topic }: { concepts: readonly GameConcept[]; restart: () => void; topic: number }) {
+  const record = useRecordGame();
   const [round, setRound] = useState(0);
   const [ordering] = useState(() => Array.from({ length: 2 }, () => ({
     left: shuffle(concepts.map((_, i) => i)), right: shuffle(concepts.map((_, i) => i)),
@@ -171,14 +173,21 @@ function MatchingGame({ concepts, restart }: { concepts: readonly GameConcept[];
         <div>{checked ? (
           <Button onClick={advance}>{round === 0 ? 'Keyingi bosqich' : 'Natijani ko‘rish'}</Button>
         ) : (
-          <Button disabled={Object.keys(pairs).length !== concepts.length} onClick={() => { setChecked(true); setPicked(null); }}>Juftliklarni tekshirish</Button>
+          <Button disabled={Object.keys(pairs).length !== concepts.length} onClick={() => {
+            record('matching', topic, left.map(id => ({
+              question: (round === 0 ? 'Ta’rifni moslang · ' : 'Atamani moslang · ') + concepts[id][round === 0 ? 0 : 1],
+              correct: pairs[id] === id,
+            })));
+            setChecked(true); setPicked(null);
+          }}>Juftliklarni tekshirish</Button>
         )}</div>
       </div>
     </Card>
   );
 }
 
-function SituationGame({ concepts, restart }: { concepts: readonly GameConcept[]; restart: () => void }) {
+function SituationGame({ concepts, restart, topic }: { concepts: readonly GameConcept[]; restart: () => void; topic: number }) {
+  const record = useRecordGame();
   const [questions] = useState(() => [false, true].flatMap(reverse => shuffle(concepts.map((_, answer) => {
     const alternatives = shuffle(concepts.map((_, id) => id).filter(id => id !== answer)).slice(0, 2);
     return { answer, reverse, terms: shuffle([answer, ...alternatives]), evidence: shuffle([answer, ...alternatives]) };
@@ -247,6 +256,7 @@ function SituationGame({ concepts, restart }: { concepts: readonly GameConcept[]
           </Button>
         ) : <Button disabled={!complete} onClick={() => {
           if (correct) setScore(score + 1);
+          record('situation', topic, [{ question: concepts[answer][reverse ? 1 : 2], correct }]);
           setChecked(true);
         }}>Tahlilni tekshirish</Button>}
       </div>
