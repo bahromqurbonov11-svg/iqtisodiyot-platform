@@ -8,7 +8,7 @@ import { publicMenu } from '@/navigation/menus';
 import { paths } from '@/navigation/paths';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/services/auth/AuthContext';
-import { VisitReport } from './VisitReport';
+import { MobileTabBar } from './MobileTabBar';
 import { Footer } from './Footer';
 import { BackToTop, ScrollProgress } from '@/components/motion/Motion';
 
@@ -74,7 +74,7 @@ export function PublicLayout() {
       </main>
       <Footer />
       <BackToTop />
-      <VisitReport />
+      <MobileTabBar />
     </div>
   );
 }
