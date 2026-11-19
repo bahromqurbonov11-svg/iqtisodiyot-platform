@@ -6,6 +6,9 @@ import { catalogService } from '@/services/catalog.service';
 import { games } from '@/data/games';
 import { appConfig } from '@/config/app.config';
 import { GameIcon } from '@/modules/games/GameIcon';
+import { CountUp, Reveal, Tilt } from '@/components/motion/Motion';
+import { MarketPlayground } from './MarketPlayground';
+import { Badge } from '@/components/ui';
 
 export function HomePage() {
   const { t } = useI18n();
@@ -35,10 +38,10 @@ export function HomePage() {
               <Button to={paths.tests} size="lg" variant="secondary">{user ? t.nav.tests : 'Testni sinab ko‘rish'}</Button>
             </div>
             <dl className="hero__facts">
-              <div><dt>25</dt><dd>mavzu</dd></div>
-              <div><dt>2</dt><dd>qism</dd></div>
-              <div><dt>{subject.parts.reduce((s, p) => s + p.credits, 0)}</dt><dd>ECTS kredit</dd></div>
-              <div><dt>{totalHours}</dt><dd>soat</dd></div>
+              <div><dt><CountUp to={25} /></dt><dd>mavzu</dd></div>
+              <div><dt><CountUp to={2} /></dt><dd>qism</dd></div>
+              <div><dt><CountUp to={subject.parts.reduce((s, p) => s + p.credits, 0)} /></dt><dd>ECTS kredit</dd></div>
+              <div><dt><CountUp to={totalHours} /></dt><dd>soat</dd></div>
             </dl>
           </div>
           <HeroVisual />
@@ -61,14 +64,33 @@ export function HomePage() {
               { icon: Gamepad2, title: 'Mashq qiling', text: 'Atamalarni moslashtiring va amaliy vaziyatlarni tahlil qiling.', to: paths.games, stage: 0 },
               { icon: LineIcon, title: 'Natijani ko‘ring', text: 'Kuchli tomonlar va bo‘shliqlar xaritasi, tavsiyalar.', to: paths.cabinet, stage: 7 },
             ].map((s, i) => (
-              <Link to={s.to} key={s.title} className="step">
-                <span className="step__num">0{i + 1}</span>
-                <span className="step__icon"><s.icon size={22} /></span>
-                <h3>{s.title}</h3>
-                <p className="muted">{s.text}</p>
-              </Link>
+              <Reveal key={s.title} delay={i * 90} className="steps__item">
+                <Link to={s.to} className="step">
+                  <span className="step__num">0{i + 1}</span>
+                  <span className="step__icon"><s.icon size={22} /></span>
+                  <h3>{s.title}</h3>
+                  <p className="muted">{s.text}</p>
+                </Link>
+              </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* INTERAKTIV LABORATORIYA */}
+      <section className="section section--lab">
+        <div className="container lab">
+          <Reveal className="lab__intro">
+            <div className="eyebrow">Sinab ko‘ring</div>
+            <h2>Bozorni o‘zingiz siljiting</h2>
+            <p className="muted">
+              Talab yoki taklif o‘zgarsa, narx va miqdor qanday o‘zgaradi? Slayderlarni suring va muvozanat nuqtasi
+              qanday harakatlanishini kuzating. Shu tarzda tushunchalar yodlanmaydi, tushuniladi.
+            </p>
+            <Badge tone="info">O‘quv namunasi</Badge>
+            <div className="mt-4"><Button to={paths.simulator} variant="secondary" iconRight={<ArrowRight size={16} />}>To‘liq simulyator</Button></div>
+          </Reveal>
+          <Reveal delay={120} className="lab__widget"><MarketPlayground /></Reveal>
         </div>
       </section>
 
@@ -83,10 +105,10 @@ export function HomePage() {
             <Button to={paths.topics} variant="ghost" iconRight={<ArrowRight size={16} />}>To‘liq katalog</Button>
           </div>
           <div className="parts">
-            {subject.parts.map((p) => {
+            {subject.parts.map((p, pi) => {
               const list = topics.filter((t) => t.partId === p.id);
               return (
-                <article key={p.id} className="part-card">
+                <Reveal as="article" delay={pi * 120} key={p.id} className="part-card">
                   <header className="part-card__head">
                     <div>
                       <span className="part-card__tag">{p.order}-qism</span>
@@ -111,7 +133,7 @@ export function HomePage() {
                   <Link to={`${paths.topics}?qism=${p.id}`} className="part-card__more">
                     Yana {list.length - 5} ta mavzu <ArrowRight size={14} />
                   </Link>
-                </article>
+                </Reveal>
               );
             })}
           </div>
@@ -129,12 +151,14 @@ export function HomePage() {
             <Button to={paths.games} variant="ghost" iconRight={<ArrowRight size={16} />}>O‘yinlar bo‘limi</Button>
           </div>
           <div className="game-strip">
-            {games.filter((g) => g.slug === 'moslashtirish' || g.slug === 'vaziyatli-qaror').map((g) => (
-              <Link key={g.slug} to={paths.games} className="game-chip" style={{ ['--gc' as string]: g.color }}>
-                <span className="game-chip__icon"><GameIcon name={g.icon} size={22} /></span>
-                <strong>{g.slug === 'moslashtirish' ? g.title : 'Vaziyatni tahlil qiling'}</strong>
-                <small>Har mavzuda 10 ta topshiriq</small>
-              </Link>
+            {games.filter((g) => g.slug === 'moslashtirish' || g.slug === 'vaziyatli-qaror').map((g, gi) => (
+              <Reveal key={g.slug} delay={gi * 100}>
+                <Link to={paths.games} className="game-chip" style={{ ['--gc' as string]: g.color }}>
+                  <span className="game-chip__icon"><GameIcon name={g.icon} size={22} /></span>
+                  <strong>{g.slug === 'moslashtirish' ? g.title : 'Vaziyatni tahlil qiling'}</strong>
+                  <small>Har mavzuda 10 ta topshiriq</small>
+                </Link>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -169,11 +193,11 @@ export function HomePage() {
 /** Bosh sahifadagi illyustratsiya: talab-taklif grafigi + bilim kartochkalari */
 function HeroVisual() {
   return (
-    <div className="hero-visual" aria-hidden>
+    <Tilt className="hero-visual" aria-hidden>
       <div className="hero-visual__panel">
         <div className="hero-visual__head">
           <span>Bozor muvozanati</span>
-          <span className="hero-visual__pill">6-mavzu</span>
+          <span className="hero-visual__pill">6-mavzu · namuna</span>
         </div>
         <svg viewBox="0 0 320 220" className="hero-visual__chart">
           <defs>
@@ -217,7 +241,7 @@ function HeroVisual() {
         <span className="dot dot--danger" /> Egiluvchanlik <b>bo‘shliq</b>
       </div>
 
-    </div>
+    </Tilt>
   );
 }
 import { RegistrationReminder } from './RegistrationReminder';
