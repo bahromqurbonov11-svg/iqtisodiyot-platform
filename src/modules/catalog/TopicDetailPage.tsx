@@ -155,6 +155,8 @@ type UploadedMaterial = {
 function UploadedMaterials({ topicId, topicTitle }: { topicId: string; topicTitle: string }) {
   const { user } = useAuth();
 
+  if (user?.external) return <Card title="O‘quv fayllari"><p>Yopiq fayllar Soliq oliy maktabi talabalari uchun.</p></Card>;
+
   return user ? (
     <MaterialFiles key={topicId + ':' + user.id} topicId={topicId} topicTitle={topicTitle} />
   ) : (

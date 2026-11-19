@@ -11,6 +11,7 @@ export interface SessionUser {
   id: string;
   fullName: string;
   role: UserRole;
+  external?: boolean;
   status: AccountStatus;
   group?: string;
 }

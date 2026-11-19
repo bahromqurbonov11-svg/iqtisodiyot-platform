@@ -48,6 +48,7 @@ async function toSessionUser(user: User): Promise<SessionUser> {
     role: profile.role === 'admin' ? 'admin' : 'student',
     status: 'approved',
     group: groupName,
+    external: profile.group_id === 900000 && profile.role !== 'admin',
   };
 }
 

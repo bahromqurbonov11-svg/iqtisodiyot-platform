@@ -16,6 +16,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
 
   const [groups, setGroups] = useState<StudentGroup[]>([]);
+  const [external, setExternal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -68,7 +69,7 @@ export function RegisterPage() {
       formData.get('password') ?? ''
     );
 
-    const groupId = Number(formData.get('group_id'));
+    const groupId = external ? 900000 : Number(formData.get('group_id'));
 
     try {
       if (
@@ -163,7 +164,12 @@ export function RegisterPage() {
           </label>
         </div>
 
-        <label className="field">
+        <label className="register-external">
+          <input type="checkbox" checked={external} onChange={event => setExternal(event.target.checked)} />
+          <span>Soliq oliy maktabi talabasi emasman</span>
+        </label>
+        {external && <p className="small muted">Bu hisobda yopiq o‘quv fayllarini yuklab olish cheklangan.</p>}
+        {!external && <label className="field">
           <span>Guruh</span>
 
           <select
@@ -175,7 +181,7 @@ export function RegisterPage() {
               Guruhni tanlang
             </option>
 
-            {groups.map((group) => (
+            {groups.filter(group => group.id !== 900000).map((group) => (
               <option
                 key={group.id}
                 value={group.id}
@@ -184,7 +190,7 @@ export function RegisterPage() {
               </option>
             ))}
           </select>
-        </label>
+        </label>}
 
         <label className="field">
           <span>Login</span>

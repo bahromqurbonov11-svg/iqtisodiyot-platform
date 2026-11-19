@@ -334,3 +334,12 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .case-text { overflow-wrap:anywhere; line-height:1.7; }
 .case-text p { white-space:pre-line; margin-block:0 .85rem; }
 .case-text h3 { display:flex; align-items:center; gap:.4rem; margin:1.4rem 0 .65rem; color:#246b58; }
+
+.case-step { background:#f4faf6; border-inline-start:3px solid #4f8874; border-radius:10px; padding:1rem; }
+.case-step h4 { margin:0 0 .65rem; color:#1c5b49; font-size:1.05rem; }
+.case-step p:last-child { margin-bottom:0; }
+.register-external { display:flex; align-items:center; gap:.65rem; padding:.8rem; background:#edf6f0; border-radius:10px; }
+.dash--admin .dash__content { margin-inline:auto; }
+.dash--admin .dash__nav { gap:1.25rem; }
+.dash--admin .dash__group { padding:.45rem; border:1px solid #ffffff20; border-radius:12px; }
+.dash--admin .dash__link { min-height:42px; }

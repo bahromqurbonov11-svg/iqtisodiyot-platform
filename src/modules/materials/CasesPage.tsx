@@ -88,7 +88,7 @@ function CaseSolution({ id }: { id: number }) {
     <Card title="Yechim va xulosa" className="case-reading">
       <div className="case-text">
         <h3><UnlockKeyhole size={17} aria-hidden /> Yechim</h3>
-        <p>{answer.solution.replace(/^Yechim[.:]?\s*/i, '')}</p>
+        <SolutionSteps text={answer.solution} />
         <h3>Xulosa</h3>
         <p>{answer.conclusion.replace(/^Xulosa[.:]?\s*/i, '')}</p>
       </div>
@@ -103,5 +103,21 @@ function CaseSolution({ id }: { id: number }) {
         {message && <p role="status">{message}</p>}
       </form>
     </Card>
+  );
+}
+
+function SolutionSteps({ text }: { text: string }) {
+  return (
+    <div className="stack">
+      {text.replace(/^Yechim[.:]?\s*/i, '').split(/(?=^\d+\s*[-–.]\s*topshiriq\s+yechimi\b)/gimu).filter(Boolean).map((part, index) => {
+        const step = part.match(/^(\d+\s*[-–.]\s*topshiriq\s+yechimi)[.:]?\s*/iu);
+        return (
+          <section className="case-step" key={index}>
+            {step && <h4>{step[1]}</h4>}
+            <p>{step ? part.slice(step[0].length) : part}</p>
+          </section>
+        );
+      })}
+    </div>
   );
 }

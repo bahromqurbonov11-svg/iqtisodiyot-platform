@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, BarChart3, BookOpen, ClipboardCheck, Gamepad2, User, Users, FolderCog, PlugZap, Library,
+  Home, LayoutDashboard, BarChart3, BookOpen, ClipboardCheck, Gamepad2, User, Users, FolderCog, PlugZap, Library,
   type LucideIcon,
 } from 'lucide-react';
 import { paths } from './paths';
@@ -26,6 +26,7 @@ export const studentMenu: { title: string; items: NavItem[] }[] = [
   {
     title: 'Kabinet',
     items: [
+      { to: paths.home, label: 'Bosh sahifa', icon: Home, end: true },
       { to: paths.cabinet, label: 'Umumiy ko‘rinish', icon: LayoutDashboard, end: true },
       { to: paths.cabinetResults, label: 'Mening natijalarim', icon: BarChart3 },
       { to: paths.cabinetProfile, label: 'Profil', icon: User },
@@ -48,18 +49,21 @@ export const adminMenu: { title: string; items: NavItem[] }[] = [
     items: [
       { to: paths.admin, label: 'Umumiy ko‘rinish', icon: LayoutDashboard, end: true },
       { to: paths.adminLearners, label: 'Talabalar', icon: Users },
-      { to: paths.adminContent, label: 'Kontent', icon: FolderCog },
+      { to: paths.adminContent, label: 'O‘quv materiallari', icon: FolderCog },
     ],
   },
   {
     title: 'Tahlil',
     items: [
-      { to: paths.analytics, label: 'Analitika', icon: BarChart3 },
+      { to: paths.analytics, label: 'Test natijalari', icon: BarChart3 },
       { to: paths.adminIntegration, label: 'Integratsiya', icon: PlugZap },
     ],
   },
   {
     title: 'Sayt',
-    items: [{ to: paths.topics, label: 'Mavzular katalogi', icon: Library }],
+    items: [
+      { to: paths.home, label: 'Bosh sahifa', icon: Home, end: true },
+      { to: paths.topics, label: 'Mavzular katalogi', icon: Library },
+    ],
   },
 ];

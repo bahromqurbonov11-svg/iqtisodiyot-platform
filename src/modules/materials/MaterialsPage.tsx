@@ -19,6 +19,7 @@ export function MaterialsPage() {
   const [params] = useSearchParams();
   const category = params.get('tur');
   if (category === 'keyslar') return <CasesPage />;
+  if (category === 'sillabus' && user?.external) return <div className="container page"><PageHeader title="Sillabuslar" /><p>PDF havolalari ushbu hisobda ko‘rsatilmaydi.</p></div>;
   if (category === 'sillabus') return (
     <div className="container page">
       <PageHeader title="Sillabuslar" crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Sillabuslar' }]} />
@@ -33,12 +34,12 @@ export function MaterialsPage() {
   );
   if (category === 'glossariy') return <GlossaryPage />;
   const showPresentations = category === 'taqdimotlar';
-  return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user)}
+  return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user) && !user?.external} external={Boolean(user?.external)}
     showPresentations={showPresentations} />;
 }
 
-function MaterialsLibrary({ signedIn, showPresentations }: {
-  signedIn: boolean; showPresentations: boolean;
+function MaterialsLibrary({ signedIn, showPresentations, external }: {
+  signedIn: boolean; showPresentations: boolean; external: boolean;
 }) {
   const subject = catalogService.getSubject().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
@@ -118,7 +119,8 @@ function MaterialsLibrary({ signedIn, showPresentations }: {
         description={fullCountReady ? slideTotal + ' ta taqdimot · mavzular bo‘yicha' : 'Mavzular bo‘yicha taqdimotlar'}
         actions={<Button to={paths.materials} variant="secondary">Materiallarga qaytish</Button>}
       />
-          {!signedIn && <p>Administrator yuklagan fayllarni ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</p>}
+          {external && <p>Yopiq fayllar Soliq oliy maktabi talabalari uchun.</p>}
+          {!signedIn && !external && <p>Administrator yuklagan fayllarni ko‘rish uchun <Link to={paths.login} className="link">tizimga kiring</Link>.</p>}
           {signedIn && !fullCountReady && !countError && <p role="status">Taqdimotlar yuklanmoqda…</p>}
           {countError && <p role="alert">Yuklangan taqdimotlar ro‘yxatini olib bo‘lmadi.</p>}
           {downloadError && <p role="alert">{downloadError}</p>}
@@ -153,7 +155,7 @@ function MaterialsLibrary({ signedIn, showPresentations }: {
                           <FirstSlidePreview publicUrl={file.ext.toLowerCase() === 'pptx' ? url : undefined} />
                           <div className="presentation-actions">
                             {view && <a href={view} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm">Ko‘rish</a>}
-                            <a href={url} download={file.fileName} className="btn btn--secondary btn--sm">Yuklab olish</a>
+                            {!external && <a href={url} download={file.fileName} className="btn btn--secondary btn--sm">Yuklab olish</a>}
                           </div>
                         </div>
                       );

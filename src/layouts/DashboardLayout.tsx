@@ -65,7 +65,7 @@ export function DashboardLayout({
       >
         <div className="dash__brand">
           <Brand
-            to={role === 'admin' ? paths.admin : paths.cabinet}
+            to={paths.home}
           />
 
           <button
@@ -148,7 +148,7 @@ export function DashboardLayout({
               <small>
                 {role === 'admin'
                   ? 'Fan administratori'
-                  : `Talaba · ${user.group || 'Guruh belgilanmagan'}`}
+                  : user.external ? 'Tashqi foydalanuvchi' : `Talaba · ${user.group || 'Guruh belgilanmagan'}`}
               </small>
             </span>
 
