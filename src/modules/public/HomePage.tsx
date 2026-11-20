@@ -20,7 +20,6 @@ export function HomePage() {
 
   return (
     <>
-      <RegistrationReminder />
       {/* HERO */}
       <section className="hero">
         <div className="container hero__grid">
@@ -249,6 +248,5 @@ function HeroVisual() {
     </Tilt>
   );
 }
-import { RegistrationReminder } from './RegistrationReminder';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/services/auth/AuthContext';
