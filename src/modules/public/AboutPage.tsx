@@ -1,108 +1,316 @@
-import { useState } from 'react';
-import { ArrowRight, ChevronRight } from 'lucide-react';
-import { PageHeader, Card, Badge, Button, Tabs } from '@/components/ui';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowRight, BookOpen, ChevronDown, Clock, GraduationCap, Layers, Pause, Play, Target, Brain, Compass,
+} from 'lucide-react';
+import { CountUp, Reveal } from '@/components/motion/Motion';
 import { catalogService } from '@/services/catalog.service';
+import { topicStyle } from '@/modules/catalog/topicStyle';
 import { references } from '@/data/subject';
 import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
 
 const kindLabel = { knowledge: 'Bilim', skill: 'Ko‘nikma', competence: 'Malaka' } as const;
+type Kind = keyof typeof kindLabel;
+
+/** Diagnostik zanjir: har bir bosqich uchun qisqa izoh va NAMUNA (illyustratsiya). */
+const chain = [
+  { key: 'Fan', text: 'Barcha savollar bitta fanga — Iqtisodiyot nazariyasiga bog‘lanadi.', example: 'Iqtisodiyot nazariyasi (IQN11210)' },
+  { key: 'Mavzu', text: 'Fan 25 mavzuga bo‘lingan. Har bir savol aniq bir mavzuga tegishli.', example: '6-mavzu. Talab, taklif, bozor muvozanati' },
+  { key: 'Tushuncha', text: 'Mavzu ichida alohida tushunchalar ajratiladi — bilimdagi bo‘shliq aynan shu darajada ko‘rinadi.', example: 'Talab qonuni' },
+  { key: 'Ko‘nikma', text: 'Tushunchani eslab qolish, tushunish yoki qo‘llash darajasi alohida baholanadi.', example: 'Grafikdan muvozanat narxini topa olish' },
+  { key: 'Savol', text: 'Test yoki o‘yin savoli tushuncha va ko‘nikmaga bog‘lab yoziladi.', example: 'Narx oshganda talab miqdori qanday o‘zgaradi?' },
+  { key: 'Javob', text: 'Talabaning har bir javobi va urinishi alohida saqlanadi.', example: 'Tanlangan variant: «talab oshadi»' },
+  { key: 'Xato turi', text: 'Noto‘g‘ri variantlar aniq chalkashlikka bog‘lanadi — shu sabab xatoning ehtimoliy sababi ko‘rinadi.', example: 'Talab miqdori va talabning o‘zgarishini adashtirish' },
+];
+
+const faq = [
+  { q: 'Ro‘yxatdan o‘tmasdan nimalarni ko‘rish mumkin?', a: 'Mavzular katalogi, tushunchalar, ma’ruza matnlari, glossariy, keyslar va taqdimot slaydlari ochiq. Natijalar saqlanishi va kabinetda ko‘rinishi uchun ro‘yxatdan o‘tish kerak.' },
+  { q: 'Diagnostik test oddiy testdan nimasi bilan farq qiladi?', a: 'Oddiy test faqat umumiy ball beradi. Diagnostik test esa har bir savolni mavzu va tushunchaga bog‘laydi, shuning uchun qaysi tushunchada chalkashlik borligi ko‘rinadi.' },
+  { q: 'O‘yinlar nima uchun kerak?', a: 'O‘yinlar bilimni qiziqarli shaklda tekshiradi. Har bir o‘yin natijasi ham mavzu bilan bog‘lanadi va kabinetingizdagi tahlilga qo‘shiladi.' },
+  { q: 'Mening natijamni kim ko‘radi?', a: 'Talaba o‘z natijalarini kabinetida ko‘radi. Fan administratori (o‘qituvchi) o‘z talabalarining faoliyati va natijalarini ko‘radi.' },
+  { q: 'Bajarilmagan topshiriq nolga teng deb olinadimi?', a: 'Yo‘q. Platforma bajarilmagan topshiriqni “bilim yo‘q” deb hisoblamaydi: u faqat ma’lumot yetishmasligini bildiradi.' },
+];
+
+type DonutItem = { key: string; label: string; value: number; color: string };
+
+function Donut({ items, active, onActive }: { items: DonutItem[]; active: string | null; onActive: (k: string | null) => void }) {
+  const total = items.reduce((s, i) => s + i.value, 0);
+  const r = 70;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+  const current = items.find((i) => i.key === active);
+  return (
+    <svg viewBox="0 0 200 200" className="donut" role="img" aria-label="O‘quv yuklamasi taqsimoti">
+      <circle cx="100" cy="100" r={r} fill="none" stroke="#edf0ea" strokeWidth="26" />
+      {items.map((i, idx) => {
+        const len = (c * i.value) / total;
+        const seg = (
+          <circle
+            key={i.key}
+            className={'donut__seg' + (active === i.key ? ' is-on' : '') + (active && active !== i.key ? ' is-dim' : '')}
+            style={{ animationDelay: idx * 0.18 + 's' }}
+            cx="100" cy="100" r={r} fill="none" stroke={i.color}
+            strokeWidth={active === i.key ? 34 : 26}
+            strokeDasharray={len + ' ' + (c - len)} strokeDashoffset={-offset}
+            transform="rotate(-90 100 100)"
+            tabIndex={0}
+            onMouseEnter={() => onActive(i.key)} onMouseLeave={() => onActive(null)}
+            onFocus={() => onActive(i.key)} onBlur={() => onActive(null)}
+            onClick={() => onActive(active === i.key ? null : i.key)}
+          />
+        );
+        offset += len;
+        return seg;
+      })}
+      <text x="100" y="96" textAnchor="middle" className="donut__big">{current ? current.value : total}</text>
+      <text x="100" y="118" textAnchor="middle" className="donut__small">
+        {current ? current.label + ' · ' + Math.round((100 * current.value) / total) + '%' : 'soat jami'}
+      </text>
+    </svg>
+  );
+}
 
 export function AboutPage() {
   const subject = catalogService.getSubject().data;
+  const allTopics = catalogService.getTopics().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
-  const [outcomeFilter, setOutcomeFilter] = useState<keyof typeof kindLabel | 'all'>('all');
+  const [kind, setKind] = useState<Kind | 'all'>('all');
+  const [hoverSeg, setHoverSeg] = useState<string | null>(null);
+  const [openTopic, setOpenTopic] = useState<string | null>(null);
+  const [step, setStep] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
   const part = subject.parts.find((p) => p.id === partId)!;
+  const partTopics = allTopics.filter((t) => t.partId === partId);
+  const totalCredits = subject.parts.reduce((s, p) => s + p.credits, 0);
+  const totalHours = subject.parts.reduce((s, p) => s + p.totalHours, 0);
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => setStep((s) => (s + 1) % chain.length), 2600);
+    return () => window.clearInterval(timer);
+  }, [playing]);
+
+  const donut: DonutItem[] = [
+    { key: 'lecture', label: 'Ma’ruza', value: part.lectureHours, color: 'var(--g-teal)' },
+    { key: 'practice', label: 'Amaliy', value: part.practiceHours, color: 'var(--g-amber)' },
+    { key: 'self', label: 'Mustaqil', value: part.selfStudyHours, color: 'var(--g-violet)' },
+  ];
+  const outcomes = part.outcomes.filter((o) => kind === 'all' || o.kind === kind);
+  const cur = chain[step];
 
   return (
-    <div className="container page">
-      <PageHeader
-        crumbs={[{ label: 'Bosh sahifa', to: paths.home }, { label: 'Fan haqida' }]}
-        eyebrow={`Fan kodi ${subject.code} · ${appConfig.organization.name}`}
-        title="Fan haqida"
-        description="Iqtisodiyot nazariyasi iqtisodiy tafakkurni shakllantiradi: cheklangan resurslar sharoitida tanlov, bozor mexanizmlari, makroiqtisodiy jarayonlar va davlat siyosatini tahlil qilishga o‘rgatadi."
-        badges={<Badge tone="primary">Manba: rasmiy sillabuslar (2026–2027)</Badge>}
-      />
-
-      <Tabs
-        ariaLabel="Fan qismlari"
-        value={partId}
-        onChange={setPartId}
-        items={subject.parts.map((p) => ({ value: p.id, label: p.title }))}
-      />
-
-      <div className="grid grid--2-1 mt-5">
-        <div className="stack">
-          <Card title="Fanning maqsadi">
-            <p>{part.goal}</p>
-          </Card>
-          <Card title="Ta’lim natijalari" subtitle="Fanni o‘zlashtirgan talaba…">
-            <Tabs ariaLabel="Ta’lim natijasi turi" value={outcomeFilter}
-              onChange={value => setOutcomeFilter(value as typeof outcomeFilter)}
-              items={[{ value: 'all', label: 'Barchasi' }, ...Object.entries(kindLabel).map(([value, label]) => ({ value, label }))]} />
-            <ul className="outcomes">
-              {part.outcomes.filter(o => outcomeFilter === 'all' || o.kind === outcomeFilter).map((o) => (
-                <li key={o.code}>
-                  <span className={`outcomes__code outcomes__code--${o.kind}`}>{o.code}</span>
-                  <div>
-                    <small className="muted">{kindLabel[o.kind]}</small>
-                    <p>{o.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
+    <div className="about">
+      {/* ---------- Kirish bloki ---------- */}
+      <section className="about-hero">
+        <span className="about-hero__orb about-hero__orb--a" aria-hidden />
+        <span className="about-hero__orb about-hero__orb--b" aria-hidden />
+        <div className="container about-hero__inner">
+          <nav className="crumbs about-hero__crumbs" aria-label="Yo‘l">
+            <Link to={paths.home}>Bosh sahifa</Link> <span aria-hidden>›</span> <span aria-current="page">Fan haqida</span>
+          </nav>
+          <div className="eyebrow about-hero__eyebrow">Fan kodi {subject.code} · {appConfig.organization.name}</div>
+          <h1 className="about-hero__title">Iqtisodiyot nazariyasi: fan nimani o‘rgatadi?</h1>
+          <p className="about-hero__lead">
+            Fan iqtisodiy tafakkurni shakllantiradi: cheklangan resurslar sharoitida tanlov, bozor mexanizmlari,
+            makroiqtisodiy jarayonlar va davlat siyosatini tahlil qilishga o‘rgatadi.
+          </p>
+          <div className="about-hero__stats">
+            <div><b><CountUp to={allTopics.length} /></b><span>mavzu</span></div>
+            <div><b><CountUp to={subject.parts.length} /></b><span>qism</span></div>
+            <div><b><CountUp to={totalCredits} /></b><span>ECTS kredit</span></div>
+            <div><b><CountUp to={totalHours} /></b><span>soat</span></div>
+          </div>
+          <p className="about-hero__src">Manba: rasmiy sillabuslar (2026–2027)</p>
         </div>
-        <div className="stack">
-          <Card title="O‘quv yuklamasi">
-            <div className="stack stack--sm">
-              {[['Ma’ruza', part.lectureHours], ['Amaliy', part.practiceHours], ['Mustaqil', part.selfStudyHours]].map(([label, hours]) => (
-                <div className="analytics-bar" key={label}>
-                  <strong>{label} · {hours} soat</strong>
-                  <progress aria-label={String(label)} value={Number(hours)} max={part.totalHours} />
-                </div>
-              ))}
+      </section>
+
+      <div className="container about-body">
+        {/* ---------- Qism tanlash ---------- */}
+        <Reveal>
+          <h2 className="about-h">Qismni tanlang</h2>
+          <div className="part-pick" role="tablist" aria-label="Fan qismlari">
+            {subject.parts.map((p, i) => {
+              const n = allTopics.filter((t) => t.partId === p.id).length;
+              return (
+                <button
+                  key={p.id} type="button" role="tab" aria-selected={p.id === partId}
+                  className={'part-pick__card' + (p.id === partId ? ' is-on' : '')}
+                  style={{ ['--gc' as string]: i === 0 ? 'var(--g-teal)' : 'var(--g-blue)' }}
+                  onClick={() => { setPartId(p.id); setOpenTopic(null); setHoverSeg(null); }}
+                >
+                  <span className="part-pick__num">{p.order}</span>
+                  <strong>{p.title}</strong>
+                  <small>{n} mavzu · {p.credits} kredit · {p.totalHours} soat</small>
+                </button>
+              );
+            })}
+          </div>
+          <p className="about-goal" key={partId}><Target size={20} aria-hidden /> <span><b>Fanning maqsadi.</b> {part.goal}</span></p>
+        </Reveal>
+
+        {/* ---------- Yuklama ---------- */}
+        <Reveal>
+          <div className="about-load">
+            <div className="about-load__chart" key={partId}>
+              <Donut items={donut} active={hoverSeg} onActive={setHoverSeg} />
             </div>
-            <dl className="kv">
-              <div><dt>ECTS kreditlar</dt><dd>{part.credits}</dd></div>
-              <div><dt>Jami yuklama</dt><dd>{part.totalHours} soat</dd></div>
-              <div><dt>Ma’ruza</dt><dd>{part.lectureHours} soat</dd></div>
-              <div><dt>Amaliy mashg‘ulot</dt><dd>{part.practiceHours} soat</dd></div>
-              <div><dt>Mustaqil ta’lim</dt><dd>{part.selfStudyHours} soat</dd></div>
-              <div><dt>Ta’lim tili</dt><dd>O‘zbek / rus</dd></div>
-            </dl>
-          </Card>
-          <Card title="Diagnostik yondashuv">
-            <p className="small muted">Platformada har bir savol quyidagi zanjirga bog‘lanadi:</p>
-            <ol className="chain">
-              {['Fan', 'Mavzu', 'Tushuncha', 'Ko‘nikma', 'Savol', 'Javob', 'Xato turi'].map((s, i, a) => (
-                <li key={s}>
-                  <span>{s}</span>
-                  {i < a.length - 1 && <ChevronRight size={14} aria-hidden />}
+            <div className="about-load__text">
+              <h2 className="about-h"><Clock size={22} aria-hidden /> O‘quv yuklamasi</h2>
+              <p className="muted small">Diagramma bo‘laklariga bosing yoki ustiga olib boring.</p>
+              <ul className="about-legend">
+                {donut.map((d) => (
+                  <li key={d.key}>
+                    <button
+                      type="button" className={'about-legend__btn' + (hoverSeg === d.key ? ' is-on' : '')}
+                      onMouseEnter={() => setHoverSeg(d.key)} onMouseLeave={() => setHoverSeg(null)}
+                      onClick={() => setHoverSeg(hoverSeg === d.key ? null : d.key)}
+                    >
+                      <i style={{ background: d.color }} aria-hidden />
+                      <span>{d.label}</span>
+                      <b>{d.value} soat</b>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <dl className="about-kv">
+                <div><dt>ECTS kreditlar</dt><dd>{part.credits}</dd></div>
+                <div><dt>Jami yuklama</dt><dd>{part.totalHours} soat</dd></div>
+                <div><dt>Ta’lim tili</dt><dd>O‘zbek / rus</dd></div>
+              </dl>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* ---------- Yo‘l xaritasi ---------- */}
+        <Reveal>
+          <h2 className="about-h"><Compass size={22} aria-hidden /> Mavzular yo‘l xaritasi</h2>
+          <p className="muted small">Mavzuga bosing — kichik mavzular ochiladi.</p>
+          <ol className="road" key={partId}>
+            {partTopics.map((t, i) => {
+              const st = topicStyle(t.globalOrder);
+              const open = openTopic === t.id;
+              return (
+                <li key={t.id} className={'road__item' + (open ? ' is-open' : '')} style={{ ['--gc' as string]: st.color, animationDelay: i * 45 + 'ms' }}>
+                  <button type="button" className="road__head" aria-expanded={open} onClick={() => setOpenTopic(open ? null : t.id)}>
+                    <span className="road__dot"><st.icon size={18} aria-hidden /></span>
+                    <span className="road__text">
+                      <small>{t.globalOrder}-mavzu · {t.lectureHours} soat ma’ruza, {t.practiceHours} soat amaliy</small>
+                      <strong>{t.title}</strong>
+                    </span>
+                    <ChevronDown className="road__chev" size={20} aria-hidden />
+                  </button>
+                  {open && (
+                    <div className="road__body">
+                      {t.subtopics.length > 0 && <ul>{t.subtopics.map((s) => <li key={s}>{s}</li>)}</ul>}
+                      <Link to={paths.topic(t.id)} className="btn btn--secondary btn--sm">Mavzuni ochish <ArrowRight size={15} aria-hidden /></Link>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </Reveal>
+
+        {/* ---------- Ta'lim natijalari ---------- */}
+        <Reveal>
+          <h2 className="about-h"><GraduationCap size={22} aria-hidden /> Ta’lim natijalari</h2>
+          <p className="muted small">Fanni o‘zlashtirgan talaba…</p>
+          <div className="chips" role="tablist" aria-label="Ta’lim natijasi turi">
+            {(['all', 'knowledge', 'skill', 'competence'] as const).map((k) => {
+              const count = k === 'all' ? part.outcomes.length : part.outcomes.filter((o) => o.kind === k).length;
+              return (
+                <button key={k} type="button" role="tab" aria-selected={kind === k} className={'chip' + (kind === k ? ' is-on' : '')} onClick={() => setKind(k)}>
+                  {k === 'all' ? 'Barchasi' : kindLabel[k]} <span>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          <ul className="outc" key={partId + kind}>
+            {outcomes.map((o, i) => (
+              <li key={o.code} className={'outc__card outc__card--' + o.kind} style={{ animationDelay: i * 60 + 'ms' }}>
+                <span className="outc__code">{o.code}</span>
+                <small>{kindLabel[o.kind]}</small>
+                <p>{o.text}</p>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+
+        {/* ---------- Diagnostik yondashuv ---------- */}
+        <Reveal>
+          <div className="diag">
+            <div className="diag__head">
+              <h2 className="about-h"><Brain size={22} aria-hidden /> Diagnostik yondashuv</h2>
+              <button type="button" className="btn btn--secondary btn--sm" onClick={() => setPlaying((p) => !p)} aria-pressed={playing}>
+                {playing ? <><Pause size={15} aria-hidden /> To‘xtatish</> : <><Play size={15} aria-hidden /> Avtomatik ko‘rsatish</>}
+              </button>
+            </div>
+            <p className="muted small">Platformada har bir savol quyidagi zanjirga bog‘lanadi. Bosqichni tanlang:</p>
+            <ol className="diag__chain">
+              {chain.map((c, i) => (
+                <li key={c.key}>
+                  <button type="button" className={'diag__step' + (i === step ? ' is-on' : '') + (i < step ? ' is-done' : '')}
+                    onClick={() => { setStep(i); setPlaying(false); }}>
+                    <b>{i + 1}</b><span>{c.key}</span>
+                  </button>
                 </li>
               ))}
             </ol>
-            <p className="small mt-3">Shu tufayli natija “umumiy ball” emas, balki aynan qaysi tushunchada qanday chalkashlik borligini ko‘rsatadi.</p>
-          </Card>
-          <Button to={`${paths.topics}?qism=${part.id}`} iconRight={<ArrowRight size={16} />} block>
-            {part.title} mavzulari
-          </Button>
-        </div>
-      </div>
+            <div className="diag__panel" key={step}>
+              <p>{cur.text}</p>
+              <div className="diag__example"><small>Namuna (illyustratsiya)</small><strong>{cur.example}</strong></div>
+            </div>
+            <p className="small">Shu tufayli natija “umumiy ball” emas, balki aynan qaysi tushunchada qanday chalkashlik borligini ko‘rsatadi.</p>
+          </div>
+        </Reveal>
 
-      <Card title="Asosiy va qo‘shimcha adabiyotlar" className="mt-5">
-        <ol className="refs">
-          {Object.entries(references).slice(0, 11).map(([n, r]) => (
-            <li key={n}><span className="refs__n">[{n}]</span> {r}</li>
-          ))}
-        </ol>
-        <h4 className="mt-4">Axborot manbalari</h4>
-        <ol className="refs">
-          {Object.entries(references).slice(11).map(([n, r]) => (
-            <li key={n}><span className="refs__n">[{n}]</span> {r}</li>
-          ))}
-        </ol>
-      </Card>
+        {/* ---------- Savol-javob ---------- */}
+        <Reveal>
+          <h2 className="about-h"><Layers size={22} aria-hidden /> Ko‘p so‘raladigan savollar</h2>
+          <div className="faq">
+            {faq.map((f, i) => (
+              <div key={f.q} className={'faq__item' + (openFaq === i ? ' is-open' : '')}>
+                <button type="button" className="faq__q" aria-expanded={openFaq === i} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                  <span>{f.q}</span><ChevronDown size={20} aria-hidden />
+                </button>
+                {openFaq === i && <p className="faq__a">{f.a}</p>}
+              </div>
+            ))}
+          </div>
+        </Reveal>
+
+        <Reveal>
+          <div className="about-cta">
+            <div>
+              <h2>{part.title} mavzularini o‘rganishni boshlang</h2>
+              <p>Mavzu sahifasida tushunchalar, jonli grafik, taqdimot va diagnostik test bir joyda.</p>
+            </div>
+            <Link to={paths.topics + '?qism=' + part.id} className="btn btn--primary">
+              <BookOpen size={17} aria-hidden /> Mavzularga o‘tish <ArrowRight size={16} aria-hidden />
+            </Link>
+          </div>
+        </Reveal>
+
+        <Reveal>
+          <details className="refs-box">
+            <summary>Asosiy va qo‘shimcha adabiyotlar, axborot manbalari</summary>
+            <ol className="refs">
+              {Object.entries(references).slice(0, 11).map(([n, r]) => (
+                <li key={n}><span className="refs__n">[{n}]</span> {r}</li>
+              ))}
+            </ol>
+            <h4 className="mt-4">Axborot manbalari</h4>
+            <ol className="refs">
+              {Object.entries(references).slice(11).map(([n, r]) => (
+                <li key={n}><span className="refs__n">[{n}]</span> {r}</li>
+              ))}
+            </ol>
+          </details>
+        </Reveal>
+      </div>
     </div>
   );
 }
