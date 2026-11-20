@@ -76,6 +76,7 @@ export const router = createHashRouter([
         lazy: async () => ({ Component: (await import('@/modules/games/GamesPage')).GamesPage }),
       },
       { path: '/simulyator', lazy: async () => ({ Component: (await import('@/modules/public/SimulatorPage')).SimulatorPage }) },
+      { path: '/oyinlar/dars-rejimi', lazy: async () => ({ Component: (await import('@/modules/games/ClassroomPage')).ClassroomPage }) },
       { path: '/oyinlar/marraga-yugurish', lazy: async () => ({ Component: (await import('@/modules/games/RunnerPage')).RunnerPage }) },
       { path: '/oyinlar/mergan', lazy: async () => ({ Component: (await import('@/modules/games/InteractiveGames')).TargetGamePage }) },
       { path: '/oyinlar/grafikni-boshqar', lazy: async () => ({ Component: (await import('@/modules/games/GraphGame')).GraphGamePage }) },
