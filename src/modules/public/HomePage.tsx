@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, ClipboardCheck, Gamepad2, LineChart as LineIcon, Target, Layers, GraduationCap, Clock, Library, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, BookOpen, ClipboardCheck, Gamepad2, LineChart as LineIcon, Target, Layers, UserPlus, GraduationCap, Clock, Library, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
@@ -34,7 +34,8 @@ export function HomePage() {
               qayerda bo‘shliq borligini ko‘rsatadi.
             </p>
             <div className="hero__actions">
-              <Button to={paths.topics} size="lg" iconRight={<ArrowRight size={18} />}>Mavzularni ko‘rish</Button>
+              {!user && <Button to={paths.register} size="lg" icon={<UserPlus size={18} />}>Ro‘yxatdan o‘tish</Button>}
+              <Button to={paths.topics} size="lg" variant={user ? 'primary' : 'secondary'} iconRight={<ArrowRight size={18} />}>Mavzularni ko‘rish</Button>
               <Button to={paths.tests} size="lg" variant="secondary">{user ? t.nav.tests : 'Testni sinab ko‘rish'}</Button>
             </div>
             <dl className="hero__facts">
