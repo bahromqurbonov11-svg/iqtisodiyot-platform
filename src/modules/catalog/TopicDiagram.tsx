@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Store, Landmark, Building2, Package, Coins, ShoppingCart, House, Factory, Users, Wallet, Cog, TrendingUp,
-  Globe, Ship, PenTool, CreditCard, Leaf, ShieldCheck, Activity, ArrowRight, type LucideIcon,
+  Ship, PenTool, CreditCard, Leaf, ShieldCheck, Activity, ArrowRight, type LucideIcon,
 } from 'lucide-react';
 import type { TopicVisual } from './TopicsPage';
 
@@ -18,7 +18,7 @@ const diagramIcons: Partial<Record<number, { steps: [LucideIcon, LucideIcon, Luc
   14: { steps: [ShoppingCart, TrendingUp, Activity], sequence: true },
   20: { steps: [Landmark, CreditCard, ShoppingCart], sequence: true },
   21: { steps: [Factory, ShieldCheck, Leaf], sequence: true },
-  23: { steps: [PenTool, Ship, Globe], sequence: true },
+  23: { steps: [PenTool, Factory, Ship], sequence: true },
 };
 
 const X = [51, 150, 249];
