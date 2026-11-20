@@ -24,7 +24,7 @@ const tr = (px: number, py: number, sx = 1, sy = 1): CSSProperties => ({ transfo
 
 const demandLabels = ['Keskin chapga', 'Biroz chapga', 'O‘z joyida', 'Biroz o‘ngga', 'Keskin o‘ngga'];
 const demandShort = ['◀◀', '◀', '●', '▶', '▶▶'];
-const priceLabels = ['Muvozanatdan past', 'Muvozanatda', 'Muvozanatdan yuqori'];
+const priceLabels = ['Pasayadi', 'O‘zgarmaydi', 'Oshadi'];
 
 function Segmented({ label, value, onChange, options, short, disabled }: {
   label: string; value: number; onChange: (v: number) => void; options: string[]; short?: string[]; disabled?: boolean;
@@ -55,7 +55,8 @@ function Chart({ values }: { values: number[] }) {
   const sup = BASE_S - s * STEP;
   const q = (dem - sup) / 2;
   const eq = (dem + sup) / 2;
-  const price = eq + p * STEP;
+  /* Narx avvalgi narxga (60) nisbatan: p=0 — avvalgidek; p≠0 — yo‘nalish bozor muvozanati yo‘nalishiga mos bo‘lsa narx muvozanatda, aks holda davlat belgilagan daraja (±1 qadam). */
+  const price = p === 0 ? 60 : Math.sign(eq - 60) === p ? eq : 60 + p * STEP;
   const qd = dem - price;
   const qs = price - sup;
   const gap = Math.abs(qd - qs);
@@ -186,7 +187,7 @@ export function GraphGamePage() {
               <li><Heart size={18} aria-hidden /> <span>Faqat bitta imkoniyat: xato qilsangiz, o‘yin tugaydi.</span></li>
               <li><Timer size={18} aria-hidden /> <span>Har bir savol uchun {SECONDS} soniya.</span></li>
               <li><Flame size={18} aria-hidden /> <span>“Biroz” — 1 qadam, “keskin” — 2 qadam siljish.</span></li>
-              <li><Flame size={18} aria-hidden /> <span>Narx doim <b>yangi muvozanatga</b> nisbatan baholanadi: “avvalgi darajada qotirilgan” narx yangi muvozanatdan past yoki yuqori bo‘lishi mumkin.</span></li>
+              <li><Flame size={18} aria-hidden /> <span>Narx tugmasi narxning <b>avvalgi darajaga nisbatan</b> o‘zgarishini bildiradi: ozgina oshsa ham “Oshadi”, ozgina tushsa ham “Pasayadi”. Davlat narxni belgilagan bo‘lsa, savolda shu ko‘rsatiladi.</span></li>
               <li><Trophy size={18} aria-hidden /> <span>10 / 10 bo‘lsa — kabinetdagi “Nishonlarim” bo‘limiga <b>Afsonaviy</b> nishon “Grafik grossmeysteri” qo‘shiladi.</span></li>
             </ul>
             {!student && <p className="small muted">Nishon faqat ro‘yxatdan o‘tgan talabalarga beriladi. Mehmon sifatida mashq qilishingiz mumkin.</p>}
@@ -215,7 +216,7 @@ export function GraphGamePage() {
               onChange={v => setValues(p => [v, p[1], p[2]])} />
             <Segmented label="Taklif" value={values[1]} options={demandLabels} short={demandShort} disabled={right}
               onChange={v => setValues(p => [p[0], v, p[2]])} />
-            <Segmented label="Bozor narxi" value={values[2]} options={priceLabels} disabled={right}
+            <Segmented label="Bozor narxi (avvalgiga nisbatan)" value={values[2]} options={priceLabels} disabled={right}
               onChange={v => setValues(p => [p[0], p[1], v])} />
             {right ? <p className="gg-ok" role="status">✓ To‘g‘ri! Keyingi savol…</p> : <Button size="lg" onClick={submit}>Javobni tekshirish</Button>}
           </Card>
