@@ -1,9 +1,10 @@
 import type { GameKey, GameRecord } from './gameStats';
+import { spent, type LoyaltyData } from './loyalty';
 
-export type BadgeIcon = 'flame' | 'award' | 'medal' | 'star' | 'rocket' | 'crosshair' | 'puzzle' | 'lightbulb' | 'trending' | 'gamepad' | 'grad' | 'crown' | 'shield' | 'gem';
+export type BadgeIcon = 'flame' | 'award' | 'medal' | 'star' | 'rocket' | 'crosshair' | 'puzzle' | 'lightbulb' | 'trending' | 'gamepad' | 'grad' | 'crown' | 'shield' | 'gem' | 'heart';
 export interface Badge {
   id: string;
-  group: 'test' | 'game';
+  group: 'test' | 'game' | 'special';
   title: string;
   text: string;
   tier: 'bronze' | 'silver' | 'gold' | 'legend';
@@ -11,6 +12,10 @@ export interface Badge {
   earned: boolean;
   progress: number;
   goal: number;
+  /** Progress yozuvi (masalan, vaqt). Bo‘lmasa "progress / goal" ko‘rsatiladi. */
+  progressLabel?: string;
+  /** Tafsilot oynasida ko‘rsatiladigan qo‘shimcha satrlar. */
+  lines?: string[];
 }
 
 export interface AttemptLike { points: number; total: number; test_scope: number | null; taken_at: string }
@@ -38,6 +43,7 @@ export function computeBadges(
   attempts: AttemptLike[] | undefined,
   topics: Map<number, { total: number; correct: number }>,
   games: GameRecord[],
+  loyalty?: LoyaltyData,
 ): Badge[] {
   const list = attempts ?? [];
   const streak = flawlessStreak(list);
@@ -49,6 +55,8 @@ export function computeBadges(
   const firm2 = firm(PART2);
   const played = new Set(games.map(g => g.game).filter(g => g !== 'graphwin')).size;
   const mk = (b: Omit<Badge, 'earned'>): Badge => ({ ...b, earned: b.progress >= b.goal });
+
+  const loyal = loyaltyBadge(loyalty);
 
   return [
     mk({ id: 'first-test', group: 'test', title: 'Birinchi qadam', text: 'Birinchi testni topshiring.', tier: 'bronze', icon: 'star', progress: Math.min(list.length, 1), goal: 1 }),
@@ -73,5 +81,47 @@ export function computeBadges(
     mk({ id: 'grapher', group: 'game', title: 'Grafik ustasi', text: 'Grafikni boshqar o‘yinida jami 5 ta to‘g‘ri javob bering.', tier: 'bronze', icon: 'trending', progress: Math.min(sum(games, 'graph'), 5), goal: 5 }),
     mk({ id: 'grand-graph', group: 'game', title: 'Grafik grossmeysteri', text: 'Sayt bo‘yicha eng qiyin topshiriq: Grafikni boshqar o‘yinida tasodifiy 10 ta murakkab savolni bitta ham xatosiz va vaqtida yeching.', tier: 'legend', icon: 'crown', progress: Math.min(sum(games, 'graphwin'), 1), goal: 1 }),
     mk({ id: 'all-games', group: 'game', title: 'Barcha o‘yinlar', text: 'Beshta o‘yinning har birini kamida bir marta o‘ynang.', tier: 'gold', icon: 'gamepad', progress: Math.min(played, 5), goal: 5 }),
+    loyal,
   ];
+}
+
+/** Sodiqlik nishoni: faol vaqti eng ko‘p talabaga (kamida 10 soat), bir vaqtda faqat bittasiga. */
+function loyaltyBadge(data?: LoyaltyData): Badge {
+  const base = {
+    id: 'loyalty', group: 'special' as const, title: 'Sodiqlik nishoni', tier: 'legend' as const, icon: 'heart' as const,
+    text: 'Saytda eng ko‘p faol vaqt o‘tkazgan talabaga beriladi (kamida 10 soat). Nishon bir vaqtda faqat bitta talabada bo‘ladi.',
+  };
+  const rules = [
+    'Qoida: kamida 10 soat faol vaqt kerak; harakatsiz (hech narsa bosilmagan, sahifa ochiq turgan) paytlar hisoblanmaydi.',
+    'Nishon boshqa talabaga o‘tib ketishi mumkin: kimning faol vaqti ko‘p bo‘lsa, o‘shaning qo‘lida turadi.',
+    'Semestr yakunida o‘qituvchi nishon egasiga imtiyoz beradi.',
+  ];
+  if (!data) {
+    return { ...base, earned: false, progress: 0, goal: 1, progressLabel: 'Yuklanmoqda…', lines: [...rules, 'Vaqt hisobi hozircha yuklanmadi.'] };
+  }
+  const min = data.min_seconds;
+  const mine = data.me?.seconds ?? 0;
+  const [first, second] = data.top;
+  const holder = first && first.seconds >= min ? first : undefined;
+  const iAmHolder = Boolean(holder?.me);
+  const lines = [...rules, 'Sizning faol vaqtingiz: ' + spent(mine) + '.'];
+  if (holder) {
+    lines.push(iAmHolder ? 'Hozir nishon egasi — siz.' : 'Hozirgi egasi: ' + holder.name + ' (' + spent(holder.seconds) + ').');
+  } else if (first) {
+    lines.push('Nishon hali hech kimda emas: eng ko‘p vaqt ' + first.name + ' da (' + spent(first.seconds) + ').');
+  }
+  if (second && first) {
+    lines.push((iAmHolder ? 'Eng yaqin taqibchi: ' : 'Ikkinchi o‘rin: ') + (iAmHolder ? second.name : second.me ? 'siz' : second.name)
+      + ' (' + spent(second.seconds) + ', farq ' + spent(first.seconds - second.seconds) + ').');
+  }
+  if (!iAmHolder) {
+    const toMin = Math.max(0, min - mine);
+    const toLead = holder ? Math.max(0, holder.seconds - mine) + 60 : toMin;
+    lines.push('Egasi bo‘lish uchun yana kamida ' + spent(Math.max(toMin, toLead)) + ' faol vaqt kerak (egasi ham vaqt o‘tkazishda davom etadi).');
+  }
+  const goal = iAmHolder ? Math.max(min, mine) : Math.max(min, (holder?.seconds ?? 0) + 60);
+  return {
+    ...base, earned: iAmHolder, progress: Math.min(mine, goal), goal, lines,
+    progressLabel: spent(mine) + ' / ' + spent(goal),
+  };
 }
