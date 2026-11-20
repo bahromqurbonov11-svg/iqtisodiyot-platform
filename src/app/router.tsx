@@ -1,5 +1,6 @@
 
 import { createHashRouter } from 'react-router-dom';
+import { RouteErrorPage } from './RouteErrorPage';
 
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
@@ -40,6 +41,7 @@ import { AdminIntegrationPage } from '@/modules/admin/AdminIntegrationPage';
 export const router = createHashRouter([
   {
     element: <PublicLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         path: '/',
