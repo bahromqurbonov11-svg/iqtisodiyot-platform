@@ -212,11 +212,11 @@ export function GraphGamePage() {
             <p className="gg-qno">{index + 1} / {ROUND} · Topshiriq</p>
             <p className="gg-prompt" key={question.id}>{question.prompt}</p>
             <Segmented label="Talab" value={values[0]} options={demandLabels} short={demandShort} disabled={right}
-              onChange={v => setValues([v, values[1], values[2]])} />
+              onChange={v => setValues(p => [v, p[1], p[2]])} />
             <Segmented label="Taklif" value={values[1]} options={demandLabels} short={demandShort} disabled={right}
-              onChange={v => setValues([values[0], v, values[2]])} />
+              onChange={v => setValues(p => [p[0], v, p[2]])} />
             <Segmented label="Bozor narxi" value={values[2]} options={priceLabels} disabled={right}
-              onChange={v => setValues([values[0], values[1], v])} />
+              onChange={v => setValues(p => [p[0], p[1], v])} />
             {right ? <p className="gg-ok" role="status">✓ To‘g‘ri! Keyingi savol…</p> : <Button size="lg" onClick={submit}>Javobni tekshirish</Button>}
           </Card>
         </div>
