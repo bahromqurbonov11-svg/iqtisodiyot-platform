@@ -7,6 +7,7 @@ import { paths } from '@/navigation/paths';
 import { GameTopThree, type RankedPlayer } from './GameTopThree';
 import { saveGameRecord } from '@/modules/student/gameStats';
 
+const MAX_LIVES = 3;
 type Quiz = { question: string; options: string[] };
 type Phase = 'ready' | 'running' | 'loading' | 'quiz' | 'over';
 const initial = () => ({ x: 520, y: 0, velocity: 0, counted: false, score: 0, heights: [30] });
@@ -25,6 +26,9 @@ export function RunnerPage() {
   const [message, setMessage] = useState('');
   const [missedTopic, setMissedTopic] = useState<number>();
   const [busy, setBusy] = useState(false);
+  const [lives, setLives] = useState(MAX_LIVES);
+  const livesRef = useRef(MAX_LIVES);
+  const immune = useRef(0);
   const [speed, setSpeed] = useState(1);
   const [pep, setPep] = useState(encouragement[0]);
   const pace = useRef(1);
@@ -52,7 +56,7 @@ export function RunnerPage() {
   const finish = useCallback(() => {
     setPhase('over');
     if (run.current) void runner('finish', run.current);
-    if (user?.role === 'student' && !user.external) saveGameRecord(user.id, { game: 'runner', score: world.current.score, total: 0 });
+    if (user && !user.external) saveGameRecord(user.id, { game: 'runner', score: world.current.score, total: 0 });
     void refreshRank();
   }, [refreshRank, user]);
 
@@ -86,7 +90,12 @@ export function RunnerPage() {
       if (w.heights.some((height, i) => {
         const obstacle = w.x + i * 31;
         return obstacle < 101 && obstacle + 23 > 72 && w.y < height;
-      })) { finish(); return; }
+      }) && time > immune.current) {
+        livesRef.current -= 1;
+        setLives(livesRef.current);
+        if (livesRef.current <= 0) { finish(); return; }
+        immune.current = time + 1500;
+      }
       if (!w.counted && end <= 72) {
         w.counted = true;
         w.score += 1;
@@ -119,6 +128,9 @@ export function RunnerPage() {
       return;
     }
     run.current = data.id;
+    livesRef.current = MAX_LIVES;
+    immune.current = 0;
+    setLives(MAX_LIVES);
     world.current = initial();
     setFrame(world.current);
     setScore(0);
@@ -159,9 +171,9 @@ export function RunnerPage() {
 
   return <div className="container page runner-page">
     <PageHeader title="Marraga yugurish" crumbs={[{ label: 'O‘yinlar', to: paths.games }, { label: 'Marraga yugurish' }]}
-      description="To‘siqlardan uchib o‘ting. Har 5 ballik marrada bitta savolga javob bering." />
+      description="To‘siqlardan uchib o‘ting: 3 marta urilishga ruxsat bor. Har 5 ballik marrada bitta savolga javob bering (xato javob raundni tugatadi)." />
     <div className="stack">
-      <Card title={score + ' ball'}>
+      <Card title={score + ' ball · jon: ' + '❤'.repeat(lives) + '🖤'.repeat(MAX_LIVES - lives)}>
         <div className="runner-controls">
           <div role="group" aria-label="O‘yin tezligi" className="presentation-actions">
             {[1, 2, 3].map(value => <button key={value} type="button"
