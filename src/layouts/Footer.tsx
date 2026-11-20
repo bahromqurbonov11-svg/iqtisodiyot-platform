@@ -17,7 +17,11 @@ export function Footer() {
             va o‘qituvchiga tahliliy ma’lumot berish uchun ishlab chiqilgan.
           </p>
           <address className="small" style={{ fontStyle: 'normal', marginTop: 12, lineHeight: 1.65 }}>
-            <div>Muallif: <strong>Qurbonov Baxromjon</strong></div>
+            <div>Mualliflar:</div>
+            <ul className="site-footer__authors">
+              <li><strong>Shadmanov Erkin Sherkulovich</strong></li>
+              <li><strong>Qurbonov Baxromjon Baxtiyor o‘g‘li</strong></li>
+            </ul>
             <div>Telefon: <a href="tel:+998938636355" className="link">+998 93 863 63 55</a></div>
             <div>Telegram: <a href="https://t.me/BaxromjonQurbonov" className="link">@BaxromjonQurbonov</a></div>
           </address>
@@ -50,7 +54,7 @@ export function Footer() {
       <div className="container site-footer__bottom">
         <SiteStatsLine />
         <div>
-          <p>© 2026 Qurbonov Baxromjon. Barcha huquqlar himoyalangan.</p>
+          <p>© 2026 Shadmanov E.Sh., Qurbonov B.B. Barcha huquqlar himoyalangan.</p>
           <p>Sayt materiallaridan foydalanganda «Iqtisodiyot nazariyasi — ta’lim va analitika» saytini manba sifatida ko‘rsating.</p>
         </div>
       </div>
