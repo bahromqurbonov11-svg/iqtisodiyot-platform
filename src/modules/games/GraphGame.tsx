@@ -127,7 +127,7 @@ export function GraphGamePage() {
   const deadline = useRef(0);
   const next = useRef<number | undefined>(undefined);
   const question = questions[index];
-  const student = user?.role === 'student' && !user.external;
+  const student = Boolean(user) && !user?.external;
 
   useEffect(() => () => window.clearTimeout(next.current), []);
 
@@ -190,7 +190,7 @@ export function GraphGamePage() {
               <li><Flame size={18} aria-hidden /> <span>Narx tugmasi narxning <b>avvalgi darajaga nisbatan</b> o‘zgarishini bildiradi: ozgina oshsa ham “Oshadi”, ozgina tushsa ham “Pasayadi”. Davlat narxni belgilagan bo‘lsa, savolda shu ko‘rsatiladi.</span></li>
               <li><Trophy size={18} aria-hidden /> <span>10 / 10 bo‘lsa — kabinetdagi “Nishonlarim” bo‘limiga <b>Afsonaviy</b> nishon “Grafik grossmeysteri” qo‘shiladi.</span></li>
             </ul>
-            {!student && <p className="small muted">Nishon faqat ro‘yxatdan o‘tgan talabalarga beriladi. Mehmon sifatida mashq qilishingiz mumkin.</p>}
+            {!student && <p className="small muted">Nishon faqat tizimga kirgan foydalanuvchilarga beriladi. Mehmon sifatida mashq qilishingiz mumkin.</p>}
             <Button size="lg" onClick={start}>O‘yinni boshlash</Button>
           </Card>
         </div>
