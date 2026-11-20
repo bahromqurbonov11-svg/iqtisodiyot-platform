@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Check, Dices, Play, RotateCcw, Trophy } from 'lucide-react';
 import { Badge, Button, Card, PageHeader } from '@/components/ui';
 import { paths } from '@/navigation/paths';
-import { sectors, START_DEPOSIT, type Sector } from './scenarios';
+import { START_DEPOSIT, type Sector, type Stage } from './scenarios';
+import { allSectors as sectors } from './catalog';
 
 /**
  * "Biznes yo‘lak" — o‘qituvchi boshqaradigan guruhli o‘yin (DEMO o‘quv modeli).
@@ -12,24 +13,32 @@ import { sectors, START_DEPOSIT, type Sector } from './scenarios';
 const COLORS = ['#1f8f78', '#2b6cb0', '#c2562d', '#7a3fb0', '#b8860b', '#c0453a'];
 
 interface Entry { stage: number; pick: number | null; cost: number; income: number; overhead: number; gamble: 'win' | 'lose' | null }
-interface Team { name: string; sector: Sector; cash: number; picks: (number | null)[]; log: Entry[] }
+interface Team { name: string; sector: Sector; stages: Stage[]; cash: number; picks: (number | null)[]; log: Entry[] }
+
+const STAGES = 6;
+function draw<T>(list: T[], n: number): T[] {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a.slice(0, n);
+}
 
 const fmt = (n: number) => (n > 0 ? '+' : '') + Math.round(n * 10) / 10;
 
 export function BusinessGamePage() {
   const [count, setCount] = useState(4);
   const [names, setNames] = useState(() => Array.from({ length: 6 }, (_, i) => (i + 1) + '-jamoa'));
-  const [picked, setPicked] = useState<string[]>(() => ['retail', 'farm', 'sewing', 'cafe', 'it', 'retail']);
+  const [picked, setPicked] = useState<string[]>(() => ['retail', 'farm', 'sewing', 'cafe', 'it', 'build']);
   const [teams, setTeams] = useState<Team[]>();
   const [stage, setStage] = useState(0);
   const [done, setDone] = useState(false);
-  const stageCount = sectors[0].stages.length;
+  const stageCount = STAGES;
 
   function start() {
-    setTeams(Array.from({ length: count }, (_, i) => ({
-      name: names[i] || (i + 1) + '-jamoa', sector: sectors.find(s => s.id === picked[i]) ?? sectors[0],
-      cash: START_DEPOSIT, picks: Array(stageCount).fill(null), log: [],
-    })));
+    setTeams(Array.from({ length: count }, (_, i) => {
+      const sector = sectors.find(s => s.id === picked[i]) ?? sectors[0];
+      return { name: names[i] || (i + 1) + '-jamoa', sector, stages: draw(sector.stages, STAGES),
+        cash: START_DEPOSIT, picks: Array(stageCount).fill(null), log: [] };
+    }));
     setStage(0); setDone(false);
   }
 
@@ -42,7 +51,7 @@ export function BusinessGamePage() {
   function settle() {
     setTeams(list => list?.map(t => {
       if (t.log.length > stage) return t;
-      const st = t.sector.stages[stage];
+      const st = t.stages[stage];
       const pick = t.picks[stage];
       let cost = 0, income = 0, gamble: Entry['gamble'] = null;
       if (pick !== null && st.options[pick][1] <= t.cash) {
@@ -86,7 +95,7 @@ export function BusinessGamePage() {
             ))}
           </div>
           <ol className="small muted cls-rules">
-            <li>Har bir soha o‘zining {stageCount} bosqichli yo‘lagiga ega: har bosqichda sohaga xos muammo va 3 ta qaror beriladi.</li>
+            <li>Har bir soha o‘z muammolar to‘plamiga ega ({sectors.length} ta soha). O‘yin boshida jamoa uchun shu sohadan {stageCount} ta bosqich tasodifiy tanlanadi, shuning uchun har o‘yin boshqacha bo‘ladi.</li>
             <li>Qaror xarajat talab qiladi. Daromad va to‘liq izoh bosqich yakunlangandan keyin ochiladi. Har bosqichda doimiy xarajat (ijara, kommunal) ham to‘lanadi.</li>
             <li>Ba’zi qarorlar tavakkalli: natijasi tasodifga bog‘liq. Oxirida jami daromad, xarajat va foyda yoki zarar hisoblanadi.</li>
           </ol>
@@ -132,7 +141,7 @@ export function BusinessGamePage() {
                 <h4><span className="cls-dot" /> {t.name} · {t.sector.emoji}</h4>
                 <ol className="small" style={{ paddingLeft: 18 }}>
                   {t.log.map(e => {
-                    const st = t.sector.stages[e.stage];
+                    const st = t.stages[e.stage];
                     const best = Math.max(...st.options.map(o => o[2] - o[1]));
                     const net = e.income - e.cost;
                     return (
@@ -162,7 +171,7 @@ export function BusinessGamePage() {
       <p className="muted small"><Badge tone="neutral">{stage + 1} / {stageCount} bosqich</Badge> {settled ? 'Natijalar ochildi.' : 'Har bir jamoa o‘z sohasidagi muammo uchun qaror tanlaydi.'}</p>
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
         {teams.map((t, i) => {
-          const st = t.sector.stages[stage];
+          const st = t.stages[stage];
           const entry = t.log[stage];
           return (
             <section key={i} className="card" style={{ padding: 16, borderTop: '4px solid ' + COLORS[i], ['--gc' as string]: COLORS[i] }}>
