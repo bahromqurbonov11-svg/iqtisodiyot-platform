@@ -89,3 +89,25 @@ export function SiteStatsLine() {
     </div>
   );
 }
+
+/** Sahifaning eng yuqorisidagi doimiy ko‘rinadigan faollik yo‘lagi */
+export function SiteActivityBar() {
+  const totals = useSiteStats();
+  const hours = totals ? Math.floor(totals.seconds / 3600) : 0;
+  const minutes = totals ? Math.floor((totals.seconds % 3600) / 60) : 0;
+  return (
+    <div className="activity-bar" role="status" aria-label="Sayt faolligi">
+      <div className="container activity-bar__inner">
+        <span className="activity-bar__live"><i aria-hidden /> Sayt faolligi</span>
+        <span className="activity-bar__item" title="Saytga tashriflar soni">
+          <Eye size={15} aria-hidden /> <b>{totals ? totals.visits.toLocaleString('uz') : '—'}</b> <em>ta tashrif</em>
+        </span>
+        <span className="activity-bar__item" title="Saytda o‘tkazilgan umumiy vaqt">
+          <Clock size={15} aria-hidden />{' '}
+          <b>{totals ? hours + ' soat ' + minutes + ' daqiqa' : '—'}</b>
+          <em className="activity-bar__long"> saytda o‘tkazilgan</em>
+        </span>
+      </div>
+    </div>
+  );
+}
