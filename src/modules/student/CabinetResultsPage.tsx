@@ -30,6 +30,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const activity = useAdminActivity(admin);
   const [group, setGroup] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
+  const [kind, setKind] = useState('');
   const [report, setReport] = useState('tests');
   const [limit, setLimit] = useState(12);
   const [practice, setPractice] = useState<string>();
@@ -58,8 +59,30 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     };
   }, [admin]);
 
-  const matching = (results ?? []).filter(result =>
+  const kindOf = (scope: number | null) => scope === null ? 'general' : scope > 0 ? 'topic' : 'semester';
+  const baseMatching = (results ?? []).filter(result =>
     (!student || result.student_id === student) && (!group || String(result.group_id) === group));
+  const matching = baseMatching.filter(result => !kind || kindOf(result.test_scope) === kind);
+  const kindLabels: Record<string, string> = { topic: 'Mavzulashtirilgan testlar', general: 'Umumiy testlar', semester: 'Semestr testlari' };
+  const kindRows = Object.entries(kindLabels).map(([key, label]) => {
+    const rows = baseMatching.filter(result => kindOf(result.test_scope) === key);
+    const total = rows.reduce((sum, row) => sum + row.total, 0);
+    const points = rows.reduce((sum, row) => sum + row.points, 0);
+    return { key, label, attempts: rows.length, students: new Set(rows.map(row => row.student_id)).size, total, percent: total ? Math.round(100 * points / total) : 0 };
+  });
+  /** Har bir mavzu bo‘yicha: mavzulashtirilgan va umumiy/semestr testlaridagi javoblar. */
+  const perTopic = topics.map(topic => {
+    let sTotal = 0, sCorrect = 0, gTotal = 0, gCorrect = 0;
+    for (const row of baseMatching) {
+      if (row.test_scope === topic.globalOrder) {
+        const answers = row.items?.filter(item => item.topic === topic.globalOrder);
+        sTotal += answers ? answers.length : row.total; sCorrect += answers ? answers.filter(item => item.correct).length : row.points;
+      } else if (row.test_scope === null || row.test_scope < 0) {
+        for (const item of row.items ?? []) if (item.topic === topic.globalOrder) { gTotal++; gCorrect += Number(item.correct); }
+      }
+    }
+    return { topic, sTotal, sCorrect, gTotal, gCorrect };
+  });
   const items = matching.flatMap(result => result.items ?? []);
   const filtered = matching.filter(result => !topicFilter || result.test_scope === Number(topicFilter) ||
     result.items?.some(item => item.topic === Number(topicFilter)));
@@ -154,13 +177,17 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
               {[...students].map(([id, name]) => <option key={id} value={id}>{name || id}</option>)}
             </select></label>
           </>}
+          <label>Test turi<select className="search-control" value={kind} onChange={event => { setKind(event.target.value); setLimit(12); }}>
+            <option value="">Barcha testlar</option>
+            {Object.entries(kindLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+          </select></label>
           <label>Mavzu<select className="search-control" value={topicFilter} onChange={event => { setTopicFilter(event.target.value); setLimit(12); }}>
             <option value="">Barcha mavzular</option>
             {topics.map(topic => <option key={topic.id} value={topic.globalOrder}>{topic.globalOrder}-mavzu · {topic.title}</option>)}
           </select></label>
         </div>
-        {(group || student || topicFilter) && <Button className="mt-3" variant="secondary" onClick={() => {
-          setGroup(''); setStudent(''); setTopicFilter(''); setLimit(12);
+        {(group || student || topicFilter || kind) && <Button className="mt-3" variant="secondary" onClick={() => {
+          setGroup(''); setStudent(''); setTopicFilter(''); setKind(''); setLimit(12);
         }}>Filtrlarni tozalash</Button>}
       </Card>
       {showTests && results && <>
@@ -187,6 +214,24 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
           <div className="admin-summary"><strong>{filtered.length} ta test urinish</strong><strong>{new Set(filtered.map(row => row.student_id)).size} ta qatnashgan talaba</strong></div>
           {testGroups.size ? bars([...testGroups.values()].filter(row => row.total > 0)
             .map(row => ({ ...row, percent: Math.round(100 * row.points / row.total), wrong: row.total - row.points }))) : <p>Bu tanlov uchun test natijasi yo‘q.</p>}
+        </Card>}
+        {admin && <Card title="Test turlari bo‘yicha statistika" subtitle="Mavzulashtirilgan, umumiy va semestr testlari alohida hisoblanadi" className="mt-5">
+          <div className="table-wrap"><table className="table">
+            <thead><tr><th>Test turi</th><th>Urinishlar</th><th>Talabalar</th><th>Javoblar</th><th>To‘g‘ri</th></tr></thead>
+            <tbody>{kindRows.map(row => <tr key={row.key}>
+              <td data-label="Test turi"><strong>{row.label}</strong></td><td data-label="Urinishlar">{row.attempts}</td>
+              <td data-label="Talabalar">{row.students}</td><td data-label="Javoblar">{row.total}</td>
+              <td data-label="To‘g‘ri">{row.total ? row.percent + '%' : '—'}</td></tr>)}</tbody>
+          </table></div>
+        </Card>}
+        {admin && <Card title="Mavzular bo‘yicha: test turlari taqqosi" subtitle="Har bir mavzuda mavzulashtirilgan va umumiy/semestr testlaridagi to‘g‘ri javoblar ulushi" className="mt-5">
+          <div className="table-wrap"><table className="table">
+            <thead><tr><th>Mavzu</th><th>Mavzulashtirilgan</th><th>Umumiy / semestr</th></tr></thead>
+            <tbody>{perTopic.map(row => <tr key={row.topic.id}>
+              <td data-label="Mavzu"><strong>{row.topic.globalOrder}.</strong> {row.topic.title}</td>
+              <td data-label="Mavzulashtirilgan">{row.sTotal ? Math.round(100 * row.sCorrect / row.sTotal) + '% · ' + row.sTotal + ' ta javob' : 'ma’lumot yo‘q'}</td>
+              <td data-label="Umumiy / semestr">{row.gTotal ? Math.round(100 * row.gCorrect / row.gTotal) + '% · ' + row.gTotal + ' ta javob' : 'ma’lumot yo‘q'}</td></tr>)}</tbody>
+          </table></div>
         </Card>}
         <Card title="Ko‘p xato qilingan savollar reytingi" subtitle={selectedTopic ? selectedTopic.globalOrder + '-mavzu bo‘yicha' : 'Barcha mavzular bo‘yicha'} className="mt-5">
           <QuestionRanking rows={difficult} />
