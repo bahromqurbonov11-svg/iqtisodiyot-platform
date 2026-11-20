@@ -11,6 +11,7 @@ import { useAuth } from '@/services/auth/AuthContext';
 import { MobileTabBar } from './MobileTabBar';
 import { SiteActivityBar } from './VisitReport';
 import { Footer } from './Footer';
+import { RegistrationReminder } from '@/modules/public/RegistrationReminder';
 import { BackToTop, ScrollProgress } from '@/components/motion/Motion';
 
 export function PublicLayout() {
@@ -28,6 +29,7 @@ export function PublicLayout() {
   return (
     <div className="site">
       <ScrollProgress />
+      <RegistrationReminder />
       <a href="#main" className="skip-link">Asosiy mazmunga o‘tish</a>
 
       <header className="site-header">
