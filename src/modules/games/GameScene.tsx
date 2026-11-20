@@ -60,13 +60,16 @@ export function GameScene({ slug }: { slug: string }) {
         <g><rect x="276" y="52" width="3" height="56" fill="#5b4636" /><path className="scene-flag" d="M279 54 h30 l-8 9 l8 9 h-30z" fill="#e0533c" /></g>
         <g className="scene-hurdle"><rect x="190" y="88" width="4" height="22" fill="#7d4a28" /><rect x="182" y="86" width="40" height="6" rx="2" fill="#fff" stroke="#c9553b" /><rect x="218" y="88" width="4" height="22" fill="#7d4a28" /></g>
         <g className="scene-runner">
-          <ellipse cx="86" cy="112" rx="14" ry="3.5" fill="#000" opacity=".22" />
-          <circle cx="88" cy="68" r="8" fill="#f2c18d" />
-          <path d="M80 62 q8 -10 16 0" fill="#3a2a1d" />
-          <path d="M88 76 L84 96" stroke="#1b5f4d" strokeWidth="9" strokeLinecap="round" />
-          <path className="scene-leg scene-leg--a" d="M84 96 L96 112" stroke="#25344d" strokeWidth="6" strokeLinecap="round" />
-          <path className="scene-leg scene-leg--b" d="M84 96 L74 112" stroke="#25344d" strokeWidth="6" strokeLinecap="round" />
-          <path d="M86 80 L98 88" stroke="#f2c18d" strokeWidth="5" strokeLinecap="round" />
+          <ellipse cx="88" cy="114" rx="16" ry="3.5" fill="#000" opacity=".22" />
+          <g className="scene-ship">
+            <path className="scene-flame" d="M70 80 L48 75 L56 80 L48 85Z" fill="#ff8a3d" />
+            <path d="M70 76 L58 63 L80 72Z" fill="#2f4d6b" />
+            <path d="M68 82 Q68 70 90 67 L112 73 Q121 80 112 88 Q104 96 90 96 Q68 93 68 82Z" fill="#fff" stroke="#9fb4c4" strokeWidth="1" />
+            <path d="M71 83 L114 83" stroke="#27a68f" strokeWidth="3" strokeLinecap="round" />
+            <path d="M78 90 L66 104 L94 96Z" fill="#2f4d6b" />
+            <ellipse cx="98" cy="75" rx="9" ry="6.5" fill="#4a9fe0" />
+            <ellipse cx="95" cy="73" rx="3" ry="1.6" fill="#fff" opacity=".8" />
+          </g>
         </g>
       </>}
 
