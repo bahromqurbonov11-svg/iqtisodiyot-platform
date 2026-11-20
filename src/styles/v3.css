@@ -208,11 +208,6 @@ dl.grid > .card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgb
   .table td[data-label]:not(.mat-num) { padding-top: 8px !important; border-top: 1px dashed var(--c-line) !important; }
   .table td[data-label]:not(.mat-num)::before { content: attr(data-label); display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--c-muted); margin-bottom: 2px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  *[class*="scene-"], *[class*="rn-"], .quick-tile__glow, .quick-tile__icon, .site-stat__icon, .hero::before, .hero::after, .hero__accent, .hero-visual__float--a, .hero-visual__float--b, .hero__facts dt, .step__icon, .game-chip__icon,
-  .tdiag-line, .tdiag-bar, .tdiag-dot, .tdiag__step.is-active { animation: none !important; }
-  .reveal { transform: none !important; }
-}
 
 /* Keng ichki mazmun sahifani kengaytirib yubormasligi uchun */
 .topic-slide-anchor, .slidedeck, .slidedeck__strip { min-width: 0; max-width: 100%; }
