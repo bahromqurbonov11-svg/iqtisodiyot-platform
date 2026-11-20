@@ -15,6 +15,17 @@ const encouragement = ['Diqqatni jamlang!', 'Yana bir to‘siq ortda!', 'Keyingi
 const runner = (action: string, run?: string, choice?: number) =>
   supabase.rpc('econ_runner', { action, run_id: run ?? null, choice: choice ?? null });
 
+/** Administrator uchun mahalliy rejim: server reytingiga yozilmaydi, savollar test bankidan olinadi. */
+type BankItem = { question: string; options: string[]; correct_index: number; topic: number | null };
+let adminBank: BankItem[] | undefined;
+async function loadAdminBank() {
+  if (adminBank) return adminBank;
+  const { data, error } = await supabase.rpc('econ_admin_test_bank');
+  if (error || !Array.isArray(data)) return undefined;
+  adminBank = (data as BankItem[]).filter(q => Array.isArray(q.options) && q.options.length === 4);
+  return adminBank;
+}
+
 export function RunnerPage() {
   const { user } = useAuth();
   const [phase, setPhase] = useState<Phase>('ready');
@@ -34,6 +45,8 @@ export function RunnerPage() {
   const pace = useRef(1);
   const world = useRef(initial());
   const run = useRef<string | undefined>(undefined);
+  const isAdmin = user?.role === 'admin';
+  const localQ = useRef<{ options: string[]; right: number; topic: number | null } | undefined>(undefined);
   const track = useRef<HTMLButtonElement>(null);
   const quizDialog = useRef<HTMLDialogElement>(null);
   const quizFeedback = useRef<HTMLParagraphElement>(null);
@@ -46,7 +59,7 @@ export function RunnerPage() {
   useEffect(() => { if (quizResult) quizFeedback.current?.focus(); }, [quizResult]);
 
   const refreshRank = useCallback(async () => {
-    if (!user) return;
+    if (!user || user.role === 'admin') return;
     const { data } = await runner('rank');
     if (data?.status === 'ok') setRank(data.players);
   }, [user]);
@@ -55,13 +68,24 @@ export function RunnerPage() {
 
   const finish = useCallback(() => {
     setPhase('over');
-    if (run.current) void runner('finish', run.current);
+    if (run.current && user?.role !== 'admin') void runner('finish', run.current);
     if (user && !user.external) saveGameRecord(user.id, { game: 'runner', score: world.current.score, total: 0 });
     void refreshRank();
   }, [refreshRank, user]);
 
   const checkpoint = useCallback(async () => {
     setPhase('loading');
+    if (user?.role === 'admin') {
+      const bank = await loadAdminBank();
+      if (!bank?.length) { setMessage('Marradagi savolni yuklab bo‘lmadi.'); finish(); return; }
+      const item = bank[Math.floor(Math.random() * bank.length)];
+      const order = item.options.map((_, i) => i).sort(() => Math.random() - .5);
+      localQ.current = { options: order.map(i => item.options[i]), right: order.indexOf(item.correct_index), topic: item.topic };
+      setQuiz({ question: item.question, options: localQ.current.options });
+      setQuizResult(undefined);
+      setPhase('quiz');
+      return;
+    }
     const { data, error } = await runner('question', run.current);
     if (error || data?.status !== 'ok') {
       setMessage('Marradagi savolni yuklab bo‘lmadi.');
@@ -71,7 +95,7 @@ export function RunnerPage() {
     setQuiz(data);
     setQuizResult(undefined);
     setPhase('quiz');
-  }, [finish]);
+  }, [finish, user?.role]);
 
   useEffect(() => {
     if (phase !== 'running') return;
@@ -121,6 +145,21 @@ export function RunnerPage() {
   async function start() {
     setBusy(true);
     setMessage('');
+    if (isAdmin) {
+      setBusy(false);
+      run.current = undefined;
+      livesRef.current = MAX_LIVES;
+      immune.current = 0;
+      setLives(MAX_LIVES);
+      world.current = initial();
+      setFrame(world.current);
+      setScore(0);
+      setPep(encouragement[0]);
+      setMissedTopic(undefined);
+      setMessage('Administrator rejimi: natija reytingga yozilmaydi, savollar butun test bankidan olinadi.');
+      setPhase('running');
+      return;
+    }
     const { data, error } = await runner('start');
     setBusy(false);
     if (error || data?.status !== 'ok') {
@@ -142,7 +181,9 @@ export function RunnerPage() {
   async function answer(choice: number) {
     if (busy || phase !== 'quiz' || quizResult) return;
     setBusy(true);
-    const { data } = await runner('answer', run.current, choice);
+    const { data } = isAdmin
+      ? { data: { status: choice === localQ.current?.right ? 'correct' : 'wrong', topic: localQ.current?.topic } }
+      : await runner('answer', run.current, choice);
     setBusy(false);
     if (data?.status === 'correct') {
       setQuizResult('correct');
