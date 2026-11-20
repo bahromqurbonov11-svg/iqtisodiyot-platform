@@ -2,7 +2,7 @@
  * O‘yin natijalarining qurilmadagi qaydi (nishonlar uchun).
  * Eslatma: bu ma’lumot faqat shu brauzerda saqlanadi; server reytingi va hisobotlariga ta’sir qilmaydi.
  */
-export type GameKey = 'runner' | 'target' | 'matching' | 'situation' | 'graph';
+export type GameKey = 'runner' | 'target' | 'matching' | 'situation' | 'graph' | 'graphwin';
 export interface GameRecord { game: GameKey; score: number; total: number; at: string }
 
 const keyFor = (userId: string) => 'econ-games-' + userId;
