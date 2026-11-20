@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, ChevronRight, Clock, ListChecks, LockKeyhole, UnlockKeyhole } from 'lucide-react';
+import { AlertTriangle, BookOpen, ChevronRight, Clock, ListChecks, LockKeyhole, UnlockKeyhole } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components/ui';
 import { useAuth } from '@/services/auth/AuthContext';
 import { catalogService } from '@/services/catalog.service';
@@ -20,10 +20,24 @@ export function CasesPage() {
 
   if (current) {
     const lines = current.body;
-    const split = lines.findIndex(line => /^Topshiriqlar?[.:]?$/i.test(line));
-    const story = (split < 0 ? lines : lines.slice(0, split))
-      .map(line => line.replace(/^(?:Vaziyat tavsifi|Vaziyat)[.:]?\s*/i, '')).filter(Boolean);
-    const tasks = (split < 0 ? [] : lines.slice(split + 1)).map(line => line.replace(/^\d+\s*[.)-]\s*/, '')).filter(Boolean);
+    const story: string[] = [];
+    const problems: string[] = [];
+    const tasks: string[] = [];
+    let mode: 'story' | 'problems' | 'tasks' = 'story';
+    for (const raw of lines) {
+      const mark = raw.match(/^(Vaziyat tavsifi|Vaziyat|Muammolar|Muammo|Topshiriqlar|Topshiriq)\s*[.:]\s*(.*)$/is);
+      let text = raw;
+      if (mark) {
+        const key = mark[1].toLowerCase();
+        mode = key.startsWith('muammo') ? 'problems' : key.startsWith('topshiriq') ? 'tasks' : 'story';
+        text = mark[2];
+      }
+      text = text.trim();
+      if (!text) continue;
+      if (mode === 'story') story.push(text);
+      else if (mode === 'problems') problems.push(text.replace(/^\d+\s*[.)-]\s*/, ''));
+      else tasks.push(text.replace(/^\d+\s*[.)-]\s*/, ''));
+    }
     const minutes = Math.max(1, Math.round(lines.join(' ').split(/\s+/).length / 180));
     const list = cases.filter(item => !topic || String(item.topic) === topic);
     const at = list.findIndex(item => item.id === current.id);
@@ -44,6 +58,7 @@ export function CasesPage() {
           <p>{current.topic}-mavzu · {topicName(current.topic)}</p>
           <ul className="case-hero__meta">
             <li><Clock size={15} aria-hidden /> ~{minutes} daqiqa o‘qish</li>
+            {problems.length > 0 && <li><AlertTriangle size={15} aria-hidden /> {problems.length} ta muammo</li>}
             {tasks.length > 0 && <li><ListChecks size={15} aria-hidden /> {tasks.length} ta topshiriq</li>}
           </ul>
         </header>
@@ -51,6 +66,12 @@ export function CasesPage() {
           <article className="case-paper">
             <h2 className="case-sec"><span><BookOpen size={17} aria-hidden /></span> Vaziyat tavsifi</h2>
             <div className="case-text">{story.map((line, index) => <p key={index}>{line}</p>)}</div>
+            {problems.length > 0 && (
+              <>
+                <h2 className="case-sec case-sec--problems"><span><AlertTriangle size={17} aria-hidden /></span> {problems.length > 1 ? 'Muammolar' : 'Muammo'}</h2>
+                <ol className="case-tasks case-problems">{problems.map((item, index) => <li key={index}><b>{index + 1}</b><p>{item}</p></li>)}</ol>
+              </>
+            )}
             {tasks.length > 0 && (
               <>
                 <h2 className="case-sec case-sec--tasks"><span><ListChecks size={17} aria-hidden /></span> Topshiriqlar</h2>
