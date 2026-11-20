@@ -54,11 +54,13 @@ export function TargetGamePage() {
     let current = true;
     async function loadResults() {
       setRankError('');
-      if (phase === 'over' && roundId.current && user?.role === 'student' && !user.external) {
+      if (phase === 'over' && roundId.current && user && !user.external) {
         if (savedRound.current !== roundId.current) {
           savedRound.current = roundId.current;
           saveGameRecord(user.id, { game: 'target', score, total: shots });
         }
+      }
+      if (phase === 'over' && roundId.current && user?.role === 'student' && !user.external) {
         const { error } = await supabase.rpc('econ_finish_target', {
           round_id: roundId.current, round_points: score, round_shots: shots,
         });
