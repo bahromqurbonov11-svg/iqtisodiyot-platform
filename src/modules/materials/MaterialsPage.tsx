@@ -140,8 +140,8 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               const repositoryFiles = materialsService.list(topic.id, 'slides').data;
               const multiple = libraryFiles.length + repositoryFiles.length > 1;
               return (
-                <li key={topic.id}>
-                  <Card title={topic.globalOrder + '-mavzu. ' + topic.title} className="stack stack--sm">
+                <li key={topic.id} style={{ ['--gc' as string]: topicStyle(topic.globalOrder).color }}>
+                  <Card title={topic.globalOrder + '-mavzu. ' + topic.title} className="stack stack--sm slide-card">
                     {libraryFiles.map((file) => {
                       const canPreview = /\.pptx$/i.test(file.file_name);
                       return (
