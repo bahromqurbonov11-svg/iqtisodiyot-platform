@@ -152,8 +152,3 @@
 }
 
 /* ---------- Harakatni kamaytirish ---------- */
-@media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; }
-  .hero-visual__panel, .hero-visual__float { transform: none; translate: none; }
-  .flashcard__inner { transition: none; }
-}
