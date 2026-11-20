@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Award, Crosshair, Crown, Flame, Gamepad2, GraduationCap, Info, Lightbulb, Lock, Medal, Puzzle, Rocket, Star, TrendingUp, X, type LucideIcon } from 'lucide-react';
+import { Award, Crosshair, Crown, Flame, Gem, ShieldCheck, Gamepad2, GraduationCap, Info, Lightbulb, Lock, Medal, Puzzle, Rocket, Star, TrendingUp, X, type LucideIcon } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { computeBadges, type AttemptLike, type Badge, type BadgeIcon } from './badges';
 import { loadGameRecords } from './gameStats';
 
 const icons: Record<BadgeIcon, LucideIcon> = {
   flame: Flame, award: Award, medal: Medal, star: Star, rocket: Rocket, crosshair: Crosshair,
-  puzzle: Puzzle, lightbulb: Lightbulb, trending: TrendingUp, gamepad: Gamepad2, grad: GraduationCap, crown: Crown,
+  puzzle: Puzzle, lightbulb: Lightbulb, trending: TrendingUp, gamepad: Gamepad2, grad: GraduationCap, crown: Crown, shield: ShieldCheck, gem: Gem,
 };
 const tierLabel = { bronze: 'Bronza', silver: 'Kumush', gold: 'Oltin', legend: 'Afsonaviy' } as const;
 const sources = {
