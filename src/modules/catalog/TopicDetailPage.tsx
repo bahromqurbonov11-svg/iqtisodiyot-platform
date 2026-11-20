@@ -197,6 +197,9 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState<string | null>(null);
   const [presentation, setPresentation] = useState<UploadedMaterial | null>(null);
+  const [liteOpen, setLiteOpen] = useState(false);
+  /** Telefonda og‘ir PPTX faylini ochish xotirani to‘ldiradi — yengil matnli ko‘rinish ishlatiladi. */
+  const lite = typeof window !== 'undefined' && window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
 
   useEffect(() => {
     let active = true;
@@ -257,7 +260,7 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
               </div>
               <div className="presentation-actions">
                 {/\.pptx$/i.test(file.file_name) && (
-                  <Button variant="secondary" onClick={() => setPresentation(file)}>Slaydlarni ko‘rish</Button>
+                  <Button variant="secondary" onClick={() => (lite ? setLiteOpen(true) : setPresentation(file))}>Slaydlarni ko‘rish</Button>
                 )}
                 <Button variant="secondary" disabled={downloading !== null} icon={<Download size={16} />} onClick={() => void download(file)}>
                   {downloading === file.id ? 'Yuklanmoqda…' : 'Yuklab olish'}
@@ -282,6 +285,7 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
         {(repositoryCount > 0 || (files && slides.length === 0)) && <SlidesList topicId={topicId} />}
       </Card>
       {other.length > 0 && <Card title="Boshqa o‘quv materiallari">{renderFiles(other)}</Card>}
+      {liteOpen && <ReadOnlySlides number={number} />}
       {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
     </>
   );
