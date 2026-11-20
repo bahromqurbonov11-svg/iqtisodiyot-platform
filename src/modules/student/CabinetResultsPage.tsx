@@ -7,7 +7,7 @@ import { supabase } from '@/services/supabase';
 import { useAdminActivity } from '@/modules/admin/adminActivity';
 import { AdminGameCharts } from '@/modules/admin/AdminGameCharts';
 import { Activity, Gauge, ListChecks, ShieldAlert } from 'lucide-react';
-import { HardList, KpiTiles, TopicMap, TopicPanel, TopicRanking, TrendChart, type Stat } from '@/modules/analytics/AnalyticsViews';
+import { QuestionRanking, KpiTiles, TopicMap, TopicPanel, TopicRanking, TrendChart, type Stat } from '@/modules/analytics/AnalyticsViews';
 
 interface Result {
   attempt_id: string;
@@ -76,7 +76,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     wrong: answers.filter(item => !item.correct).length,
     percent: Math.round(100 * answers.filter(item => item.correct).length / answers.length),
     topic: answers[0].topic,
-  })).filter(item => item.wrong > 0).sort((a, b) => b.wrong - a.wrong || a.percent - b.percent).slice(0, 10);
+  })).filter(item => item.wrong > 0).sort((a, b) => b.wrong - a.wrong || a.percent - b.percent);
   const groups = new Map((results ?? []).filter(row => row.group_id != null).map(row => [String(row.group_id), row.group_name]));
   activity.data?.groups.forEach(entry => groups.set(String(entry.id), entry.name));
   const trend = (topicFilter ? [] : filtered).slice(0, 12).reverse();
@@ -188,8 +188,8 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
           {testGroups.size ? bars([...testGroups.values()].filter(row => row.total > 0)
             .map(row => ({ ...row, percent: Math.round(100 * row.points / row.total), wrong: row.total - row.points }))) : <p>Bu tanlov uchun test natijasi yo‘q.</p>}
         </Card>}
-        <Card title="Ko‘proq xato qilingan savollar" subtitle={selectedTopic ? selectedTopic.globalOrder + '-mavzu bo‘yicha' : 'Barcha mavzular bo‘yicha'} className="mt-5">
-          <HardList rows={difficult} />
+        <Card title="Ko‘p xato qilingan savollar reytingi" subtitle={selectedTopic ? selectedTopic.globalOrder + '-mavzu bo‘yicha' : 'Barcha mavzular bo‘yicha'} className="mt-5">
+          <QuestionRanking rows={difficult} />
         </Card>
       </>}
       {showTests && <Card title="Topshirilgan testlar" className="mt-5">
