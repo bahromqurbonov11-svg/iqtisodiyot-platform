@@ -15,6 +15,7 @@ import { adminMenu, studentMenu } from '@/navigation/menus';
 import { paths } from '@/navigation/paths';
 import { useAuth } from '@/services/auth/AuthContext';
 import { AccessGate } from './AccessGate';
+import { SiteActivityBar } from './VisitReport';
 
 export function DashboardLayout({
   role,
@@ -140,6 +141,7 @@ export function DashboardLayout({
       )}
 
       <div className="dash__main">
+        <SiteActivityBar />
         <header className="dash__topbar">
           <button
             className="icon-btn dash__burger"
