@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Clock, ListChecks, TimerOff } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
 import { useAuth } from '@/services/auth/AuthContext';
@@ -113,7 +114,7 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
       <div className="stack">
         {!user && <GuestTest initialTopic={initialTopic} />}
         {user && !attempt && (
-          <Card title="Testni boshlash">
+          <Card title="Testni boshlash" subtitle="Savollar bankini tanlang va testni boshlang" className="test-start">
             <div className="stack">
               <label htmlFor="test-topic">Savollar banki</label>
               <select className="search-control" id="test-topic" value={topic} onChange={(event) => { setTopic(event.target.value); setCount('20'); }}>
@@ -134,6 +135,11 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
                   <p className="small muted">Jami vaqt: {Math.floor(totalSeconds / 60)} daqiqa {totalSeconds % 60 ? ` ${totalSeconds % 60} soniya` : ""}</p>
                 </>
               )}
+              <ul className="test-pills" aria-label="Test shartlari">
+                <li><ListChecks size={16} aria-hidden /> {broad ? (selectedCount !== undefined ? selectedCount + ' ta savol' : 'Savollar soni tanlanadi') : 'Mavzu bo‘yicha 20 tagacha savol'}</li>
+                <li><Clock size={16} aria-hidden /> Har bir savolga 90 soniya</li>
+                <li><TimerOff size={16} aria-hidden /> Vaqt tugasa — javob xato hisoblanadi</li>
+              </ul>
               <Button disabled={busy} onClick={() => void startTest()}>Boshlash</Button>
             </div>
           </Card>
@@ -142,11 +148,12 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
           <>
             {index < attempt.questions.length ? (
               <Card className="test-question">
-                <div className="test-meta"><strong>{index + 1} / {attempt.questions.length}</strong><span aria-label="Qolgan vaqt">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
+                <div className="test-meta"><strong>{index + 1} / {attempt.questions.length}</strong><span aria-label="Qolgan vaqt" className={seconds <= 15 ? 'is-urgent' : ''}>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
+                <div className="test-progress" aria-hidden><i style={{ width: (100 * index / attempt.questions.length) + '%' }} /></div>
                 <h2>{attempt.questions[index].question}</h2>
                 <div className="stack">
                   {attempt.questions[index].options.map((option, choice) => (
-                    <button className="test-option" key={choice} onClick={() => advance(Date.now() >= deadline ? 4 : choice)}>{option}</button>
+                    <button className="test-option" key={choice} onClick={() => advance(Date.now() >= deadline ? 4 : choice)}><b aria-hidden>{String.fromCharCode(65 + choice)}</b><span>{option}</span></button>
                   ))}
                 </div>
               </Card>
@@ -154,14 +161,17 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
           </>
         )}
         {attempt && score !== undefined && (
-          <Card title="Natija">
+          <Card title="Natija" className="test-result">
+            <div className="test-score" role="img" aria-label={'Natija ' + Math.round(100 * score / attempt.questions.length) + ' foiz'}>
+              <b>{Math.round(100 * score / attempt.questions.length)}%</b><span>{score} / {attempt.questions.length}</span>
+            </div>
             <p>{score} ta to‘g‘ri · {attempt.questions.length - score} ta xato</p>
             <p>{answers.filter(choice => choice === 4).length} ta belgilanmagan (xato hisoblandi)</p>
             <Button onClick={() => setAttempt(undefined)}>Yangi test</Button>
           </Card>
         )}
         {user?.role === 'admin' && !attempt && (
-          <Card title="Savollar bankini yuklash">
+          <Card title="Savollar bankini yuklash" className="test-bank">
             <div className="stack">
               <label htmlFor="test-bank-file">Tayyorlangan savollar banki (.json)</label>
               <input id="test-bank-file" type="file" accept=".json" onChange={(event) => setFile(event.target.files?.[0])} />
