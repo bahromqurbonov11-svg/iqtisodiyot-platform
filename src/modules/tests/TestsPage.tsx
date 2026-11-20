@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Clock, ListChecks, TimerOff } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
@@ -15,6 +15,8 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   const { user } = useAuth();
   const [topic, setTopic] = useState(initialTopic?.toString() ?? '');
   const [index, setIndex] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
+  const pickTimer = useRef<number | undefined>(undefined);
   const [deadline, setDeadline] = useState(0);
   const [seconds, setSeconds] = useState(90);
   const [count, setCount] = useState('20');
@@ -46,7 +48,19 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
     return () => window.clearInterval(timer);
   }, [attempt, index, deadline]);
 
+  useEffect(() => () => window.clearTimeout(pickTimer.current), []);
+
+  /** Javob tanlanganda belgi ko‘rinib turadi, so‘ng savol silliq almashadi. */
+  function choose(choice: number) {
+    if (picked !== null) return;
+    const final = Date.now() >= deadline ? 4 : choice;
+    setPicked(choice);
+    pickTimer.current = window.setTimeout(() => advance(final), 520);
+  }
+
   function advance(choice: number) {
+    window.clearTimeout(pickTimer.current);
+    setPicked(null);
     setAnswers((previous) => previous.map((value, position) => position === index ? choice : value));
     setIndex(index + 1);
     setDeadline(Date.now() + 90_000);
@@ -70,6 +84,7 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
       return;
     }
     setAttempt(data);
+    setPicked(null);
     setIndex(0);
     setSeconds(90);
     setDeadline(Date.now() + 90_000);
@@ -147,13 +162,13 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
         {attempt && score === undefined && (
           <>
             {index < attempt.questions.length ? (
-              <Card className="test-question">
+              <Card className="test-question" key={index}>
                 <div className="test-meta"><strong>{index + 1} / {attempt.questions.length}</strong><span aria-label="Qolgan vaqt" className={seconds <= 15 ? 'is-urgent' : ''}>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
                 <div className="test-progress" aria-hidden><i style={{ width: (100 * index / attempt.questions.length) + '%' }} /></div>
                 <h2>{attempt.questions[index].question}</h2>
                 <div className="stack">
                   {attempt.questions[index].options.map((option, choice) => (
-                    <button className="test-option" key={choice} onClick={() => advance(Date.now() >= deadline ? 4 : choice)}><b aria-hidden>{String.fromCharCode(65 + choice)}</b><span>{option}</span></button>
+                    <button type="button" className={'test-option' + (picked === choice ? ' is-picked' : picked !== null ? ' is-dim' : '')} key={index + '-' + choice} disabled={picked !== null && picked !== choice} aria-pressed={picked === choice} onClick={() => choose(choice)}><b aria-hidden>{String.fromCharCode(65 + choice)}</b><span>{option}</span></button>
                   ))}
                 </div>
               </Card>
