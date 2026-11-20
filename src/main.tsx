@@ -13,6 +13,7 @@ import '@/styles/pages.css';
 import '@/styles/motion.css';
 import '@/styles/v2.css';
 import '@/styles/v3.css';
+import '@/styles/v4.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
