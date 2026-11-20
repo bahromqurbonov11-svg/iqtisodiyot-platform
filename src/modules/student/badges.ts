@@ -1,12 +1,12 @@
 import type { GameKey, GameRecord } from './gameStats';
 
-export type BadgeIcon = 'flame' | 'award' | 'medal' | 'star' | 'rocket' | 'crosshair' | 'puzzle' | 'lightbulb' | 'trending' | 'gamepad' | 'grad';
+export type BadgeIcon = 'flame' | 'award' | 'medal' | 'star' | 'rocket' | 'crosshair' | 'puzzle' | 'lightbulb' | 'trending' | 'gamepad' | 'grad' | 'crown';
 export interface Badge {
   id: string;
   group: 'test' | 'game';
   title: string;
   text: string;
-  tier: 'bronze' | 'silver' | 'gold';
+  tier: 'bronze' | 'silver' | 'gold' | 'legend';
   icon: BadgeIcon;
   earned: boolean;
   progress: number;
@@ -40,7 +40,7 @@ export function computeBadges(
   const streak = flawlessStreak(list);
   const perfect = list.filter(a => a.total > 0 && a.points === a.total).length;
   const masteredTopics = [...topics.values()].filter(t => t.total >= 5 && t.correct / t.total >= 0.8).length;
-  const played = new Set(games.map(g => g.game)).size;
+  const played = new Set(games.map(g => g.game).filter(g => g !== 'graphwin')).size;
   const mk = (b: Omit<Badge, 'earned'>): Badge => ({ ...b, earned: b.progress >= b.goal });
 
   return [
@@ -58,6 +58,7 @@ export function computeBadges(
     mk({ id: 'matcher', group: 'game', title: 'Tushuncha ustasi', text: 'Moslashtirish o‘yinida jami 5 ta to‘g‘ri javob bering.', tier: 'bronze', icon: 'puzzle', progress: Math.min(sum(games, 'matching'), 5), goal: 5 }),
     mk({ id: 'strategist', group: 'game', title: 'Strateg', text: 'Vaziyatli qaror o‘yinida jami 5 ta to‘g‘ri javob bering.', tier: 'bronze', icon: 'lightbulb', progress: Math.min(sum(games, 'situation'), 5), goal: 5 }),
     mk({ id: 'grapher', group: 'game', title: 'Grafik ustasi', text: 'Grafikni boshqar o‘yinida jami 5 ta to‘g‘ri javob bering.', tier: 'bronze', icon: 'trending', progress: Math.min(sum(games, 'graph'), 5), goal: 5 }),
+    mk({ id: 'grand-graph', group: 'game', title: 'Grafik grossmeysteri', text: 'Sayt bo‘yicha eng qiyin topshiriq: Grafikni boshqar o‘yinida tasodifiy 10 ta murakkab savolni bitta ham xatosiz va vaqtida yeching.', tier: 'legend', icon: 'crown', progress: Math.min(sum(games, 'graphwin'), 1), goal: 1 }),
     mk({ id: 'all-games', group: 'game', title: 'Barcha o‘yinlar', text: 'Beshta o‘yinning har birini kamida bir marta o‘ynang.', tier: 'gold', icon: 'gamepad', progress: Math.min(played, 5), goal: 5 }),
   ];
 }
