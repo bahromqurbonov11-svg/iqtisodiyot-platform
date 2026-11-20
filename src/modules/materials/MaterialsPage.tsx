@@ -25,21 +25,11 @@ export function MaterialsPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const category = params.get('tur');
+  if (category === 'adabiyotlar') return <LiteraturePage />;
   if (category === 'maruzalar') return <LecturesPage />;
   if (category === 'keyslar') return <CasesPage />;
-  if (category === 'sillabus' && user?.external) return <div className="container page"><PageHeader title="Sillabuslar" /><p>PDF havolalari ushbu hisobda ko‘rsatilmaydi.</p></div>;
-  if (category === 'sillabus') return (
-    <div className="container page">
-      <PageHeader title="Sillabuslar" crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Sillabuslar' }]} />
-      <div className="stack">
-        {[1, 2].map(part => (
-          <a className="card card--pad cat-card" key={part} href={import.meta.env.BASE_URL + 'sillabus/in-' + part + '.pdf'} target="_blank" rel="noopener">
-            Iqtisodiyot nazariyasi {part} · Sillabus (PDF)
-          </a>
-        ))}
-      </div>
-    </div>
-  );
+  if (category === 'sillabus' && user?.external) return <div className="container page"><PageHeader title="Sillabuslar" /><p>Sillabuslar ushbu hisobda ko‘rsatilmaydi.</p></div>;
+  if (category === 'sillabus') return <SyllabusPage />;
   if (category === 'glossariy') return <GlossaryPage />;
   const showPresentations = category === 'taqdimotlar';
   return <MaterialsLibrary key={user?.id ?? 'guest'} signedIn={Boolean(user) && !user?.external} external={Boolean(user?.external)}
@@ -194,7 +184,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
         </label>
         {materialCategories.filter(c => (c.title + ' ' + c.description).toLowerCase().includes(categorySearch.trim().toLowerCase())).map((c) => {
           const Icon = icons[c.icon];
-          const categories: Record<string, string> = { cases: 'keyslar', syllabus: 'sillabus', slides: 'taqdimotlar', glossary: 'glossariy', lectures: 'maruzalar' };
+          const categories: Record<string, string> = { literature: 'adabiyotlar', cases: 'keyslar', syllabus: 'sillabus', slides: 'taqdimotlar', glossary: 'glossariy', lectures: 'maruzalar' };
           if (c.id === 'tests' || categories[c.id]) return (
             <Link key={c.id} to={c.id === 'tests' ? paths.tests : paths.materials + '?tur=' + categories[c.id]} className="card card--pad cat-card"
               style={{ color: 'inherit', ['--gc' as string]: catColor[c.id] ?? 'var(--g-teal)' }}>
@@ -202,7 +192,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
               <span className="cat-card__foot">
-                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? caseEntries.length + ' ta keys' : c.id === 'syllabus' ? '2 ta PDF' : c.id === 'lectures' ? allTopics.length + ' ta ma’ruza' : c.id === 'tests' ? 'Test ishlash' : 'Atamalarni ko‘rish'}</Badge>}
+                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? caseEntries.length + ' ta keys' : c.id === 'literature' ? 'PDF · faqat ko‘rish' : c.id === 'syllabus' ? '2 ta PDF · ko‘rish' : c.id === 'lectures' ? allTopics.length + ' ta ma’ruza' : c.id === 'tests' ? 'Test ishlash' : 'Atamalarni ko‘rish'}</Badge>}
               </span>
             </Link>
           );
@@ -329,5 +319,25 @@ function FirstSlidePreview({ filePath, publicUrl }: { filePath?: string; publicU
 
 import { CasesPage } from './CasesPage';
 import { LecturesPage } from './LecturesPage';
+import { LiteraturePage } from './LiteraturePage';
+import { PdfViewer } from './PdfViewer';
 import caseEntries from '@/data/cases.json';
 import slidePreviews from '@/data/slide-previews.json';
+
+function SyllabusPage() {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <div className="container page">
+      <PageHeader title="Sillabuslar" crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Sillabuslar' }]}
+        description="Sillabuslar faqat saytda ko‘rish uchun ochiladi." />
+      <div className="stack">
+        {[1, 2].map(part => (
+          <button type="button" className="card card--pad cat-card" key={part} onClick={() => setOpen(part)} style={{ textAlign: 'left', cursor: 'pointer' }}>
+            Iqtisodiyot nazariyasi {part} · Sillabus (ko‘rish)
+          </button>
+        ))}
+      </div>
+      {open && <PdfViewer url={import.meta.env.BASE_URL + 'sillabus/in-' + open + '.pdf'} title={'Iqtisodiyot nazariyasi ' + open + ' · Sillabus'} onClose={() => setOpen(null)} />}
+    </div>
+  );
+}
