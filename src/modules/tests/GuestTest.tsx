@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Card } from '@/components/ui';
 import { topicGameBank } from '@/data/topicGames';
 import { catalogService } from '@/services/catalog.service';
@@ -8,6 +8,9 @@ export function GuestTest({ initialTopic }: { initialTopic?: number }) {
   const [topic, setTopic] = useState(initialTopic ?? 1);
   const [index, setIndex] = useState(-1);
   const [score, setScore] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
   const topics = catalogService.getTopics().data;
   const bank = topicGameBank[topic - 1];
   const question = bank[index];
@@ -21,10 +24,16 @@ export function GuestTest({ initialTopic }: { initialTopic?: number }) {
       </> : index < 3 ? <>
         <strong>{index + 1} / 3 · {question[1]}</strong>
         {[index, (index + 1) % bank.length, (index + 2) % bank.length].sort((a,b) => (a + topic) % 3 - (b + topic) % 3).map(id => (
-          <button type="button" key={id} className="test-option" onClick={() => {
-            if (id === index) setScore(value => value + 1);
-            setIndex(index + 1);
-          }}>{bank[id][0]}</button>
+          <button type="button" key={index + '-' + id} className={'test-option' + (picked === id ? ' is-picked' : picked !== null ? ' is-dim' : '')}
+            disabled={picked !== null && picked !== id} onClick={() => {
+              if (picked !== null) return;
+              setPicked(id);
+              timer.current = window.setTimeout(() => {
+                if (id === index) setScore(value => value + 1);
+                setPicked(null);
+                setIndex(index + 1);
+              }, 520);
+            }}>{bank[id][0]}</button>
         ))}
       </> : <>
         <strong>Natija: {score} / 3</strong>
