@@ -74,8 +74,8 @@ function Chart({ values }: { values: number[] }) {
       {[1, 2, 3, 4].map(i => <line key={'h' + i} x1={X0} x2={X0 + 450} y1={y(i * 32)} y2={y(i * 32)} stroke="#dbe6de" strokeWidth="1" />)}
       {[1, 2, 3, 4].map(i => <line key={'v' + i} y1={24} y2={Y0} x1={x(i * 20)} x2={x(i * 20)} stroke="#dbe6de" strokeWidth="1" />)}
       <path d={'M' + X0 + ' 18V' + Y0 + 'H508'} fill="none" stroke="#50675d" strokeWidth="1.6" />
-      <text x="10" y="14" fontSize="14" fill="#243b33">Narx (P)</text>
-      <text x="508" y="318" textAnchor="end" fontSize="14" fill="#243b33">Miqdor (Q)</text>
+      <text x="10" y="14" fontSize="14" fill="#243b33">Narx</text>
+      <text x="508" y="318" textAnchor="end" fontSize="14" fill="#243b33">Miqdor</text>
 
       <g clipPath="url(#gg-clip)">
         <g style={{ ...motion, ...tr(STEP * d * SX, 0) }}>
@@ -99,8 +99,8 @@ function Chart({ values }: { values: number[] }) {
         <circle r="13" fill="#2f855a" opacity=".18" className="gg-pulse" />
         <circle r="7" fill="#153a32" stroke="#fff" strokeWidth="2" />
       </g>
-      <g style={{ ...motion, ...tr(x(dq) + 8, y(dem - dq) + 4) }}><text fontSize="16" fontWeight="700" fill="#236753">D</text></g>
-      <g style={{ ...motion, ...tr(x(sq) + 8, y(sup + sq) + 4) }}><text fontSize="16" fontWeight="700" fill="#a35429">S</text></g>
+      <g style={{ ...motion, ...tr(x(dq) - 6, y(dem - dq) + 20) }}><text fontSize="13" fontWeight="700" textAnchor="end" fill="#236753">Talab</text></g>
+      <g style={{ ...motion, ...tr(x(sq) - 6, y(sup + sq) - 10) }}><text fontSize="13" fontWeight="700" textAnchor="end" fill="#a35429">Taklif</text></g>
       <g style={{ ...motion, ...tr(X0 + 6, y(price) - 8) }}><text fontSize="12" fontWeight="700" fill="#47508a">Bozor narxi</text></g>
       {kind && <g style={{ ...motion, ...tr(x(Math.max(qd, qs)) + 10, y(price) - 12) }}>
         <text fontSize="13" fontWeight="700" textAnchor="start" fill={kind === 'short' ? '#c0453a' : '#2b6cb0'}>{kind === 'short' ? 'Tanqislik' : 'Ortiqcha taklif'}</text>
@@ -198,7 +198,7 @@ export function GraphGamePage() {
         <div className="gg-layout">
           <Card className="gg-board" title="Bozor grafigi">
             <Chart values={values} />
-            <div className="gg-legend"><span className="gg-legend__d">Talab (D)</span><span className="gg-legend__s">Taklif (S)</span><span className="gg-legend__p">Bozor narxi</span></div>
+            <div className="gg-legend"><span className="gg-legend__d">Talab</span><span className="gg-legend__s">Taklif</span><span className="gg-legend__p">Bozor narxi</span></div>
           </Card>
           <Card className={'gg-panel' + (right ? ' is-right' : '')}>
             <div className="gg-top">
@@ -210,9 +210,9 @@ export function GraphGamePage() {
             <div className="gg-bar" aria-hidden><i style={{ width: (100 * left / SECONDS) + '%' }} /></div>
             <p className="gg-qno">{index + 1} / {ROUND} · Topshiriq</p>
             <p className="gg-prompt" key={question.id}>{question.prompt}</p>
-            <Segmented label="Talab (D)" value={values[0]} options={demandLabels} short={demandShort} disabled={right}
+            <Segmented label="Talab" value={values[0]} options={demandLabels} short={demandShort} disabled={right}
               onChange={v => setValues([v, values[1], values[2]])} />
-            <Segmented label="Taklif (S)" value={values[1]} options={demandLabels} short={demandShort} disabled={right}
+            <Segmented label="Taklif" value={values[1]} options={demandLabels} short={demandShort} disabled={right}
               onChange={v => setValues([values[0], v, values[2]])} />
             <Segmented label="Bozor narxi" value={values[2]} options={priceLabels} disabled={right}
               onChange={v => setValues([values[0], values[1], v])} />
