@@ -76,6 +76,16 @@ export function GamesPage() {
               <span className="game-tile__cta">Darsni boshlash <ArrowRight size={15} aria-hidden /></span>
             </span>
           </Link>
+          <Link to={paths.game('biznes-yolak')} className="game-tile" style={{ ['--gc' as string]: 'var(--g-violet)' }}>
+            <span className="game-tile__glow" aria-hidden />
+            <span className="game-tile__icon"><Users size={26} aria-hidden /></span>
+            <h3>Biznes yo‘lak</h3>
+            <p>Jamoalar bir xil depozit bilan boshlab, o‘z biznes sohasini tanlaydi: har bosqichda muammo, qaror va xarajat. Oxirida foyda yoki zarar hisoblanadi.</p>
+            <span className="game-tile__foot">
+              <Badge tone="neutral" icon={<Timer size={12} />}>~40 daqiqa</Badge>
+              <span className="game-tile__cta">Boshlash <ArrowRight size={15} aria-hidden /></span>
+            </span>
+          </Link>
         </div>
       </section>
 
