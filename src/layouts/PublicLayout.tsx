@@ -9,6 +9,7 @@ import { paths } from '@/navigation/paths';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/services/auth/AuthContext';
 import { MobileTabBar } from './MobileTabBar';
+import { SiteActivityBar } from './VisitReport';
 import { Footer } from './Footer';
 import { BackToTop, ScrollProgress } from '@/components/motion/Motion';
 
@@ -30,12 +31,14 @@ export function PublicLayout() {
       <a href="#main" className="skip-link">Asosiy mazmunga o‘tish</a>
 
       <header className="site-header">
+        <SiteActivityBar />
         <div className="container site-header__inner">
           <Brand showSchool />
           <nav className={`site-nav${open ? ' is-open' : ''}`} aria-label="Asosiy navigatsiya">
             {publicMenu(t).map((m) => (
               <NavLink key={m.to} to={m.to} className={({ isActive }) => `site-nav__link${isActive ? ' is-active' : ''}`}>
-                {m.label}
+                {m.icon && <m.icon className="site-nav__icon" size={17} aria-hidden />}
+                <span>{m.label}</span>
               </NavLink>
             ))}
             <div className="site-nav__mobile-actions">
