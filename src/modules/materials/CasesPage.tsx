@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, ChevronRight, LockKeyhole, UnlockKeyhole } from 'lucide-react';
+import { BookOpen, ChevronRight, Clock, ListChecks, LockKeyhole, UnlockKeyhole } from 'lucide-react';
 import { Button, Card, PageHeader } from '@/components/ui';
 import { useAuth } from '@/services/auth/AuthContext';
 import { catalogService } from '@/services/catalog.service';
@@ -18,20 +18,55 @@ export function CasesPage() {
   const shown = cases.filter(item => !topic || String(item.topic) === topic);
   const topicName = (id: number) => topics.find(item => item.globalOrder === id)?.title ?? '';
 
-  if (current) return (
-    <div className="container page">
-      <PageHeader crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Keyslar', to: catalog + (topic ? '&mavzu=' + topic : '') }, { label: current.id + '-keys' }]}
-        eyebrow={current.topic + '-mavzu · ' + topicName(current.topic)} title={current.title} />
-      <div className="case-layout">
-        <Card title={current.id + '-keys'} className="case-reading">
-          <div className="case-text">{current.body.map((line, index) => (
-            /^(?:Topshiriqlar?|Vaziyat tavsifi|Vaziyat)[.:]?$/i.test(line) ? <h3 key={index}>{line.replace(/[.:]$/, '')}</h3> : <p key={index}>{line}</p>
-          ))}</div>
-        </Card>
-        <CaseSolution key={current.id} id={current.id} />
+  if (current) {
+    const lines = current.body;
+    const split = lines.findIndex(line => /^Topshiriqlar?[.:]?$/i.test(line));
+    const story = (split < 0 ? lines : lines.slice(0, split))
+      .map(line => line.replace(/^(?:Vaziyat tavsifi|Vaziyat)[.:]?\s*/i, '')).filter(Boolean);
+    const tasks = (split < 0 ? [] : lines.slice(split + 1)).map(line => line.replace(/^\d+\s*[.)-]\s*/, '')).filter(Boolean);
+    const minutes = Math.max(1, Math.round(lines.join(' ').split(/\s+/).length / 180));
+    const list = cases.filter(item => !topic || String(item.topic) === topic);
+    const at = list.findIndex(item => item.id === current.id);
+    const near = (item?: (typeof cases)[number]) => item ? catalog + '&keys=' + item.id + (topic ? '&mavzu=' + topic : '') : undefined;
+    const prev = near(list[at - 1]);
+    const next = near(list[at + 1]);
+    const title = current.title.charAt(0) + current.title.slice(1).toLowerCase();
+    return (
+      <div className="container page">
+        <nav className="crumbs" aria-label="Yo‘l">
+          <Link to={paths.materials}>Materiallar</Link> <span aria-hidden>›</span>{' '}
+          <Link to={catalog + (topic ? '&mavzu=' + topic : '')}>Keyslar</Link> <span aria-hidden>›</span>{' '}
+          <span aria-current="page">{current.id}-keys</span>
+        </nav>
+        <header className="case-hero">
+          <span className="case-hero__no"><BookOpen size={18} aria-hidden /> {current.id}-keys</span>
+          <h1>{title}</h1>
+          <p>{current.topic}-mavzu · {topicName(current.topic)}</p>
+          <ul className="case-hero__meta">
+            <li><Clock size={15} aria-hidden /> ~{minutes} daqiqa o‘qish</li>
+            {tasks.length > 0 && <li><ListChecks size={15} aria-hidden /> {tasks.length} ta topshiriq</li>}
+          </ul>
+        </header>
+        <div className="case-layout case-layout--split">
+          <article className="case-paper">
+            <h2 className="case-sec"><span><BookOpen size={17} aria-hidden /></span> Vaziyat tavsifi</h2>
+            <div className="case-text">{story.map((line, index) => <p key={index}>{line}</p>)}</div>
+            {tasks.length > 0 && (
+              <>
+                <h2 className="case-sec case-sec--tasks"><span><ListChecks size={17} aria-hidden /></span> Topshiriqlar</h2>
+                <ol className="case-tasks">{tasks.map((task, index) => <li key={index}><b>{index + 1}</b><p>{task}</p></li>)}</ol>
+              </>
+            )}
+            <nav className="case-nav" aria-label="Keyslar orasida">
+              {prev ? <Link to={prev} onClick={() => window.scrollTo(0, 0)}>← Oldingi keys</Link> : <span />}
+              {next ? <Link to={next} onClick={() => window.scrollTo(0, 0)}>Keyingi keys →</Link> : <span />}
+            </nav>
+          </article>
+          <aside className="case-side"><CaseSolution key={current.id} id={current.id} /></aside>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="container page">
