@@ -228,15 +228,25 @@ export function AboutPage() {
               );
             })}
           </div>
-          <ul className="outc" key={partId + kind}>
-            {outcomes.map((o, i) => (
-              <li key={o.code} className={'outc__card outc__card--' + o.kind} style={{ animationDelay: i * 60 + 'ms' }}>
-                <span className="outc__code">{o.code}</span>
-                <small>{kindLabel[o.kind]}</small>
-                <p>{o.text}</p>
-              </li>
-            ))}
-          </ul>
+          <div className={'outg-grid' + (kind === 'all' ? '' : ' outg-grid--one')} key={partId + kind}>
+            {(['knowledge', 'skill', 'competence'] as const).filter((k) => kind === 'all' || kind === k).map((k) => {
+              const items = outcomes.filter((o) => o.kind === k);
+              if (!items.length) return null;
+              return (
+                <section key={k} className={'outg outg--' + k} aria-label={kindLabel[k]}>
+                  <header className="outg__head"><strong>{kindLabel[k]}</strong><span>{items.length}</span></header>
+                  <ol className="outg__list">
+                    {items.map((o, i) => (
+                      <li key={o.code} style={{ animationDelay: i * 50 + 'ms' }}>
+                        <b className="outg__code">{o.code}</b>
+                        <p>{o.text}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              );
+            })}
+          </div>
         </Reveal>
 
         {/* ---------- Diagnostik yondashuv ---------- */}
