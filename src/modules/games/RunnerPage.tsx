@@ -219,7 +219,7 @@ export function RunnerPage() {
         <div className="stack mt-3">
           {!user && <Button to={paths.login}>O‘ynash uchun kiring</Button>}
           {user && (phase === 'ready' || phase === 'over') && <Button disabled={busy} onClick={() => void start()}>{phase === 'over' ? 'Qayta o‘ynash' : 'Boshlash'}</Button>}
-          {phase === 'running' && <p className="small muted">Ko‘tarilish uchun maydonni bosing yoki fokusda bo‘lganda Space tugmasini ishlating.</p>}
+          {phase === 'running' && <p className="small muted"><span className="hint-touch">Ko‘tarilish uchun o‘yin maydoniga bosing.</span><span className="hint-key">Ko‘tarilish uchun maydonni bosing yoki ↑ tugmasidan foydalaning.</span></p>}
           {phase === 'loading' && <p role="status">Savol yuklanmoqda…</p>}
           {phase === 'over' && <strong>Raund natijasi: {score} ball</strong>}
           {message && <p role="status">{message}</p>}
