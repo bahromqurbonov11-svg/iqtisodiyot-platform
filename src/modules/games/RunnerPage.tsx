@@ -5,6 +5,7 @@ import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
 import { paths } from '@/navigation/paths';
 import { GameTopThree, type RankedPlayer } from './GameTopThree';
+import { saveGameRecord } from '@/modules/student/gameStats';
 
 type Quiz = { question: string; options: string[] };
 type Phase = 'ready' | 'running' | 'loading' | 'quiz' | 'over';
@@ -51,8 +52,9 @@ export function RunnerPage() {
   const finish = useCallback(() => {
     setPhase('over');
     if (run.current) void runner('finish', run.current);
+    if (user?.role === 'student' && !user.external) saveGameRecord(user.id, { game: 'runner', score: world.current.score, total: 0 });
     void refreshRank();
-  }, [refreshRank]);
+  }, [refreshRank, user]);
 
   const checkpoint = useCallback(async () => {
     setPhase('loading');
@@ -157,7 +159,7 @@ export function RunnerPage() {
 
   return <div className="container page runner-page">
     <PageHeader title="Marraga yugurish" crumbs={[{ label: 'O‘yinlar', to: paths.games }, { label: 'Marraga yugurish' }]}
-      description="To‘siqlardan sakrab o‘ting. Har 5 ballik marrada bitta savolga javob bering." />
+      description="To‘siqlardan uchib o‘ting. Har 5 ballik marrada bitta savolga javob bering." />
     <div className="stack">
       <Card title={score + ' ball'}>
         <div className="runner-controls">
@@ -172,13 +174,16 @@ export function RunnerPage() {
           </div>
           <strong aria-live="polite">{pep}</strong>
         </div>
-        <button ref={track} type="button" className="runner-track" aria-label="Sakrash" onClick={jump} onKeyDown={event => {
+        <button ref={track} type="button" className="runner-track" aria-label="Ko‘tarilish" onClick={jump} onKeyDown={event => {
           if (event.key === 'ArrowUp') { event.preventDefault(); jump(); }
         }}>
           <svg viewBox="0 0 590 190" preserveAspectRatio="xMidYMax meet" width="100%" aria-hidden="true">
             <defs>
               <linearGradient id="rn-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7cc8ff" /><stop offset="1" stopColor="#e9f7ff" /></linearGradient>
               <linearGradient id="rn-ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9a066" /><stop offset="1" stopColor="#a8683a" /></linearGradient>
+              <linearGradient id="rn-hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#b9c9d6" /></linearGradient>
+              <radialGradient id="rn-glass" cx=".35" cy=".3" r=".9"><stop offset="0" stopColor="#bfe8ff" /><stop offset="1" stopColor="#2b7fc4" /></radialGradient>
+              <linearGradient id="rn-fire" x1="1" x2="0"><stop offset="0" stopColor="#ffe08a" /><stop offset="1" stopColor="#ff6a3d" /></linearGradient>
               <linearGradient id="rn-bar" x1="0" x2="1"><stop offset="0" stopColor="#b97a49" /><stop offset="1" stopColor="#7a4626" /></linearGradient>
             </defs>
             <rect width="590" height="190" fill="url(#rn-sky)" />
@@ -198,20 +203,23 @@ export function RunnerPage() {
               </g>
             ))}
             <ellipse cx="86" cy="158" rx={16 - Math.min(frame.y / 6, 8)} ry="3.5" fill="#000" opacity=".22" />
-            <g transform={'translate(0 ' + (-frame.y) + ')'}>
-              <circle cx="87" cy="108" r="8" fill="#f2c18d" />
-              <path d="M79 103 q8 -10 17 0" fill="#3a2a1d" />
-              <rect x="78" y="116" width="19" height="24" rx="8" fill="#1b5f4d" />
-              <path className={frame.y > 0 ? '' : 'rn-leg rn-leg--a'} d="M84 138 L93 156" stroke="#25344d" strokeWidth="6" strokeLinecap="round" />
-              <path className={frame.y > 0 ? '' : 'rn-leg rn-leg--b'} d="M90 138 L78 156" stroke="#25344d" strokeWidth="6" strokeLinecap="round" />
-              <path d="M92 122 L103 128" stroke="#f2c18d" strokeWidth="5" strokeLinecap="round" />
+            <g transform={'translate(0 ' + (7 - frame.y) + ')'}>
+              <g className="rn-ship">
+                <path className={'rn-flame' + (frame.y > 0 ? ' rn-flame--boost' : '')} d="M73 134 L56 130 L62 134 L56 138Z" fill="url(#rn-fire)" />
+                <path d="M73 130 L64 120 L79 127Z" fill="#2f4d6b" />
+                <path d="M72 134 Q72 126 86 124 L102 128 Q108 133 102 138 Q96 144 86 144 Q72 142 72 134Z" fill="url(#rn-hull)" stroke="#9fb4c4" strokeWidth=".8" />
+                <path d="M74 134 L104 134" stroke="#27a68f" strokeWidth="2" strokeLinecap="round" />
+                <path d="M80 139 L72 150 L91 144Z" fill="#2f4d6b" />
+                <ellipse cx="92" cy="130" rx="6.5" ry="4.6" fill="url(#rn-glass)" />
+                <ellipse cx="90" cy="128.6" rx="2.2" ry="1.2" fill="#fff" opacity=".8" />
+              </g>
             </g>
           </svg>
         </button>
         <div className="stack mt-3">
           {!user && <Button to={paths.login}>O‘ynash uchun kiring</Button>}
           {user && (phase === 'ready' || phase === 'over') && <Button disabled={busy} onClick={() => void start()}>{phase === 'over' ? 'Qayta o‘ynash' : 'Boshlash'}</Button>}
-          {phase === 'running' && <p className="small muted">Sakrash uchun maydonni bosing yoki fokusda bo‘lganda Space tugmasini ishlating.</p>}
+          {phase === 'running' && <p className="small muted">Ko‘tarilish uchun maydonni bosing yoki fokusda bo‘lganda Space tugmasini ishlating.</p>}
           {phase === 'loading' && <p role="status">Savol yuklanmoqda…</p>}
           {phase === 'over' && <strong>Raund natijasi: {score} ball</strong>}
           {message && <p role="status">{message}</p>}
