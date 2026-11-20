@@ -186,6 +186,7 @@ export function GraphGamePage() {
               <li><Heart size={18} aria-hidden /> <span>Faqat bitta imkoniyat: xato qilsangiz, o‘yin tugaydi.</span></li>
               <li><Timer size={18} aria-hidden /> <span>Har bir savol uchun {SECONDS} soniya.</span></li>
               <li><Flame size={18} aria-hidden /> <span>“Biroz” — 1 qadam, “keskin” — 2 qadam siljish.</span></li>
+              <li><Flame size={18} aria-hidden /> <span>Narx doim <b>yangi muvozanatga</b> nisbatan baholanadi: “avvalgi darajada qotirilgan” narx yangi muvozanatdan past yoki yuqori bo‘lishi mumkin.</span></li>
               <li><Trophy size={18} aria-hidden /> <span>10 / 10 bo‘lsa — kabinetdagi “Nishonlarim” bo‘limiga <b>Afsonaviy</b> nishon “Grafik grossmeysteri” qo‘shiladi.</span></li>
             </ul>
             {!student && <p className="small muted">Nishon faqat ro‘yxatdan o‘tgan talabalarga beriladi. Mehmon sifatida mashq qilishingiz mumkin.</p>}
