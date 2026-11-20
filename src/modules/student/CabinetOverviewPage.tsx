@@ -6,6 +6,7 @@ import { useAuth } from '@/services/auth/AuthContext';
 import { paths } from '@/navigation/paths';
 import { useOwnProgress, mastery } from './useOwnProgress';
 import { catalogService } from '@/services/catalog.service';
+import { BadgeShelf } from './BadgeShelf';
 
 export function CabinetOverviewPage() {
   const { user } = useAuth();
@@ -85,6 +86,7 @@ export function CabinetOverviewPage() {
           </p>
         </Card>
       </div>
+      {user && !user.external && <BadgeShelf userId={user.id} attempts={progress.attempts} topics={progress.topics} loading={progress.loading} />}
       {needsPractice.length > 0 && <Card title="Takrorlash uchun mavzular" className="mt-5">
         <ul className="stack stack--sm">
           {needsPractice.map(({ topic, percent }) => <li key={topic.id}>
