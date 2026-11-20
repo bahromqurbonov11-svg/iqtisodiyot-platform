@@ -7,6 +7,7 @@ import { useAuth } from '@/services/auth/AuthContext';
 import { supabase } from '@/services/supabase';
 import { GameTopThree, type RankedPlayer } from './GameTopThree';
 import { useRecordGame } from './recordGame';
+import { saveGameRecord } from '@/modules/student/gameStats';
 
 function bonusQuestion(maxTopic: number) {
   const topic = Math.floor(Math.random() * Math.min(maxTopic, topicGameBank.length)) + 1;
@@ -28,6 +29,7 @@ export function TargetGamePage() {
   const [rank, setRank] = useState<RankedPlayer[]>();
   const [rankError, setRankError] = useState('');
   const roundId = useRef<string | undefined>(undefined);
+  const savedRound = useRef<string | undefined>(undefined);
   const [phase, setPhase] = useState<'ready' | 'playing' | 'question' | 'over'>('ready');
   const [score, setScore] = useState(0);
   const [arrows, setArrows] = useState(10);
@@ -53,6 +55,10 @@ export function TargetGamePage() {
     async function loadResults() {
       setRankError('');
       if (phase === 'over' && roundId.current && user?.role === 'student' && !user.external) {
+        if (savedRound.current !== roundId.current) {
+          savedRound.current = roundId.current;
+          saveGameRecord(user.id, { game: 'target', score, total: shots });
+        }
         const { error } = await supabase.rpc('econ_finish_target', {
           round_id: roundId.current, round_points: score, round_shots: shots,
         });
