@@ -150,8 +150,3 @@
   .tpanel__head { flex-direction: column; align-items: flex-start; }
   .tmap__grid { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .tdiag-line, .tdiag-bar, .tdiag-pulse, .tdiag__arrow, .tdiag__text, .trend__line, .trend__area, .tpanel { animation: none; }
-  .trend__line { stroke-dashoffset: 0; } .trend__area { opacity: 1; }
-  .topic-tile, .kpi, .tmap__tile, .rank__row { transition: none; }
-}
