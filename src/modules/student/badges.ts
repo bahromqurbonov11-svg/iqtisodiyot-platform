@@ -41,16 +41,22 @@ const sum = (records: GameRecord[], game: GameKey) => records.filter(r => r.game
 
 export function computeBadges(
   attempts: AttemptLike[] | undefined,
-  topics: Map<number, { total: number; correct: number }>,
+  _topics: Map<number, { total: number; correct: number }>,
   games: GameRecord[],
   loyalty?: LoyaltyData,
 ): Badge[] {
   const list = attempts ?? [];
   const streak = flawlessStreak(list);
   const perfect = list.filter(a => a.total > 0 && a.points === a.total).length;
-  const masteredTopics = [...topics.values()].filter(t => t.total >= 5 && t.correct / t.total >= 0.8).length;
-  const firm = (part: number[]) => part.filter(n => { const t = topics.get(n); return Boolean(t && t.total >= 5 && t.correct / t.total >= 0.9); }).length;
-  const flawlessTopics = (part: number[]) => part.filter(n => list.some(a => a.test_scope === n && a.total > 0 && a.points === a.total)).length;
+  /** Mavzu bo‘yicha eng yaxshi mavzulashtirilgan test natijasi (0..1); test ishlanmagan bo‘lsa — undefined. */
+  const bestScoped = (n: number) => {
+    const tries = list.filter(a => a.test_scope === n && a.total > 0);
+    return tries.length ? Math.max(...tries.map(a => a.points / a.total)) : undefined;
+  };
+  const reached = (part: number[], min: number) => part.filter(n => { const r = bestScoped(n); return r !== undefined && r >= min; }).length;
+  const masteredTopics = reached([...PART1, ...PART2], 0.8);
+  const firm = (part: number[]) => reached(part, 0.9);
+  const flawlessTopics = (part: number[]) => reached(part, 1);
   const firm1 = firm(PART1);
   const firm2 = firm(PART2);
   const played = new Set(games.map(g => g.game).filter(g => g !== 'graphwin')).size;
@@ -63,14 +69,14 @@ export function computeBadges(
     mk({ id: 'perfect', group: 'test', title: 'Bexato test', text: 'Bitta testni xatosiz yeching.', tier: 'bronze', icon: 'award', progress: Math.min(perfect, 1), goal: 1 }),
     mk({ id: 'streak3', group: 'test', title: 'Ketma-ket 3 ta bexato', text: 'Ketma-ket 3 ta mavzulashtirilgan testni xatosiz yeching.', tier: 'silver', icon: 'flame', progress: Math.min(streak.best, 3), goal: 3 }),
     mk({ id: 'streak5', group: 'test', title: 'Ketma-ket 5 ta bexato', text: 'Ketma-ket 5 ta mavzulashtirilgan testni xatosiz yeching.', tier: 'gold', icon: 'flame', progress: Math.min(streak.best, 5), goal: 5 }),
-    mk({ id: 'master1', group: 'test', title: 'Mavzu ustasi', text: 'Bitta mavzuda kamida 5 ta javob bilan 80% natija ko‘rsating.', tier: 'silver', icon: 'grad', progress: Math.min(masteredTopics, 1), goal: 1 }),
-    mk({ id: 'master5', group: 'test', title: 'Keng bilimdon', text: '5 ta mavzuda 80% va undan yuqori natija ko‘rsating.', tier: 'gold', icon: 'medal', progress: Math.min(masteredTopics, 5), goal: 5 }),
+    mk({ id: 'master1', group: 'test', title: 'Mavzu ustasi', text: 'Biror mavzu bo‘yicha mavzulashtirilgan testda 80% va undan yuqori natija ko‘rsating.', tier: 'silver', icon: 'grad', progress: Math.min(masteredTopics, 1), goal: 1 }),
+    mk({ id: 'master5', group: 'test', title: 'Keng bilimdon', text: '5 ta turli mavzu bo‘yicha mavzulashtirilgan testda 80% va undan yuqori natija ko‘rsating.', tier: 'gold', icon: 'medal', progress: Math.min(masteredTopics, 5), goal: 5 }),
 
-    mk({ id: 'firm1', group: 'test', title: 'Qat‘iyatli: 1-qism', text: 'Iqtisodiyot nazariyasi 1 ning barcha 12 ta mavzusida kamida 5 ta javob bilan 90% dan yuqori natija ko‘rsating.', tier: 'gold', icon: 'shield', progress: firm1, goal: 12 }),
-    mk({ id: 'firm2', group: 'test', title: 'Qat‘iyatli: 2-qism', text: 'Iqtisodiyot nazariyasi 2 ning barcha 13 ta mavzusida kamida 5 ta javob bilan 90% dan yuqori natija ko‘rsating.', tier: 'gold', icon: 'shield', progress: firm2, goal: 13 }),
-    mk({ id: 'firm-all', group: 'test', title: 'Qat‘iyatli: butun kurs', text: 'Ikkala qism bo‘yicha ham “Qat‘iyatli” nishonini oling: barcha 25 ta mavzuda 90% dan yuqori natija.', tier: 'legend', icon: 'crown', progress: firm1 + firm2, goal: 25 }),
-    mk({ id: 'flawless1', group: 'test', title: 'Benuqson: 1-qism', text: '1-qismning har bir mavzusi bo‘yicha kamida bitta testni xatosiz yeching (12 ta mavzu).', tier: 'legend', icon: 'gem', progress: flawlessTopics(PART1), goal: 12 }),
-    mk({ id: 'flawless2', group: 'test', title: 'Benuqson: 2-qism', text: '2-qismning har bir mavzusi bo‘yicha kamida bitta testni xatosiz yeching (13 ta mavzu).', tier: 'legend', icon: 'gem', progress: flawlessTopics(PART2), goal: 13 }),
+    mk({ id: 'firm1', group: 'test', title: 'Qat‘iyatli: 1-qism', text: 'Iqtisodiyot nazariyasi 1 ning barcha 12 ta mavzusi bo‘yicha mavzulashtirilgan testda 90% va undan yuqori natija ko‘rsating.', tier: 'gold', icon: 'shield', progress: firm1, goal: 12 }),
+    mk({ id: 'firm2', group: 'test', title: 'Qat‘iyatli: 2-qism', text: 'Iqtisodiyot nazariyasi 2 ning barcha 13 ta mavzusi bo‘yicha mavzulashtirilgan testda 90% va undan yuqori natija ko‘rsating.', tier: 'gold', icon: 'shield', progress: firm2, goal: 13 }),
+    mk({ id: 'firm-all', group: 'test', title: 'Qat‘iyatli: butun kurs', text: 'Ikkala qism bo‘yicha ham “Qat‘iyatli” nishonini oling: barcha 25 ta mavzu bo‘yicha mavzulashtirilgan testda 90% va undan yuqori natija.', tier: 'legend', icon: 'crown', progress: firm1 + firm2, goal: 25 }),
+    mk({ id: 'flawless1', group: 'test', title: 'Benuqson: 1-qism', text: '1-qismning har bir mavzusi bo‘yicha mavzulashtirilgan testni xatosiz (100%) yeching — 12 ta mavzu.', tier: 'legend', icon: 'gem', progress: flawlessTopics(PART1), goal: 12 }),
+    mk({ id: 'flawless2', group: 'test', title: 'Benuqson: 2-qism', text: '2-qismning har bir mavzusi bo‘yicha mavzulashtirilgan testni xatosiz (100%) yeching — 13 ta mavzu.', tier: 'legend', icon: 'gem', progress: flawlessTopics(PART2), goal: 13 }),
 
     mk({ id: 'mergan', group: 'game', title: 'Mergan', text: 'Mergan o‘yinida bir raundda kamida 50 ball to‘plang.', tier: 'silver', icon: 'crosshair', progress: Math.min(best(games, 'target'), 50), goal: 50 }),
     mk({ id: 'mergan-gold', group: 'game', title: 'Oltin mergan', text: 'Mergan o‘yinida bir raundda kamida 100 ball to‘plang.', tier: 'gold', icon: 'crosshair', progress: Math.min(best(games, 'target'), 100), goal: 100 }),
