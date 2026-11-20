@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, PageHeader } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { useAdminActivity } from './adminActivity';
+import { AdminBadgesCard } from './AdminBadgesCard';
 
 export function AdminLearnersPage() {
   const { data, error } = useAdminActivity();
@@ -34,5 +35,6 @@ export function AdminLearnersPage() {
         </ul>}
       </div>}
     </Card>
+    <AdminBadgesCard />
   </>;
 }
