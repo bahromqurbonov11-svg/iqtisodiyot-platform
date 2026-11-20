@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpDown, BookOpen, ClipboardCheck, FileText, Presentation, X } from 'lucide-react';
+import { ArrowUpDown, BookOpen, ChevronDown, ClipboardCheck, FileText, Presentation, X } from 'lucide-react';
 import { CountUp } from '@/components/motion/Motion';
 import { mastery } from '@/modules/student/useOwnProgress';
 import { paths } from '@/navigation/paths';
@@ -131,7 +131,12 @@ export function TopicRanking({ topics, stats, selected, onSelect }: {
   if (!rows.length) return <p className="muted">Bu tanlov uchun mavzu bo‘yicha natija yo‘q.</p>;
   return (
     <div>
-      <div className="chips" role="group" aria-label="Tartiblash">
+      <div className="rank-legend" aria-hidden>
+        <span className="rank-legend__item rank-legend__item--success">O‘zlashtirilgan</span>
+        <span className="rank-legend__item rank-legend__item--warning">Mashq kerak</span>
+        <span className="rank-legend__item rank-legend__item--danger">Bo‘shliq</span>
+      </div>
+      <div className="chips rank-sort" role="group" aria-label="Tartiblash">
         <ArrowUpDown size={14} aria-hidden />
         {([['gap', 'Bo‘shliq birinchi'], ['wrong', 'Xato ko‘p'], ['order', 'Mavzu raqami']] as [Sort, string][]).map(([v, label]) => (
           <button key={v} type="button" className={'chip' + (sort === v ? ' is-on' : '')} aria-pressed={sort === v} onClick={() => setSort(v)}>{label}</button>
@@ -283,5 +288,61 @@ export function HardList({ rows }: { rows: Hard[] }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+/* ---------- Ko‘p xato qilingan savollar reytingi ---------- */
+type QSort = 'count' | 'share';
+
+export function QuestionRanking({ rows }: { rows: Hard[] }) {
+  const mounted = useMounted();
+  const [sort, setSort] = useState<QSort>('count');
+  const [limit, setLimit] = useState(8);
+  const [open, setOpen] = useState<string[]>([]);
+  if (!rows.length) return <p className="muted">Bu tanlov uchun xato qayd etilgan savol yo‘q.</p>;
+  const sorted = [...rows].sort((a, b) => sort === 'count'
+    ? b.wrong - a.wrong || b.total - a.total
+    : (b.wrong / b.total) - (a.wrong / a.total) || b.wrong - a.wrong);
+  const top = Math.max(...sorted.map((r) => (sort === 'count' ? r.wrong : r.wrong / r.total)), 1e-9);
+  return (
+    <div className="qrank">
+      <div className="chips rank-sort" role="group" aria-label="Savollarni tartiblash">
+        <ArrowUpDown size={14} aria-hidden />
+        {([['count', 'Xato soni bo‘yicha'], ['share', 'Xato ulushi bo‘yicha']] as [QSort, string][]).map(([v, label]) => (
+          <button key={v} type="button" className={'chip' + (sort === v ? ' is-on' : '')} aria-pressed={sort === v} onClick={() => setSort(v)}>{label}</button>
+        ))}
+      </div>
+      <p className="small muted qrank__note">Jami {sorted.length} ta savolda xato qayd etilgan. Savol matniga bossangiz, to‘liq ochiladi.</p>
+      <ol className="qrank__list">
+        {sorted.slice(0, limit).map((r, i) => {
+          const share = Math.round((100 * r.wrong) / r.total);
+          const isOpen = open.includes(r.label);
+          const value = sort === 'count' ? r.wrong : r.wrong / r.total;
+          return (
+            <li key={r.label} className={'qrank__item' + (i < 3 ? ' qrank__item--top' + (i + 1) : '')} style={{ animationDelay: (i % 8) * 50 + 'ms' }}>
+              <span className="qrank__pos">{i + 1}</span>
+              <div className="qrank__body">
+                <button type="button" className={'qrank__q' + (isOpen ? ' is-open' : '')} aria-expanded={isOpen}
+                  onClick={() => setOpen(isOpen ? open.filter((x) => x !== r.label) : [...open, r.label])}>
+                  {r.label}
+                  <ChevronDown size={16} aria-hidden />
+                </button>
+                <span className="qrank__track"><i style={{ width: mounted ? Math.max(4, Math.round((100 * value) / top)) + '%' : '0%' }} /></span>
+                <span className="qrank__meta">
+                  {r.topic ? <span className="qrank__topic">{r.topic}-mavzu</span> : null}
+                  <span>{r.wrong} ta xato / {r.total} ta javob</span>
+                </span>
+              </div>
+              <span className="qrank__pct" title="Xato ulushi">{share}%</span>
+            </li>
+          );
+        })}
+      </ol>
+      {sorted.length > limit && (
+        <button type="button" className="btn btn--secondary btn--sm qrank__more" onClick={() => setLimit((l) => l + 8)}>
+          Yana ko‘rsatish ({sorted.length - limit})
+        </button>
+      )}
+    </div>
   );
 }
