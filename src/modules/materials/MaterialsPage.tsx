@@ -8,10 +8,9 @@ import { paths } from '@/navigation/paths';
 import { materialsService } from '@/services/materials.service';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/services/auth/AuthContext';
-import { useI18n } from '@/i18n';
-import { glossaryTranslations } from '@/data/glossary-translations';
 import { PresentationViewer } from '@/modules/catalog/TopicDetailPage';
 import { SlideShelf } from './SlideShelf';
+import { GlossaryPage } from './GlossaryPage';
 import { topicStyle } from '@/modules/catalog/topicStyle';
 
 const catColor: Record<string, string> = {
@@ -328,75 +327,6 @@ function FirstSlidePreview({ filePath, publicUrl }: { filePath?: string; publicU
   );
 }
 
-type GlossaryEntry = { term: string; definitions: string[] };
-
-function normalizeGlossaryText(text: string) {
-  return text.normalize('NFC').toLowerCase().replace(/[‘’ʻʼ´'\u0060]/g, '').replace(/\s+/g, ' ').trim();
-}
-
-function GlossaryPage() {
-  const { locale, t } = useI18n();
-  const labels = {
-    uz: ['Glossariy', 'Iqtisodiy atamalar va ularning ta’riflari', 'Glossariydan qidirish', 'Atama yoki ta’rifni yozing…', 'Qidiruvga mos atama yoki ta’rif topilmadi.', 'ta atama', 'Glossariy yuklanmoqda…', 'Glossariyni yuklab bo‘lmadi.'],
-    ru: ['Глоссарий', 'Экономические термины и их определения', 'Поиск по глоссарию', 'Введите термин или определение…', 'Ничего не найдено.', 'терминов', 'Загрузка глоссария…', 'Не удалось загрузить глоссарий.'],
-    en: ['Glossary', 'Economic terms and their definitions', 'Search the glossary', 'Enter a term or definition…', 'No matching terms or definitions.', 'terms', 'Loading glossary…', 'Could not load the glossary.'],
-  }[locale];
-  const [entries, setEntries] = useState<GlossaryEntry[] | null>(null);
-  const [loadError, setLoadError] = useState(false);
-  const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    let mounted = true;
-    import('../../../iqtisodiyot-glossariy.json').then(({ default: terms }) => {
-      if (mounted) setEntries(terms);
-    }).catch(() => {
-      if (mounted) setLoadError(true);
-    });
-    return () => { mounted = false; };
-  }, []);
-
-  const words = normalizeGlossaryText(query).split(' ').filter(Boolean);
-  const results = (entries ?? []).map(entry => {
-    const translated = locale !== 'uz' ? glossaryTranslations[entry.term]?.[locale] : undefined;
-    return { ...entry, original: entry.term, translated };
-  }).filter(({ term, definitions, translated }) => {
-    const haystack = normalizeGlossaryText([term, ...definitions, ...(translated ?? [])].join(' '));
-    return words.every((word) => haystack.includes(word));
-  });
-
-  return (
-    <div className="container page">
-      <PageHeader crumbs={[{ label: t.nav.materials, to: paths.materials }, { label: labels[0] }]}
-        title={labels[0]} description={labels[1]} />
-      <div className="stack">
-        <label className="stack stack--sm">
-          <strong className="glossary-label">{labels[2]}</strong>
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)}
-            className="search-control" placeholder={labels[3]} />
-        </label>
-        {loadError && <p role="alert">{labels[7]}</p>}
-        {!entries && !loadError && <p role="status">{labels[6]}</p>}
-        {entries && (
-          <>
-            <p className="small muted" aria-live="polite">
-              {query.trim() ? results.length + ' / ' : ''}{entries.length} {labels[5]}
-            </p>
-            {results.length === 0 ? <p>{labels[4]}</p> : (
-              <dl className="grid grid--2" style={{ margin: 0 }}>
-                {results.map(({ term, definitions, translated }) => (
-                  <div key={term} className="card card--pad stack stack--sm">
-                    <dt className="glossary-term" lang={translated ? locale : 'uz'}><strong>{translated?.[0] ?? term}</strong></dt>
-                    {(translated ? [translated[1]] : definitions).map((definition) => <dd lang={translated ? locale : 'uz'} key={definition} className="muted small" style={{ margin: 0 }}>{definition}</dd>)}
-                  </div>
-                ))}
-              </dl>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 import { CasesPage } from './CasesPage';
 import { LecturesPage } from './LecturesPage';
 import caseEntries from '@/data/cases.json';
