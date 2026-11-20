@@ -14,8 +14,10 @@ type Phase = 'ask' | 'answer' | 'reveal';
 interface Round { term: string; definition: string; topic: number }
 
 const COLORS = ['#1f8f78', '#2b6cb0', '#c2562d', '#7a3fb0', '#b8860b', '#c0453a'];
-const RIGHT = 10;
+/** To‘g‘ri javob bali urinish tartibiga bog‘liq: birinchi guruh 10, keyingilar kamroq oladi. */
+const RIGHT_BY_TURN = [10, 7, 5, 3];
 const WRONG = -5;
+const rightFor = (attempt: number) => RIGHT_BY_TURN[Math.min(attempt, RIGHT_BY_TURN.length - 1)];
 
 function shuffle<T>(list: T[]): T[] {
   const a = [...list];
@@ -35,6 +37,7 @@ export function ClassroomPage() {
   const [out, setOut] = useState<number[]>([]);
   const [left, setLeft] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [peek, setPeek] = useState(false);
   const [gain, setGain] = useState<{ group: number; value: number; id: number } | null>(null);
   const deadline = useRef(0);
 
@@ -55,7 +58,7 @@ export function ClassroomPage() {
   }
 
   function begin(i: number) {
-    setIndex(i); setPhase('ask'); setTurn(null); setOut([]); setPaused(false);
+    setIndex(i); setPhase('ask'); setTurn(null); setOut([]); setPaused(false); setPeek(false);
     deadline.current = Date.now() + setup.seconds * 1000;
     setLeft(setup.seconds);
   }
@@ -72,12 +75,12 @@ export function ClassroomPage() {
 
   function buzz(group: number) {
     if (phase !== 'ask' || out.includes(group) || paused) return;
-    setTurn(group); setPhase('answer');
+    setTurn(group); setPhase('answer'); setPeek(false);
   }
 
   function judge(correct: boolean) {
     if (turn === null) return;
-    const value = correct ? RIGHT : WRONG;
+    const value = correct ? rightFor(out.length) : WRONG;
     setScores(s => s.map((v, i) => i === turn ? v + value : v));
     setGain({ group: turn, value, id: Date.now() });
     if (correct) { setPhase('reveal'); setTurn(null); return; }
@@ -86,8 +89,8 @@ export function ClassroomPage() {
     setTurn(null);
     if (nextOut.length >= setup.groups) setPhase('reveal');
     else {
-      // Xato javobdan keyin qolgan guruhlar uchun vaqt qayta ishga tushadi.
-      deadline.current = Date.now() + Math.max(left, 10) * 1000;
+      // Taymer to‘xtamaydi: qolgan guruhlar o‘sha raund vaqti ichida, kamroq ball evaziga javob beradi.
+      setPeek(false);
       setPhase('ask');
     }
   }
@@ -151,8 +154,9 @@ export function ClassroomPage() {
           </div>
           <ol className="small muted cls-rules">
             <li>Ekranda atamaning ta’rifi chiqadi. Guruhlar kengashadi.</li>
-            <li>Tayyor guruh o‘z tugmasini bosadi (yoki klaviaturada guruh raqamini): birinchi bosgan javob beradi.</li>
-            <li>O‘qituvchi javobni ko‘radi va "To‘g‘ri" (+{RIGHT}) yoki "Noto‘g‘ri" ({WRONG}) ni bosadi. Xato bo‘lsa, boshqa guruhlar javob bera oladi.</li>
+            <li>Tayyor guruh o‘z tugmasini bosadi (yoki klaviaturada guruh raqamini): birinchi bosgan javob beradi. Guruh tanlangandan keyin ham taymer to‘xtamaydi.</li>
+            <li>Javob ekranda ko‘rinmaydi: uni faqat o‘qituvchi “Javobni ko‘rish” tugmasi bilan ko‘radi va "To‘g‘ri" yoki "Noto‘g‘ri" ({WRONG}) ni bosadi.</li>
+            <li>Javob xato bo‘lsa, qolgan guruhlar o‘sha raund vaqti ichida javob bera oladi, lekin kamroq ball oladi: 1-guruh {RIGHT_BY_TURN[0]}, 2-guruh {RIGHT_BY_TURN[1]}, 3-guruh {RIGHT_BY_TURN[2]}, keyingilari {RIGHT_BY_TURN[3]} ball.</li>
           </ol>
           <Button className="mt-4" icon={<Play size={16} />} onClick={start}>O‘yinni boshlash</Button>
           <p className="small muted mt-3"><Badge tone="demo">DEMO</Badge> Natijalar dars davomida ekranda turadi, saqlanmaydi.</p>
@@ -204,13 +208,19 @@ export function ClassroomPage() {
           {phase === 'reveal' && <div className="cls-answer"><Eye size={20} aria-hidden /> Javob: <strong>{round?.term}</strong></div>}
           {phase === 'answer' && turn !== null && (
             <div className="cls-judge" style={{ ['--gc' as string]: COLORS[turn] }}>
-              <p><span className="cls-dot" /> <strong>{names6[turn]}</strong> javob beryapti. Javob: <b className="cls-secret">{round?.term}</b></p>
+              <p><span className="cls-dot" /> <strong>{names6[turn]}</strong> javob beryapti.</p>
+              <p className="small muted">Javob ekranda yashirilgan. O‘qituvchi uni tekshirish uchun ko‘radi:</p>
+              <div className="cls-peek" style={{ display: "flex", gap: 12, alignItems: "center", margin: "8px 0" }}>
+                {peek ? <b className="cls-secret">{round?.term}</b> : <span className="muted">••••••••</span>}
+                <Button variant="secondary" size="sm" icon={<Eye size={14} />} onClick={() => setPeek(v => !v)}>{peek ? 'Yashirish' : 'Javobni ko‘rish'}</Button>
+              </div>
               <div className="presentation-actions">
-                <Button icon={<Check size={16} />} onClick={() => judge(true)}>To‘g‘ri +{RIGHT}</Button>
+                <Button icon={<Check size={16} />} onClick={() => judge(true)}>To‘g‘ri +{rightFor(out.length)}</Button>
                 <Button variant="secondary" icon={<X size={16} />} onClick={() => judge(false)}>Noto‘g‘ri {WRONG}</Button>
               </div>
             </div>
           )}
+          {phase === 'ask' && out.length > 0 && <p role="status" className="small muted">Oldingi javob xato. Endi to‘g‘ri javob uchun {rightFor(out.length)} ball beriladi.</p>}
           {phase === 'ask' && <div className="cls-buzz">
             {names6.map((name, i) => (
               <button key={i} type="button" className="cls-buzz__btn" style={{ ['--gc' as string]: COLORS[i] }}
