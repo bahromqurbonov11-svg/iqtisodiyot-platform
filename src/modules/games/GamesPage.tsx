@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, BookOpen, Crosshair, Flag, GitCompareArrows, Lightbulb, SlidersHorizontal, Timer, type LucideIcon } from 'lucide-react';
+import { ArrowRight, BookOpen, Crosshair, Flag, GitCompareArrows, Lightbulb, SlidersHorizontal, Timer, Users, type LucideIcon } from 'lucide-react';
 import { Badge, Button, PageHeader } from '@/components/ui';
 import { Reveal } from '@/components/motion/Motion';
 import { GameScene } from './GameScene';
@@ -59,6 +59,25 @@ export function GamesPage() {
     <div className="container page">
       <PageHeader crumbs={[{ label: 'Bosh sahifa', to: paths.home }, { label: 'O‘yinlar' }]}
         title="Iqtisodiyot o‘yinlari" description="Marraga yuguring yoki mavzu bo‘yicha mashq qiling." />
+
+      <section className="games-section" aria-labelledby="class-h">
+        <div className="games-section__head">
+          <h2 id="class-h">Dars rejimi</h2>
+          <span className="muted small">O‘qituvchi boshqaradi · guruhlar bilan</span>
+        </div>
+        <div className="game-tiles game-tiles--3">
+          <Link to={paths.game('dars-rejimi')} className="game-tile" style={{ ['--gc' as string]: 'var(--g-violet)' }}>
+            <span className="game-tile__glow" aria-hidden />
+            <span className="game-tile__icon"><Users size={26} aria-hidden /></span>
+            <h3>Atama bellashuvi</h3>
+            <p>Dars uchun jamoaviy o‘yin: guruhlar, ball jadvali va taymer. Ta’rifga qarab atamani birinchi topgan guruh ball oladi.</p>
+            <span className="game-tile__foot">
+              <Badge tone="neutral" icon={<Timer size={12} />}>~30 daqiqa</Badge>
+              <span className="game-tile__cta">Darsni boshlash <ArrowRight size={15} aria-hidden /></span>
+            </span>
+          </Link>
+        </div>
+      </section>
 
       <section className="games-section" aria-labelledby="arcade-h">
         <div className="games-section__head">
