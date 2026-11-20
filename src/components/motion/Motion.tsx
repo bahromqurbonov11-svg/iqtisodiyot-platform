@@ -50,7 +50,6 @@ export function CountUp({ to, duration = 1100 }: { to: number; duration?: number
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!seen) return;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setValue(to); return; }
     let raf = 0;
     const start = performance.now();
     const tick = (now: number) => {
