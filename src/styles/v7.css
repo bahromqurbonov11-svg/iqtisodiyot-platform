@@ -1,0 +1,54 @@
+/* ===== v7: juda tor telefonlar (320 px va undan keng, 420 px gacha) ===== */
+@media (max-width: 420px) {
+  .site-header__inner { gap: 8px; }
+  .site-header__inner > .brand { min-width: 0; flex: 1 1 0; gap: 7px; }
+  .site-header__inner > .brand > span:first-child:not(.brand__mark):not(.brand__text) { width: 44px !important; }
+  .site-header__inner > .brand .brand__text { min-width: 0; }
+  .site-header__inner > .brand .brand__text strong { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; }
+  .site-header__inner > .brand .brand__text small { font-size: 9px; letter-spacing: .05em; overflow: hidden; text-overflow: ellipsis; }
+  .site-header__inner > .site-language-select { flex: 0 0 auto; min-width: 58px; max-width: 5.2rem; padding: .3rem .25rem; font-size: 13px; }
+  .site-header__inner > .site-header__burger { flex: 0 0 auto; margin-left: 0; }
+}
+
+@media (max-width: 380px) {
+  .site-header__inner > .brand > span:first-child:not(.brand__mark):not(.brand__text) { display: none; }
+  .site-header__inner > .brand .brand__text { white-space: normal; }
+  .site-header__inner > .brand .brand__text strong { font-size: 14px; line-height: 1.12; overflow: visible; text-overflow: clip; }
+  .site-header__inner > .brand .brand__text small { display: none; }
+}
+
+/* O‘yin paneli telefonda eni bo‘yicha toshib ketmasin */
+.gg-panel, .gg-board, .sim-panel { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.gg-seg__btn { min-width: 0; }
+@media (max-width: 600px) {
+  .gg-seg__btn { padding: 0 3px; font-size: 13px; line-height: 1.2; }
+  /* iOS inputga bosganda sahifani kattalashtirmasligi uchun */
+  input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
+  /* Barmoq bilan bosish uchun qulayroq maydonlar */
+  .breadcrumbs a, .crumbs a, nav[aria-label*="rumb"] a { display: inline-block; padding: 8px 2px; }
+  input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+}
+.gg-pips { flex: 1 1 0; min-width: 0; gap: 4px; }
+.gg-pips li { flex: 0 1 20px; min-width: 6px; }
+.gg-top { min-width: 0; }
+
+/* 320 px: qolgan toshishlar */
+@media (max-width: 960px) {
+  .tabbar { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .tabbar__item { min-width: 0; }
+  .tabbar__icon { width: min(44px, 100%); }
+  .tabbar__label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .auth { grid-template-columns: minmax(0, 1fr); }
+  .auth > * { min-width: 0; }
+}
+.outc > li, .outc__card { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 380px) {
+  .gg-seg__btn { font-size: 11px; letter-spacing: -.01em; padding: 0 2px; }
+  .gg-panel { padding: 14px; }
+  .tabbar__item { font-size: 10px; }
+}
+
+/* Telefonda "Mavzular" sahifasida 100 dan ortiq doimiy animatsiya batareyani tez sarflaydi */
+@media (max-width: 760px) {
+  .topic-tile *, .topic-tile *::before, .topic-tile *::after { animation-iteration-count: 2 !important; }
+}
