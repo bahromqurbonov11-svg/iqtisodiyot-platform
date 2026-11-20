@@ -3,10 +3,12 @@ import { Brand } from '@/components/Brand';
 import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
 import { useI18n } from '@/i18n';
+import { useAuth } from '@/services/auth/AuthContext';
 import { SiteStatsLine } from './VisitReport';
 
 export function Footer() {
   const { t } = useI18n();
+  const { user } = useAuth();
   return (
     <footer className="site-footer">
       <div className="container site-footer__grid">
@@ -46,8 +48,9 @@ export function Footer() {
           <h4>{t.nav.cabinet}</h4>
           <ul>
             <li><Link to={paths.cabinet}>{t.nav.cabinet}</Link></li>
-            <li><Link to={paths.admin}>{t.nav.admin}</Link></li>
-            <li><Link to={paths.analytics}>{t.nav.analytics}</Link></li>
+            {user?.role === 'student' && (
+              <li><Link to={paths.cabinetResults}>{t.nav.results}</Link></li>
+            )}
           </ul>
         </div>
       </div>

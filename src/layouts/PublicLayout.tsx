@@ -1,5 +1,5 @@
 import { LanguageSelect } from '@/components/LanguageSelect';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
 import { Menu, X, LogIn, LayoutDashboard } from 'lucide-react';
 import { Brand } from '@/components/Brand';
@@ -18,6 +18,7 @@ export function PublicLayout() {
   const { t } = useI18n();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
   const loc = useLocation();
   useEffect(() => {
     setOpen(false);
@@ -30,7 +31,9 @@ export function PublicLayout() {
     <div className="site">
       <ScrollProgress />
       <RegistrationReminder />
-      <a href="#main" className="skip-link">Asosiy mazmunga o‘tish</a>
+      <button type="button" className="skip-link" onClick={() => mainRef.current?.focus()}>
+        Asosiy mazmunga o‘tish
+      </button>
 
       <header className="site-header">
         <SiteActivityBar />
@@ -74,7 +77,7 @@ export function PublicLayout() {
           </button>
         </div>
       </header>
-      <main id="main" className="site-main">
+      <main id="main" className="site-main" ref={mainRef} tabIndex={-1}>
         <Outlet />
       </main>
       <Footer />

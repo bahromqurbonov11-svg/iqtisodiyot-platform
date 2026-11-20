@@ -152,3 +152,8 @@
   .cls-score ol { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .cls-timer.is-urgent, .cls-gain { animation: none; } }
+@media (max-width: 420px) {
+  .achs { grid-template-columns: minmax(0, 1fr); }
+  .ach { min-width: 0; overflow-wrap: anywhere; }
+  .ach__info { flex-shrink: 0; }
+}
