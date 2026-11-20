@@ -1,17 +1,19 @@
 import { useMemo, useState } from 'react';
-import { Award, Crosshair, Crown, Flame, Gem, ShieldCheck, Gamepad2, GraduationCap, Info, Lightbulb, Lock, Medal, Puzzle, Rocket, Star, TrendingUp, X, type LucideIcon } from 'lucide-react';
+import { Award, Crosshair, Crown, Flame, Gem, Heart, ShieldCheck, Gamepad2, GraduationCap, Info, Lightbulb, Lock, Medal, Puzzle, Rocket, Star, TrendingUp, X, type LucideIcon } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { computeBadges, type AttemptLike, type Badge, type BadgeIcon } from './badges';
 import { loadGameRecords } from './gameStats';
+import { useLoyalty } from './loyalty';
 
 const icons: Record<BadgeIcon, LucideIcon> = {
   flame: Flame, award: Award, medal: Medal, star: Star, rocket: Rocket, crosshair: Crosshair,
-  puzzle: Puzzle, lightbulb: Lightbulb, trending: TrendingUp, gamepad: Gamepad2, grad: GraduationCap, crown: Crown, shield: ShieldCheck, gem: Gem,
+  puzzle: Puzzle, lightbulb: Lightbulb, trending: TrendingUp, gamepad: Gamepad2, grad: GraduationCap, crown: Crown, shield: ShieldCheck, heart: Heart, gem: Gem,
 };
 const tierLabel = { bronze: 'Bronza', silver: 'Kumush', gold: 'Oltin', legend: 'Afsonaviy' } as const;
 const sources = {
   test: 'Serverda saqlangan test natijalaridan hisoblanadi.',
   game: 'Shu qurilmada o‘ynalgan o‘yinlardan hisoblanadi (boshqa qurilmada alohida yig‘iladi).',
+  special: 'Serverda hisoblanadigan faol vaqtdan olinadi. Faqat bitta talabada bo‘ladi.',
 } as const;
 type Filter = 'all' | 'earned' | 'locked';
 
@@ -48,7 +50,8 @@ function BadgeCard({ b, index, open, onToggle }: { b: Badge; index: number; open
       {open ? (
         <div className="ach__detail" role="region" aria-label={b.title + ' haqida'}>
           <p><b>Qanday olinadi:</b> {b.text}</p>
-          <p><b>Holat:</b> {b.earned ? 'Olingan ✓' : b.progress + ' / ' + b.goal + ' (' + percent + '%)'}</p>
+          <p><b>Holat:</b> {b.earned ? 'Olingan ✓' : b.progressLabel ?? b.progress + ' / ' + b.goal + ' (' + percent + '%)'}</p>
+          {b.lines?.map(line => <p key={line}>{line}</p>)}
           <p className="ach__src">{sources[b.group]}</p>
         </div>
       ) : (
@@ -56,7 +59,7 @@ function BadgeCard({ b, index, open, onToggle }: { b: Badge; index: number; open
       )}
       {b.earned
         ? <span className="ach__state">✓ {tierLabel[b.tier]} nishon olindi</span>
-        : <span className="ach__prog"><i style={{ width: percent + '%' }} /><em>{b.progress} / {b.goal}</em></span>}
+        : <span className="ach__prog"><i style={{ width: percent + '%' }} /><em>{b.progressLabel ?? b.progress + ' / ' + b.goal}</em></span>}
     </li>
   );
 }
@@ -68,15 +71,17 @@ export function BadgeShelf({ userId, attempts, topics, loading }: {
   topics: Map<number, { total: number; correct: number }>;
   loading: boolean;
 }) {
-  const badges = useMemo(() => computeBadges(attempts, topics, loadGameRecords(userId)), [attempts, topics, userId]);
+  const loyalty = useLoyalty(Boolean(userId));
+  const badges = useMemo(() => computeBadges(attempts, topics, loadGameRecords(userId), loyalty), [attempts, topics, userId, loyalty]);
   const [filter, setFilter] = useState<Filter>('all');
   const [openId, setOpenId] = useState<string | null>(null);
   const earned = badges.filter(b => b.earned).length;
-  const next = badges.filter(b => !b.earned).sort((a, b) => b.progress / b.goal - a.progress / a.goal)[0];
-  const shown = (group: 'test' | 'game') => badges.filter(b => b.group === group && (filter === 'all' || (filter === 'earned') === b.earned));
-  const groups: { key: 'test' | 'game'; title: string }[] = [
+  const next = badges.filter(b => !b.earned && b.group !== 'special').sort((a, b) => b.progress / b.goal - a.progress / a.goal)[0];
+  const shown = (group: 'test' | 'game' | 'special') => badges.filter(b => b.group === group && (filter === 'all' || (filter === 'earned') === b.earned));
+  const groups: { key: 'test' | 'game' | 'special'; title: string }[] = [
     { key: 'test', title: 'Test nishonlari' },
     { key: 'game', title: 'O‘yin nishonlari' },
+    { key: 'special', title: 'Maxsus nishon' },
   ];
   const filters: [Filter, string, number][] = [
     ['all', 'Barchasi', badges.length], ['earned', 'Olingan', earned], ['locked', 'Ochilmagan', badges.length - earned],
