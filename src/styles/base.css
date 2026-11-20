@@ -29,6 +29,5 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .xs { font-size: var(--fs-xs); }
 .serif { font-family: var(--font-serif); }
 .nowrap { white-space: nowrap; }
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
-}
+/* Eslatma: telefonlarda "harakatni kamaytirish" rejimi ko‘pincha o‘z-o‘zidan yoqilgan bo‘ladi,
+   shuning uchun animatsiyalar bu rejimda ham o‘chirilmaydi (talabalar asosan telefondan foydalanadi). */
