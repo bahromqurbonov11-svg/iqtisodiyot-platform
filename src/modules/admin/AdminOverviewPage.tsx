@@ -6,6 +6,7 @@ import { appConfig } from '@/config/app.config';
 import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
 import { SiteStatTiles } from '@/layouts/VisitReport';
+import { LoyaltyAdminCard } from './LoyaltyAdminCard';
 
 export function AdminOverviewPage() {
   const [limit, setLimit] = useState<number>();
@@ -34,6 +35,8 @@ export function AdminOverviewPage() {
         description={`${appConfig.subject.name} · ${appConfig.subject.code}`}
         actions={<Button to={paths.analytics} iconRight={<ArrowRight size={16} />}>Analitika</Button>}
       />
+
+      <LoyaltyAdminCard />
 
       <Card title="Marraga yugurish va Mergan · Savollar" className="mt-5">
         <div className="stack">
