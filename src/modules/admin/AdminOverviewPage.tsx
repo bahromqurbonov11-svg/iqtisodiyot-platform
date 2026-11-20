@@ -7,8 +7,11 @@ import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
 import { SiteStatTiles } from '@/layouts/VisitReport';
 import { LoyaltyAdminCard } from './LoyaltyAdminCard';
+import { BadgeShelf } from '@/modules/student/BadgeShelf';
+import { useAuth } from '@/services/auth/AuthContext';
 
 export function AdminOverviewPage() {
+  const { user } = useAuth();
   const [limit, setLimit] = useState<number>();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -37,6 +40,7 @@ export function AdminOverviewPage() {
       />
 
       <LoyaltyAdminCard />
+      {user && <BadgeShelf userId={user.id} topics={new Map()} loading={false} />}
 
       <Card title="Marraga yugurish va Mergan · Savollar" className="mt-5">
         <div className="stack">
