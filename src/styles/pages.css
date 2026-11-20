@@ -396,7 +396,7 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 @keyframes site-icon-in { from { opacity:.45; scale:.86; } }
 @keyframes site-chart-in { from { opacity:.55; } }
 @keyframes site-meter-in { from { opacity:.65; transform:scaleX(.15); } }
-@media (prefers-reduced-motion:no-preference) {
+@media all {
   :where(.site, .dash) :where(nav,.page,.dash__content,.site-footer,.site-header) .lucide {
     transition:transform .18s ease, color .18s ease;
     animation:site-icon-in .32s ease-out both;
@@ -412,10 +412,6 @@ a.mastery-list__name:hover { color: var(--c-primary); }
   :where(.site, .dash) meter { animation:site-chart-in .55s ease-out; }
   .target-impact { animation:site-icon-in .16s ease-out; }
   .matching-arrows path[marker-end] { animation:site-chart-in .28s ease-out; }
-}
-@media (prefers-reduced-motion:reduce) {
-  .hero-chart-line,.hero-chart-point,.hero-chart-shade,.hero-chart-guides,.topic-motion-line,.topic-motion-bar,.topic-motion-icon,.target-shot { animation:none; }
-  .hero-chart-ring,.hero-chart-tracers,.target-shot { display:none; }
 }
 .matching-board { position:relative; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(1.5rem,9vw,6rem); }
 .matching-board .btn { overflow-wrap:anywhere; }
