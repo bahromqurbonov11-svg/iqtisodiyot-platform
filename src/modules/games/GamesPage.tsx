@@ -20,8 +20,8 @@ interface GameCard {
 /** Tezkor o‘yinlar (mavzuga bog‘liq emas) */
 const arcade: GameCard[] = [
   { slug: 'mergan', title: 'Mergan', text: 'Harakatlanuvchi nishonni markazda tuting va bonus savollarga javob berib qo‘shimcha o‘q oling.', meta: 'Vaqt o‘qlar soniga bog‘liq', cta: 'O‘ynash', color: 'var(--g-coral)', icon: Crosshair },
-  { slug: 'grafikni-boshqar', title: 'Grafikni boshqar', text: 'Talab, taklif va narxni o‘zgartirib, bozor muvozanatini toping.', meta: '8 topshiriq · 5–8 daqiqa', cta: 'O‘ynash', color: 'var(--g-blue)', icon: SlidersHorizontal },
-  { slug: 'marraga-yugurish', title: 'Marraga yugurish', text: 'To‘siqlardan sakrab ball yig‘ing. Har 5 ballik marrada savolga javob bering va talabalar reytingiga kiring.', meta: 'Reyting bor', cta: 'O‘yin va reyting', color: 'var(--g-amber)', icon: Flag },
+  { slug: 'grafikni-boshqar', title: 'Grafikni boshqar', text: 'Talab, taklif va narxni o‘zgartirib, bozor muvozanatini toping.', meta: '10 topshiriq · bitta xato — o‘yin tugaydi', cta: 'O‘ynash', color: 'var(--g-blue)', icon: SlidersHorizontal },
+  { slug: 'marraga-yugurish', title: 'Marraga yugurish', text: 'To‘siqlar orasidan uchib o‘tib ball yig‘ing. Har 5 ballik marrada savolga javob bering va talabalar reytingiga kiring.', meta: 'Reyting bor', cta: 'O‘yin va reyting', color: 'var(--g-amber)', icon: Flag },
 ];
 
 /** Mavzu bo‘yicha o‘yinlar */
