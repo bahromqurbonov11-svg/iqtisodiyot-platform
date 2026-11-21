@@ -56,7 +56,7 @@ export function ReadOnlySlides({ number }: { number: number }) {
           if (Math.abs(dx) > 40) move(dx < 0 ? 1 : -1);
         }}>
         <button type="button" className="slidedeck__nav slidedeck__nav--prev" onClick={() => move(-1)} disabled={index === 0} aria-label="Oldingi slayd"><ChevronLeft size={26} /></button>
-        <article className="slide" key={index}>
+        <article className={index === 0 && !full ? 'slide topic-slide-preview' : 'slide'} key={index}>
           <span className="slide__num">{index + 1}</span>
           {lines.length ? <>
             <h3 className="slide__title">{title}</h3>

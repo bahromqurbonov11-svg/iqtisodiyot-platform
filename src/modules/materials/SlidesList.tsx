@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui';
 import { materialsService, formatSize, formatDate } from '@/services/materials.service';
 import { useAuth } from '@/services/auth/AuthContext';
 import type { TopicId } from '@/models';
+import { FirstSlidePreview } from './FirstSlidePreview';
 
 /**
  * Mavzu taqdimotlari ro‘yxati.
@@ -32,9 +33,14 @@ export function SlidesList({ topicId }: { topicId: TopicId }) {
       <ul className="files">
         {files.map((f) => {
           const view = materialsService.viewUrl(f);
+          const fileUrl = materialsService.fileUrl(f);
           const Icon = f.ext === 'pdf' ? FileText : Presentation;
           return (
-            <li key={f.path} className="file">
+            <li key={f.path}>
+              {f.ext.toLowerCase() === 'pptx' && <div className="slot slot--with-preview">
+                <FirstSlidePreview publicUrl={fileUrl} floating />
+              </div>}
+              <div className="file">
               <span className={`file__icon file__icon--${f.ext}`}><Icon size={20} aria-hidden /></span>
               <div className="file__main">
                 <strong>{f.title}</strong>
@@ -49,9 +55,10 @@ export function SlidesList({ topicId }: { topicId: TopicId }) {
                     <Eye size={15} /> <span>Ko‘rish</span>
                   </a>
                 )}
-                <a className="btn btn--primary btn--sm" href={materialsService.fileUrl(f)} download={f.fileName}>
+                <a className="btn btn--primary btn--sm" href={fileUrl} download={f.fileName}>
                   <Download size={15} /> <span>Yuklab olish</span>
                 </a>
+              </div>
               </div>
             </li>
           );

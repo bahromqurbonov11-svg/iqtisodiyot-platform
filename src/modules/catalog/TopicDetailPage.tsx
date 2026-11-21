@@ -1,4 +1,5 @@
 import { ReadOnlySlides } from '@/modules/materials/ReadOnlySlides';
+import { FirstSlidePreview } from '@/modules/materials/FirstSlidePreview';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -251,8 +252,11 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
   function renderFiles(items: UploadedMaterial[]) {
     return (
         <ul className="stack">
-          {items.map((file) => (
-            <li key={file.id} className="slot">
+          {items.map((file) => {
+            const preview = slides.includes(file) && /\.pptx$/i.test(file.file_name);
+            return (
+            <li key={file.id} className={preview ? 'slot slot--with-preview' : 'slot'}>
+              {preview && <FirstSlidePreview key={file.file_path} filePath={file.file_path} floating />}
               <div>
                 <strong>{file.title}</strong>
                 <small className="muted">{(file.material_kind && materialLabels[file.material_kind]) || 'O‘quv materiali'}</small>
@@ -267,7 +271,8 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
                 </Button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
     );
   }
