@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText, FlaskConical } from 'lucide-react';
+import { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText, TrendingUp } from 'lucide-react';
 import { ResearchTile } from './ResearchTile';
 import { PageHeader, Card, Badge, Button, Tabs } from '@/components/ui';
 import { materialCategories, type MaterialCategory } from '@/data/materials';
@@ -18,7 +18,7 @@ const catColor: Record<string, string> = {
   syllabus: 'var(--g-teal)', lectures: 'var(--g-blue)', slides: 'var(--g-violet)', cases: 'var(--g-coral)', tests: 'var(--g-amber)', glossary: 'var(--g-teal)',
 };
 
-const icons: Record<MaterialCategory['icon'], typeof BookOpen> = { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText, FlaskConical };
+const icons: Record<MaterialCategory['icon'], typeof BookOpen> = { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText, TrendingUp };
 
 type ListedPresentation = { id: string; topicId: string; title: string; file_name: string; file_path: string };
 

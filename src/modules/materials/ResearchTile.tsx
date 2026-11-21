@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { FlaskConical } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { MaterialCategory } from '@/data/materials';
 import { loadResearchLink } from '@/services/researchLink';
@@ -21,7 +21,7 @@ export function ResearchTile({ category }: { category: MaterialCategory }) {
   const className = 'card card--pad cat-card';
   const style = { color: 'inherit', '--gc': 'var(--g-blue)' } as CSSProperties;
   const content = <>
-    <span className="cat-card__icon"><FlaskConical size={22} aria-hidden /></span>
+    <span className="cat-card__icon"><TrendingUp size={22} aria-hidden /></span>
     <strong>{category.title}</strong>
     <span className="small muted" style={{ flex: 1 }}>{category.description}</span>
     <span className="cat-card__foot"><Badge tone={url ? 'success' : 'info'}>{url ? 'Yangi varaqda ochish' : status}</Badge></span>

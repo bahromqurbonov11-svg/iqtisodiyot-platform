@@ -8,7 +8,7 @@ export interface MaterialCategory {
   id: string;
   title: string;
   description: string;
-  icon: 'BookOpen' | 'Presentation' | 'FileQuestion' | 'Briefcase' | 'BookA' | 'Languages' | 'ScrollText' | 'FlaskConical';
+  icon: 'BookOpen' | 'Presentation' | 'FileQuestion' | 'Briefcase' | 'BookA' | 'Languages' | 'ScrollText' | 'TrendingUp';
   knownInProject?: string;
 }
 
@@ -20,5 +20,5 @@ export const materialCategories: MaterialCategory[] = [
   { id: 'cases', title: 'Keyslar', description: 'Amaliy vaziyatlar va infografikalar.', icon: 'Briefcase', knownInProject: '1-keys (matn + infografika)' },
   { id: 'tests', title: 'Test to‘plamlari', description: 'Diagnostik testlar uchun asos bo‘ladigan savollar banki.', icon: 'FileQuestion', knownInProject: '4 ta to‘plam + kalitlar' },
   { id: 'glossary', title: 'Glossariy', description: 'Asosiy iqtisodiy tushunchalar lug‘ati.', icon: 'BookA' },
-  { id: 'research', title: 'Zamonaviy tadqiqotlar', description: 'Iqtisodiyotga oid zamonaviy tadqiqotlar va ilmiy maqolalar.', icon: 'FlaskConical' },
+  { id: 'research', title: 'Zamonaviy tadqiqotlar', description: 'Iqtisodiyotga oid zamonaviy tadqiqotlar va ilmiy maqolalar.', icon: 'TrendingUp' },
 ];
