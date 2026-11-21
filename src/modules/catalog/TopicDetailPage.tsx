@@ -1,7 +1,7 @@
 import { ReadOnlySlides } from '@/modules/materials/ReadOnlySlides';
 import { FirstSlidePreview } from '@/modules/materials/FirstSlidePreview';
 import { powerpointEmbedUrl } from '@/services/powerpointEmbed';
-import { TopicAccessNotice, useTopicAccess } from '@/services/TopicAccess';
+import { useTopicAccess } from '@/services/TopicAccess';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -40,10 +40,10 @@ export function TopicDetailPage() {
   const { topicId = '' } = useParams();
   const topic = catalogService.getTopic(topicId);
   if (!topic) return <NotFoundPage />;
-  if (!access.allows(topic.globalOrder)) return <TopicAccessNotice pending={access.maximum === null} failed={access.failed} />;
+  const materialsOpen = access.allows(topic.globalOrder);
 
   const part = catalogService.getSubject().data.parts.find((p) => p.id === topic.partId)!;
-  const siblings = catalogService.getTopics(topic.partId).data.filter(item => access.allows(item.globalOrder));
+  const siblings = catalogService.getTopics(topic.partId).data;
   const { prev, next } = catalogService.getAdjacent(topic.id);
 
   return (
@@ -80,7 +80,20 @@ export function TopicDetailPage() {
             </ol>
           </Card>
 
-          <UploadedMaterials topicId={topic.id} topicTitle={topic.title} />
+          {materialsOpen ? <UploadedMaterials topicId={topic.id} topicTitle={topic.title} /> :
+            <div id="topic-locked-slides" className="topic-slide-anchor">
+              <Card title="Taqdimotlar" subtitle="Bu mavzuning taqdimotlarini ko‘rish va yuklab olish cheklangan.">
+                <div className="presentation-actions">
+                  <Button variant="secondary" disabled>Slaydlarni ko‘rish</Button>
+                  <Button variant="secondary" disabled>Yuklab olish</Button>
+                </div>
+              </Card>
+            </div>}
+          <Card title="Ma’ruza matni">
+            {materialsOpen
+              ? <Button variant="secondary" to={paths.materials + '?tur=maruzalar&mavzu=' + topic.globalOrder}>Ma’ruzani o‘qish</Button>
+              : <><p className="small muted">Bu mavzuning ma’ruza matniga kirish cheklangan.</p><Button variant="secondary" disabled>Ma’ruzani o‘qish</Button></>}
+          </Card>
 
           <div ref={conceptsSection} className="topic-slide-anchor"><Card title="Asosiy tushunchalar">
             <ConceptCards concepts={topicConcepts[topic.globalOrder - 1]} />
@@ -89,7 +102,7 @@ export function TopicDetailPage() {
           <div className="grid grid--2">
             <Card title="Diagnostik test" actions={<StageBadge stage={4} />}>
               <p className="small muted">Har bir savol mavzu tushunchasiga va ehtimoliy xato turiga bog‘lanadi.</p>
-              <Button to={paths.test(`test-${topic.id}`)} variant="secondary" icon={<ClipboardCheck size={16} />} className="mt-3">
+              <Button to={materialsOpen ? paths.test(`test-${topic.id}`) : undefined} disabled={!materialsOpen} variant="secondary" icon={<ClipboardCheck size={16} />} className="mt-3">
                 Test sahifasi
               </Button>
             </Card>
@@ -120,7 +133,7 @@ export function TopicDetailPage() {
                 <span><small>Oldingi mavzu</small>{prev.title}</span>
               </Link>
             ) : <span />}
-            {next && access.allows(next.globalOrder) && (
+            {next && (
               <Link to={paths.topic(next.id)} className="pager__link pager__link--next">
                 <span><small>Keyingi mavzu</small>{next.title}</span>
                 <ArrowRight size={16} />
@@ -154,7 +167,8 @@ export function TopicDetailPage() {
                 <small>{result.correct} / {result.total} ta to‘g‘ri</small>
               </div>;
             })()}
-            <Button className="mt-3" variant="secondary" to={paths.test('test-' + topic.id)}>Mavzu testini ishlash</Button>
+            <Button className="mt-3" variant="secondary" disabled={!materialsOpen}
+              to={materialsOpen ? paths.test('test-' + topic.id) : undefined}>Mavzu testini ishlash</Button>
           </Card>
         </aside>
       </div>

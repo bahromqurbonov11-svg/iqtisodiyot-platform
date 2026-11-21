@@ -3,8 +3,10 @@ import { Button, Card } from '@/components/ui';
 import { topicGameBank } from '@/data/topicGames';
 import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
+import { useTopicAccess } from '@/services/TopicAccess';
 
 export function GuestTest({ initialTopic }: { initialTopic?: number }) {
+  const access = useTopicAccess();
   const [topic, setTopic] = useState(initialTopic ?? 1);
   const [index, setIndex] = useState(-1);
   const [score, setScore] = useState(0);
@@ -16,11 +18,11 @@ export function GuestTest({ initialTopic }: { initialTopic?: number }) {
   const question = bank[index];
   return <Card title="3 savollik qisqa test">
     <div className="stack">
-      {index < 0 ? <>
+      {index < 0 || !access.allows(topic) ? <>
         <label>Mavzu<select className="search-control" value={topic} onChange={event => setTopic(Number(event.target.value))}>
-          {topics.map(t => <option key={t.id} value={t.globalOrder}>{t.globalOrder}. {t.title}</option>)}
+          {topics.map(t => <option key={t.id} value={t.globalOrder} disabled={!access.allows(t.globalOrder)}>{t.globalOrder}. {t.title}</option>)}
         </select></label>
-        <Button onClick={() => { setScore(0); setIndex(0); }}>Sinab ko‘rish</Button>
+        <Button disabled={!access.allows(topic)} onClick={() => { setScore(0); setIndex(0); }}>Sinab ko‘rish</Button>
       </> : index < 3 ? <>
         <strong>{index + 1} / 3 · {question[1]}</strong>
         {[index, (index + 1) % bank.length, (index + 2) % bank.length].sort((a,b) => (a + topic) % 3 - (b + topic) % 3).map(id => (

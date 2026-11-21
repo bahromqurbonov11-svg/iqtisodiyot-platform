@@ -13,6 +13,10 @@ interface Attempt {
 
 export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   const { user } = useAuth();
+  const access = useTopicAccess();
+  if (initialTopic && !access.allows(initialTopic)) {
+    return <TopicAccessNotice pending={access.maximum === null} failed={access.failed} />;
+  }
   return <TestSession key={user?.id ?? 'guest'} initialTopic={initialTopic} />;
 }
 
@@ -20,6 +24,7 @@ type Draft = { attempt: Attempt; index: number; deadline: number; answers: numbe
 
 function TestSession({ initialTopic }: { initialTopic?: number }) {
   const { user } = useAuth();
+  const access = useTopicAccess();
   const storageKey = user ? 'econ-test-draft:' + user.id : undefined;
   const [draft] = useState<Draft | undefined>(() => {
     if (!storageKey) return;
@@ -40,6 +45,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   const [count, setCount] = useState('20');
   const [counts, setCounts] = useState<Record<string, number>>({});
   const broad = !topic || topic.startsWith('-');
+  const topicLocked = !broad && !access.allows(Number(topic));
   const available = counts[topic || 'all'];
   const selectedCount = count === 'all' ? available : Number(count);
   const totalSeconds = (selectedCount ?? 0) * 90;
@@ -106,6 +112,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   }
 
   async function startTest() {
+    if (topicLocked) return;
     setBusy(true);
     setMessage('');
     const { data, error } = await supabase.rpc('econ_start_selected_test', {
@@ -179,7 +186,9 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
                 <option value="-1">1-semestr</option>
                 <option value="-2">2-semestr</option>
                 <optgroup label="Mavzular">
-                {topics.map((item) => <option key={item.id} value={item.globalOrder}>{item.globalOrder}. {item.title}</option>)}
+                {topics.map((item) => <option key={item.id} value={item.globalOrder} disabled={!access.allows(item.globalOrder)}>
+                  {item.globalOrder}. {item.title}{access.allows(item.globalOrder) ? '' : ' · Yopiq'}
+                </option>)}
                 </optgroup>
               </select>
               {broad && (
@@ -197,7 +206,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
                 <li><Clock size={16} aria-hidden /> Har bir savolga 90 soniya</li>
                 <li><TimerOff size={16} aria-hidden /> Vaqt tugasa — javob xato hisoblanadi</li>
               </ul>
-              <Button disabled={busy} onClick={() => void startTest()}>Boshlash</Button>
+              <Button disabled={busy || topicLocked} onClick={() => void startTest()}>Boshlash</Button>
             </div>
           </Card>
         )}
@@ -242,3 +251,4 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   );
 }
 import { GuestTest } from './GuestTest';
+import { TopicAccessNotice, useTopicAccess } from '@/services/TopicAccess';

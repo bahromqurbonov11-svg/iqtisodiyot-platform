@@ -11,17 +11,13 @@ import cases from '@/data/cases.json';
 const catalog = paths.materials + '?tur=keyslar';
 
 export function CasesPage() {
-  const access = useTopicAccess();
   const [params, setParams] = useSearchParams();
   const topic = params.get('mavzu') ?? '';
   const current = cases.find(item => String(item.id) === params.get('keys'));
-  const topics = catalogService.getTopics().data.filter(item => access.allows(item.globalOrder));
-  const shown = cases.filter(item => access.allows(item.topic) && (!topic || String(item.topic) === topic));
+  const topics = catalogService.getTopics().data;
+  const shown = cases.filter(item => !topic || String(item.topic) === topic);
   const topicName = (id: number) => topics.find(item => item.globalOrder === id)?.title ?? '';
 
-  if ((current && !access.allows(current.topic)) || (topic && !access.allows(Number(topic)))) {
-    return <TopicAccessNotice pending={access.maximum === null} failed={access.failed} />;
-  }
   if (current) {
     const lines = current.body;
     const story: string[] = [];
@@ -181,4 +177,3 @@ function SolutionSteps({ text }: { text: string }) {
     </div>
   );
 }
-import { TopicAccessNotice, useTopicAccess } from '@/services/TopicAccess';

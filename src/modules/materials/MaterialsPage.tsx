@@ -44,7 +44,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
   const subject = catalogService.getSubject().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
   const access = useTopicAccess();
-  const topics = catalogService.getTopics(partId).data.filter(t => access.allows(t.globalOrder));
+  const topics = catalogService.getTopics(partId).data;
   const [uploaded, setUploaded] = useState<ListedPresentation[] | null>(null);
   const [countError, setCountError] = useState(false);
   const [presentation, setPresentation] = useState<ListedPresentation | null>(null);
@@ -251,9 +251,11 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               <tr key={t.id}>
                 <td className="mat-num" data-label="№"><span style={{ ['--gc' as string]: topicStyle(t.globalOrder).color }}>{t.globalOrder}</span></td>
                 <td className="mat-title"><Link to={paths.topic(t.id)} className="link">{t.title}</Link></td>
-                <td className="center" data-label="Ma’ruza"><Link className="link" to={paths.materials + '?tur=maruzalar&mavzu=' + t.globalOrder}>O‘qish</Link></td>
+                <td className="center" data-label="Ma’ruza">{access.allows(t.globalOrder)
+                  ? <Link className="link" to={paths.materials + '?tur=maruzalar&mavzu=' + t.globalOrder}>O‘qish</Link>
+                  : <span className="muted small">Yopiq</span>}</td>
                 <td className="center" data-label="Taqdimot">
-                  {slideCounts[t.id] || Object.hasOwn(slidePreviews, t.globalOrder) ? (
+                  {!access.allows(t.globalOrder) ? <span className="muted small">Yopiq</span> : slideCounts[t.id] || Object.hasOwn(slidePreviews, t.globalOrder) ? (
                     <Link to={paths.topic(t.id) + '?tab=taqdimot'} className="link">Ko‘rish</Link>
                   ) : (
                     <span className="muted small">{signedIn && !fullCountReady ? 'Yuklanmoqda…' : 'Tez orada'}</span>

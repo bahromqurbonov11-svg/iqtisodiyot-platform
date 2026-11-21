@@ -29,11 +29,14 @@ export function LecturesPage() {
       description={topic ? undefined : '25 mavzu bo‘yicha ma’ruza matnlari, jadvallar va chizmalar.'} />
     {topic ? <LectureReader key={topic.id} number={topic.globalOrder} /> :
       <div className="grid grid--3">
-        {topics.filter(item => access.allows(item.globalOrder)).map(item => <Link key={item.id} to={library + '&mavzu=' + item.globalOrder}
-          className="card card--pad case-tile" onClick={() => window.scrollTo(0, 0)}>
-          <span className="case-tile__number"><BookOpen size={17} aria-hidden /> {item.globalOrder}-mavzu</span>
-          <strong>{item.title}</strong><ChevronRight size={18} aria-hidden />
-        </Link>)}
+        {topics.map(item => {
+          const heading = <><span className="case-tile__number"><BookOpen size={17} aria-hidden /> {item.globalOrder}-mavzu</span>
+            <strong>{item.title}</strong></>;
+          return access.allows(item.globalOrder)
+            ? <Link key={item.id} to={library + '&mavzu=' + item.globalOrder} className="card card--pad case-tile"
+                onClick={() => window.scrollTo(0, 0)}>{heading}<ChevronRight size={18} aria-hidden /></Link>
+            : <div key={item.id} className="card card--pad case-tile">{heading}<span className="small muted">Yopiq</span></div>;
+        })}
       </div>}
   </div>;
 }

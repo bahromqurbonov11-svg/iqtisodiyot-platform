@@ -59,16 +59,16 @@ export function AdminOverviewPage() {
 
       <LoyaltyAdminCard />
       <ResearchLinkAdminCard />
-      <Card title="Mavzularga kirish" subtitle="Tanlangan mavzugacha bo‘lgan sahifalar, slaydlar va keyslar ochiq bo‘ladi." className="mt-5">
+      <Card title="Mavzu materiallari va testlariga kirish" subtitle="Tanlangan mavzugacha taqdimotlar, ma’ruzalar va mavzu testlari ochiq bo‘ladi." className="mt-5">
         <div className="stack">
-          <label htmlFor="public-topic-limit">Ochiq bo‘ladigan oxirgi mavzu</label>
+          <label htmlFor="public-topic-limit">Materiallari va testi ochiq bo‘ladigan oxirgi mavzu</label>
           <select id="public-topic-limit" className="search-control" value={topicDraft ?? access.maximum ?? ''}
             disabled={access.maximum === null || topicSaving} onChange={event => {
               setTopicDraft(Number(event.target.value));
               setTopicMessage('');
             }}>
             <option value="" disabled>{access.failed ? 'Sozlamani yuklab bo‘lmadi' : 'Yuklanmoqda…'}</option>
-            <option value="0">Barcha mavzular yopiq</option>
+            <option value="0">Barcha mavzularda materiallar va testlar yopiq</option>
             {catalogService.getTopics().data.map(topic => <option key={topic.id} value={topic.globalOrder}>
               {topic.globalOrder}. {topic.title}
             </option>)}
