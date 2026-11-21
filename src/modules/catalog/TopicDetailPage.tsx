@@ -1,5 +1,6 @@
 import { ReadOnlySlides } from '@/modules/materials/ReadOnlySlides';
 import { FirstSlidePreview } from '@/modules/materials/FirstSlidePreview';
+import { powerpointEmbedUrl } from '@/services/powerpointEmbed';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -166,6 +167,7 @@ const materialLabels: Record<string, string> = {
 };
 
 type UploadedMaterial = {
+  powerpoint_embed_url?: string | null;
   id: string;
   title: string;
   description: string | null;
@@ -209,7 +211,7 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
       try {
         const { data, error: loadError } = await supabase
           .from('learning_resources')
-          .select('id,title,description,material_kind,file_name,file_path')
+          .select('id,title,description,material_kind,file_name,file_path,powerpoint_embed_url')
           .in('topic_name', [topicId, topicTitle])
           .order('created_at', { ascending: false });
         if (loadError) throw loadError;
@@ -301,7 +303,32 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
 type Presentation = Awaited<ReturnType<typeof import('@pagus-kit/core').parse>>;
 type SlideRenderer = typeof import('@pagus-kit/renderer').renderSlide;
 
-export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMaterial, 'title' | 'file_path'>; onClose: () => void }) {
+type PresentationFile = Pick<UploadedMaterial, 'title' | 'file_path' | 'powerpoint_embed_url'>;
+
+export function PresentationViewer({ file, onClose }: { file: PresentationFile; onClose: () => void }) {
+  const embed = powerpointEmbedUrl(file.powerpoint_embed_url);
+  const [useLocal, setUseLocal] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (embed && !useLocal) dialog.current?.showModal();
+  }, [embed, useLocal]);
+
+  if (!embed || useLocal) return <LocalPresentationViewer file={file} onClose={onClose} />;
+
+  return (
+    <dialog className="presentation-viewer" ref={dialog} aria-label={file.title} onClose={onClose}>
+      <div className="presentation-viewer__header">
+        <strong>{file.title}</strong>
+        <Button variant="ghost" onClick={() => dialog.current?.close()}>Yopish</Button>
+      </div>
+      <iframe className="presentation-viewer__office" src={embed} title={file.title + ' — PowerPoint'}
+        allowFullScreen referrerPolicy="no-referrer" />
+      <Button variant="secondary" onClick={() => setUseLocal(true)}>Sayt ko‘ruvchisida ochish</Button>
+    </dialog>
+  );
+}
+
+function LocalPresentationViewer({ file, onClose }: { file: PresentationFile; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer; links: Awaited<ReturnType<typeof readSlideLinks>> | null } | null>(null);
   const [slide, setSlide] = useState(0);

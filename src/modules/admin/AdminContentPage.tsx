@@ -13,6 +13,7 @@ import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/services/auth/AuthContext';
 import { paths } from '@/navigation/paths';
+import { powerpointEmbedUrl } from '@/services/powerpointEmbed';
 
 type Resource = {
   id: string;
@@ -21,6 +22,7 @@ type Resource = {
   topic_name: string | null;
   file_name: string;
   file_path: string;
+  powerpoint_embed_url?: string | null;
   file_type: string | null;
   file_size: number | null;
   created_at: string;
@@ -41,6 +43,10 @@ export function AdminContentPage() {
   const [fileInputKey, setFileInputKey] = useState(0);
 
   const [resources, setResources] = useState<Resource[]>([]);
+  const [embedResource, setEmbedResource] = useState('');
+  const [embedDraft, setEmbedDraft] = useState('');
+  const [embedStatus, setEmbedStatus] = useState('');
+  const [embedSaving, setEmbedSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
@@ -230,6 +236,43 @@ export function AdminContentPage() {
         description="O‘quv resurslarini yuklash va boshqarish."
       />
 
+      <Card title="PowerPoint for the web" className="mt-5">
+        <form className="stack" onSubmit={async event => {
+          event.preventDefault();
+          if (!embedResource || user?.role !== 'admin') return;
+          const url = powerpointEmbedUrl(embedDraft);
+          if (embedDraft.trim() && !url) {
+            setEmbedStatus('OneDrive yoki SharePoint bergan Embed havolasini kiriting.');
+            return;
+          }
+          setEmbedSaving(true);
+          const { data, error } = await supabase.from('learning_resources')
+            .update({ powerpoint_embed_url: url }).eq('id', embedResource).select('id').single();
+          if (!error && data) {
+            setResources(rows => rows.map(row => row.id === embedResource ? { ...row, powerpoint_embed_url: url } : row));
+          }
+          setEmbedStatus(error || !data ? 'Havolani saqlab bo‘lmadi.' : 'Sozlama saqlandi.');
+          setEmbedSaving(false);
+        }}>
+          <label htmlFor="powerpoint-resource">Taqdimot</label>
+          <select id="powerpoint-resource" className="search-control" value={embedResource} disabled={embedSaving}
+            required onChange={event => {
+              const id = event.target.value;
+              setEmbedResource(id);
+              setEmbedDraft(resources.find(row => row.id === id)?.powerpoint_embed_url ?? '');
+              setEmbedStatus('');
+            }}>
+            <option value="">Taqdimotni tanlang</option>
+            {resources.filter(row => /\.pptx$/i.test(row.file_name)).map(row =>
+              <option key={row.id} value={row.id}>{row.title}</option>)}
+          </select>
+          <label htmlFor="powerpoint-embed">Microsoft Embed havolasi</label>
+          <input id="powerpoint-embed" type="url" className="search-control" value={embedDraft} maxLength={4096}
+            disabled={!embedResource || embedSaving} onChange={event => setEmbedDraft(event.target.value)} />
+          <Button type="submit" disabled={!embedResource || embedSaving}>Saqlash</Button>
+          {embedStatus && <p role="status">{embedStatus}</p>}
+        </form>
+      </Card>
       <Card title="Yangi resurs yuklash" className="mt-5">
         <form onSubmit={handleUpload}>
           <div className="mt-3">

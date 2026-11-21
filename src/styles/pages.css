@@ -323,6 +323,7 @@ a.mastery-list__name:hover { color: var(--c-primary); }
 .presentation-viewer__header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .presentation-viewer__stage { display: grid; place-items: center; margin-block: 12px; background: #172520; color: white; min-height: 100px; }
 .presentation-viewer__stage img { display: block; width: 100%; height: min(64dvh, 620px); object-fit: contain; }
+.presentation-viewer__office { display: block; width: 100%; height: min(68dvh, 650px); border: 0; margin: 12px 0; }
 .presentation-viewer__frame:fullscreen { box-sizing: border-box; width: 100%; height: 100%; padding: 16px; overflow: auto; background: white; }
 .presentation-viewer__frame:fullscreen .presentation-viewer__stage img { height: 78dvh; }
 

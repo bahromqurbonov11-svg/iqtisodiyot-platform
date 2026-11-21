@@ -21,7 +21,7 @@ const catColor: Record<string, string> = {
 
 const icons: Record<MaterialCategory['icon'], typeof BookOpen> = { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText, TrendingUp };
 
-type ListedPresentation = { id: string; topicId: string; title: string; file_name: string; file_path: string };
+type ListedPresentation = { id: string; topicId: string; title: string; file_name: string; file_path: string; powerpoint_embed_url?: string | null };
 
 export function MaterialsPage() {
   const { user } = useAuth();
@@ -77,7 +77,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
         const pageSize = 500;
         for (let offset = 0; ; offset += pageSize) {
           const { data, error } = await supabase.from('learning_resources')
-            .select('id,topic_name,material_kind,title,file_name,file_path')
+            .select('id,topic_name,material_kind,title,file_name,file_path,powerpoint_embed_url')
             .or('material_kind.eq.slides,material_kind.is.null')
             .order('id')
             .range(offset, offset + pageSize - 1);
@@ -86,7 +86,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
           for (const row of data) {
             const id = topicIds.get(row.topic_name ?? '');
             if (id && (row.material_kind === 'slides' || /\.(pptx|ppt|ppsx)$/i.test(row.file_name))) {
-              files.push({ id: row.id, topicId: id, title: row.title, file_name: row.file_name, file_path: row.file_path });
+              files.push({ id: row.id, topicId: id, title: row.title, file_name: row.file_name, file_path: row.file_path, powerpoint_embed_url: row.powerpoint_embed_url });
             }
           }
           if (data.length < pageSize) break;
