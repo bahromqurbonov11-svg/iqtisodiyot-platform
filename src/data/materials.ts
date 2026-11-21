@@ -13,7 +13,7 @@ export interface MaterialCategory {
 }
 
 export const materialCategories: MaterialCategory[] = [
-  { id: 'literature', title: 'Adabiyotlar', description: 'Darslik va qo‘shimcha adabiyotlar — faqat saytda ko‘rish uchun (PDF).', icon: 'BookA' },
+  { id: 'literature', title: 'Adabiyotlar', description: 'Soliq oliy maktabi kutubxonasidagi darsliklar va qo‘shimcha adabiyotlar.', icon: 'BookA' },
   { id: 'syllabus', title: 'Sillabuslar', description: 'IN-1 va IN-2 fan dasturlari (o‘zbek va rus tillarida).', icon: 'ScrollText', knownInProject: '4 ta fayl (UZ/RU)' },
   { id: 'lectures', title: 'Ma’ruza matnlari', description: 'Har bir mavzu bo‘yicha asosiy nazariy material.', icon: 'BookOpen', knownInProject: 'RU: 12 ta mavzu matni' },
   { id: 'slides', title: 'Taqdimotlar', description: 'Ma’ruza slaydlari (PPTX).', icon: 'Presentation', knownInProject: 'RU: 12 ta, UZ: alohida mavzular' },

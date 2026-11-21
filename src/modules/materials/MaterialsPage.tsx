@@ -186,7 +186,16 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
         {materialCategories.filter(c => (c.title + ' ' + c.description).toLowerCase().includes(categorySearch.trim().toLowerCase())).map((c) => {
           if (c.id === 'research') return <ResearchTile key={c.id} category={c} />;
           const Icon = icons[c.icon];
-          const categories: Record<string, string> = { literature: 'adabiyotlar', cases: 'keyslar', syllabus: 'sillabus', slides: 'taqdimotlar', glossary: 'glossariy', lectures: 'maruzalar' };
+          if (c.id === 'literature') return (
+            <a key={c.id} href="https://oliymaktab.uz/uz/students/library/books" className="card card--pad cat-card"
+              style={{ color: 'inherit', ['--gc' as string]: catColor[c.id] ?? 'var(--g-teal)' }}>
+              <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
+              <strong>{c.title}</strong>
+              <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
+              <span className="cat-card__foot"><Badge tone="success">Kutubxonani ochish</Badge></span>
+            </a>
+          );
+          const categories: Record<string, string> = { cases: 'keyslar', syllabus: 'sillabus', slides: 'taqdimotlar', glossary: 'glossariy', lectures: 'maruzalar' };
           if (c.id === 'tests' || categories[c.id]) return (
             <Link key={c.id} to={c.id === 'tests' ? paths.tests : paths.materials + '?tur=' + categories[c.id]} className="card card--pad cat-card"
               style={{ color: 'inherit', ['--gc' as string]: catColor[c.id] ?? 'var(--g-teal)' }}>
@@ -194,7 +203,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
               <span className="cat-card__foot">
-                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? caseEntries.length + ' ta keys' : c.id === 'literature' ? 'PDF · faqat ko‘rish' : c.id === 'syllabus' ? '2 ta PDF · ko‘rish' : c.id === 'lectures' ? allTopics.length + ' ta ma’ruza' : c.id === 'tests' ? 'Test ishlash' : 'Atamalarni ko‘rish'}</Badge>}
+                {c.id === 'slides' ? <Badge tone={fullCountReady ? 'success' : 'info'}>{badgeText}</Badge> : <Badge tone="success">{c.id === 'cases' ? caseEntries.length + ' ta keys' : c.id === 'syllabus' ? '2 ta PDF · ko‘rish' : c.id === 'lectures' ? allTopics.length + ' ta ma’ruza' : c.id === 'tests' ? 'Test ishlash' : 'Atamalarni ko‘rish'}</Badge>}
               </span>
             </Link>
           );
