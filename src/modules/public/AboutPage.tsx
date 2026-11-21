@@ -9,6 +9,7 @@ import { topicStyle } from '@/modules/catalog/topicStyle';
 import { references } from '@/data/subject';
 import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
+import { ProductionSurface } from './ProductionSurface';
 
 const kindLabel = { knowledge: 'Bilim', skill: 'Ko‘nikma', competence: 'Malaka' } as const;
 type Kind = keyof typeof kindLabel;
@@ -111,6 +112,8 @@ export function AboutPage() {
           <nav className="crumbs about-hero__crumbs" aria-label="Yo‘l">
             <Link to={paths.home}>Bosh sahifa</Link> <span aria-hidden>›</span> <span aria-current="page">Fan haqida</span>
           </nav>
+          <div className="about-hero__grid">
+          <div>
           <div className="eyebrow about-hero__eyebrow">Fan kodi {subject.code} · {appConfig.organization.name}</div>
           <h1 className="about-hero__title">Iqtisodiyot nazariyasi: fan nimani o‘rgatadi?</h1>
           <p className="about-hero__lead">
@@ -124,6 +127,9 @@ export function AboutPage() {
             <div><b><CountUp to={totalHours} /></b><span>soat</span></div>
           </div>
           <p className="about-hero__src">Manba: rasmiy sillabuslar (2026–2027)</p>
+          </div>
+          <ProductionSurface />
+          </div>
         </div>
       </section>
 
