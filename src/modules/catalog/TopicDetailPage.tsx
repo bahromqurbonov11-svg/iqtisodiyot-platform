@@ -1,6 +1,7 @@
 import { ReadOnlySlides } from '@/modules/materials/ReadOnlySlides';
 import { FirstSlidePreview } from '@/modules/materials/FirstSlidePreview';
 import { powerpointEmbedUrl } from '@/services/powerpointEmbed';
+import { TopicAccessNotice, useTopicAccess } from '@/services/TopicAccess';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -26,6 +27,7 @@ import { useAuth } from '@/services/auth/AuthContext';
  * Mazmun bloklari 2-bosqichda (materiallar, tushunchalar) to‘ldiriladi.
  */
 export function TopicDetailPage() {
+  const access = useTopicAccess();
   const progress = useOwnProgress();
   const [sectionParams] = useSearchParams();
   const conceptsSection = useRef<HTMLDivElement>(null);
@@ -38,9 +40,10 @@ export function TopicDetailPage() {
   const { topicId = '' } = useParams();
   const topic = catalogService.getTopic(topicId);
   if (!topic) return <NotFoundPage />;
+  if (!access.allows(topic.globalOrder)) return <TopicAccessNotice pending={access.maximum === null} failed={access.failed} />;
 
   const part = catalogService.getSubject().data.parts.find((p) => p.id === topic.partId)!;
-  const siblings = catalogService.getTopics(topic.partId).data;
+  const siblings = catalogService.getTopics(topic.partId).data.filter(item => access.allows(item.globalOrder));
   const { prev, next } = catalogService.getAdjacent(topic.id);
 
   return (
@@ -117,7 +120,7 @@ export function TopicDetailPage() {
                 <span><small>Oldingi mavzu</small>{prev.title}</span>
               </Link>
             ) : <span />}
-            {next && (
+            {next && access.allows(next.globalOrder) && (
               <Link to={paths.topic(next.id)} className="pager__link pager__link--next">
                 <span><small>Keyingi mavzu</small>{next.title}</span>
                 <ArrowRight size={16} />

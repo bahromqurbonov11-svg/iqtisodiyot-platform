@@ -13,7 +13,8 @@ export function TopicsPage() {
   const progress = useOwnProgress();
   const [statusFilter, setStatusFilter] = useState('all');
   const subject = catalogService.getSubject().data;
-  const all = catalogService.getTopics().data;
+  const access = useTopicAccess();
+  const all = catalogService.getTopics().data.filter(topic => access.allows(topic.globalOrder));
   const [params, setParams] = useSearchParams();
   const part = params.get('qism') ?? 'all';
   const [q, setQ] = useState('');
@@ -177,3 +178,4 @@ export const topicVisuals: TopicVisual[] = [
 ];
 import { useOwnProgress, mastery } from '@/modules/student/useOwnProgress';
 import { useAuth } from '@/services/auth/AuthContext';
+import { useTopicAccess } from '@/services/TopicAccess';

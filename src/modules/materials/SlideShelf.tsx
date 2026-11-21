@@ -10,7 +10,8 @@ const slidesByTopic: Record<string, string[][]> = previews;
 
 /** Taqdimotlar javoni: har mavzu uchun birinchi slayd ko‘rinishidagi rangli karta (ro‘yxatdan o‘tmasdan ham ochiq). */
 export function SlideShelf() {
-  const topics = catalogService.getTopics().data.filter((t) => slidesByTopic[t.globalOrder]?.length);
+  const access = useTopicAccess();
+  const topics = catalogService.getTopics().data.filter((t) => access.allows(t.globalOrder) && slidesByTopic[t.globalOrder]?.length);
   return (
     <div className="shelf">
       {topics.map((t, i) => {
@@ -33,3 +34,4 @@ export function SlideShelf() {
     </div>
   );
 }
+import { useTopicAccess } from '@/services/TopicAccess';

@@ -10,9 +10,26 @@ import { LoyaltyAdminCard } from './LoyaltyAdminCard';
 import { ResearchLinkAdminCard } from './ResearchLinkAdminCard';
 import { BadgeShelf } from '@/modules/student/BadgeShelf';
 import { useAuth } from '@/services/auth/AuthContext';
+import { useTopicAccess } from '@/services/TopicAccess';
 
 export function AdminOverviewPage() {
   const { user } = useAuth();
+  const access = useTopicAccess();
+  const [topicDraft, setTopicDraft] = useState<number>();
+  const [topicSaving, setTopicSaving] = useState(false);
+  const [topicMessage, setTopicMessage] = useState('');
+
+  async function saveTopicAccess() {
+    if (topicDraft === undefined) return;
+    setTopicSaving(true);
+    const { data, error } = await supabase.rpc('econ_set_public_topic_limit', { new_maximum: topicDraft });
+    if (!error && typeof data === 'number') {
+      access.setMaximum(data);
+      setTopicDraft(undefined);
+    }
+    setTopicMessage(error ? 'Cheklovni saqlab bo‘lmadi.' : 'Cheklov saqlandi.');
+    setTopicSaving(false);
+  }
   const [limit, setLimit] = useState<number>();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -42,6 +59,24 @@ export function AdminOverviewPage() {
 
       <LoyaltyAdminCard />
       <ResearchLinkAdminCard />
+      <Card title="Mavzularga kirish" subtitle="Tanlangan mavzugacha bo‘lgan sahifalar, slaydlar va keyslar ochiq bo‘ladi." className="mt-5">
+        <div className="stack">
+          <label htmlFor="public-topic-limit">Ochiq bo‘ladigan oxirgi mavzu</label>
+          <select id="public-topic-limit" className="search-control" value={topicDraft ?? access.maximum ?? ''}
+            disabled={access.maximum === null || topicSaving} onChange={event => {
+              setTopicDraft(Number(event.target.value));
+              setTopicMessage('');
+            }}>
+            <option value="" disabled>{access.failed ? 'Sozlamani yuklab bo‘lmadi' : 'Yuklanmoqda…'}</option>
+            <option value="0">Barcha mavzular yopiq</option>
+            {catalogService.getTopics().data.map(topic => <option key={topic.id} value={topic.globalOrder}>
+              {topic.globalOrder}. {topic.title}
+            </option>)}
+          </select>
+          <Button disabled={topicDraft === undefined || topicSaving} onClick={() => void saveTopicAccess()}>Cheklovni saqlash</Button>
+          {topicMessage && <p role="status">{topicMessage}</p>}
+        </div>
+      </Card>
       {user && <BadgeShelf userId={user.id} topics={new Map()} loading={false} />}
 
       <Card title="Marraga yugurish va Mergan · Savollar" className="mt-5">

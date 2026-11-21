@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight } from 'lucide-react';
 import { Card, PageHeader } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
+import { TopicAccessNotice, useTopicAccess } from '@/services/TopicAccess';
 import { paths } from '@/navigation/paths';
 
 type Block =
@@ -14,9 +15,13 @@ const library = paths.materials + '?tur=maruzalar';
 const assets = import.meta.env.BASE_URL + 'maruzalar/';
 
 export function LecturesPage() {
+  const access = useTopicAccess();
   const [params] = useSearchParams();
   const topics = catalogService.getTopics().data;
   const topic = topics.find(item => String(item.globalOrder) === params.get('mavzu'));
+  if (topic && !access.allows(topic.globalOrder)) {
+    return <TopicAccessNotice pending={access.maximum === null} failed={access.failed} />;
+  }
   return <div className="container page">
     <PageHeader title={topic?.title ?? 'Ma’ruza matnlari'}
       eyebrow={topic ? topic.globalOrder + '-mavzu · Ma’ruza' : undefined}
@@ -24,7 +29,7 @@ export function LecturesPage() {
       description={topic ? undefined : '25 mavzu bo‘yicha ma’ruza matnlari, jadvallar va chizmalar.'} />
     {topic ? <LectureReader key={topic.id} number={topic.globalOrder} /> :
       <div className="grid grid--3">
-        {topics.map(item => <Link key={item.id} to={library + '&mavzu=' + item.globalOrder}
+        {topics.filter(item => access.allows(item.globalOrder)).map(item => <Link key={item.id} to={library + '&mavzu=' + item.globalOrder}
           className="card card--pad case-tile" onClick={() => window.scrollTo(0, 0)}>
           <span className="case-tile__number"><BookOpen size={17} aria-hidden /> {item.globalOrder}-mavzu</span>
           <strong>{item.title}</strong><ChevronRight size={18} aria-hidden />

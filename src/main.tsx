@@ -6,6 +6,7 @@ import { SiteStatsProvider } from '@/layouts/VisitReport';
 import { TimeTracker } from '@/layouts/TimeTracker';
 import { I18nProvider } from '@/i18n';
 import { AuthProviderRoot } from '@/services/auth/AuthContext';
+import { TopicAccessProvider } from '@/services/TopicAccess';
 import '@/styles/tokens.css';
 import '@/styles/base.css';
 import '@/styles/components.css';
@@ -25,7 +26,7 @@ createRoot(document.getElementById('root')!).render(
     <I18nProvider>
       <AuthProviderRoot>
         <TimeTracker />
-        <SiteStatsProvider><RouterProvider router={router} /></SiteStatsProvider>
+        <SiteStatsProvider><TopicAccessProvider><RouterProvider router={router} /></TopicAccessProvider></SiteStatsProvider>
       </AuthProviderRoot>
     </I18nProvider>
   </StrictMode>,

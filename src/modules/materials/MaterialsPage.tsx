@@ -43,7 +43,8 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
 }) {
   const subject = catalogService.getSubject().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
-  const topics = catalogService.getTopics(partId).data;
+  const access = useTopicAccess();
+  const topics = catalogService.getTopics(partId).data.filter(t => access.allows(t.globalOrder));
   const [uploaded, setUploaded] = useState<ListedPresentation[] | null>(null);
   const [countError, setCountError] = useState(false);
   const [presentation, setPresentation] = useState<ListedPresentation | null>(null);
@@ -99,18 +100,18 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
 
     void loadCounts();
     return () => { active = false; };
-  }, [signedIn, external]);
+  }, [signedIn, external, access.maximum]);
 
   const slideCounts = materialsService.countByTopic('slides');
-  const allTopics = catalogService.getTopics().data;
+  const allTopics = catalogService.getTopics().data.filter(t => access.allows(t.globalOrder));
   for (const { topicId } of uploaded ?? []) {
     slideCounts[topicId] = (slideCounts[topicId] ?? 0) + 1;
   }
-  const slideTotal = Object.values(slideCounts).reduce((total, count) => total + count, 0);
+  const slideTotal = allTopics.reduce((total, topic) => total + (slideCounts[topic.id] ?? 0), 0);
   const fullCountReady = uploaded !== null;
   const hasLibrary = signedIn || (uploaded?.length ?? 0) > 0;
   const badgeText = fullCountReady ? slideTotal + ' ta fayl'
-    : !signedIn ? (slideTotal ? slideTotal + ' ta ochiq fayl' : Object.keys(slidePreviews).length + ' ta taqdimot')
+    : !signedIn ? (slideTotal ? slideTotal + ' ta ochiq fayl' : allTopics.filter(t => Object.hasOwn(slidePreviews, t.globalOrder)).length + ' ta taqdimot')
     : countError ? 'Jami sonni yuklab bo‘lmadi' : 'Hisoblanmoqda…';
 
   if (showPresentations) return (
@@ -166,7 +167,8 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               );
             })}
           </ul>
-      {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
+      {presentation && allTopics.some(t => t.id === presentation.topicId) &&
+        <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
     </div>
   );
 
@@ -294,3 +296,4 @@ function SyllabusPage() {
     </div>
   );
 }
+import { useTopicAccess } from '@/services/TopicAccess';
