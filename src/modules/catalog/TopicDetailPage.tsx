@@ -199,7 +199,7 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
   const [downloading, setDownloading] = useState<string | null>(null);
   const [presentation, setPresentation] = useState<UploadedMaterial | null>(null);
   const [liteOpen, setLiteOpen] = useState(false);
-  /** Telefonda og‘ir PPTX faylini ochish xotirani to‘ldiradi — yengil matnli ko‘rinish ishlatiladi. */
+  /** Telefonlarda xotira cheklangan bo‘lsa, matnli ko‘rinishni ham taklif qilamiz. */
   const lite = typeof window !== 'undefined' && window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
 
   useEffect(() => {
@@ -264,7 +264,7 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
               </div>
               <div className="presentation-actions">
                 {/\.pptx$/i.test(file.file_name) && (
-                  <Button variant="secondary" onClick={() => (lite ? setLiteOpen(true) : setPresentation(file))}>Slaydlarni ko‘rish</Button>
+                  <Button variant="secondary" onClick={() => setPresentation(file)}>Slaydlarni ko‘rish</Button>
                 )}
                 <Button variant="secondary" disabled={downloading !== null} icon={<Download size={16} />} onClick={() => void download(file)}>
                   {downloading === file.id ? 'Yuklanmoqda…' : 'Yuklab olish'}
@@ -290,6 +290,8 @@ function MaterialFiles({ topicId, topicTitle, guest = false }: { topicId: string
         {(repositoryCount > 0 || (files && slides.length === 0)) && <SlidesList topicId={topicId} />}
       </Card>
       {other.length > 0 && <Card title="Boshqa o‘quv materiallari">{renderFiles(other)}</Card>}
+      {lite && slides.length > 0 && !liteOpen &&
+        <Button variant="secondary" onClick={() => setLiteOpen(true)}>Slaydlarni matn shaklida ko‘rish</Button>}
       {liteOpen && <ReadOnlySlides number={number} />}
       {presentation && <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
     </>
@@ -303,6 +305,7 @@ export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMater
   const dialog = useRef<HTMLDialogElement>(null);
   const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer; links: Awaited<ReturnType<typeof readSlideLinks>> | null } | null>(null);
   const [slide, setSlide] = useState(0);
+  const [step, setStep] = useState(0);
   const [image, setImage] = useState<string>();
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState('');
@@ -338,23 +341,39 @@ export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMater
   useEffect(() => {
     if (!deck) return;
     try {
-      const { svg } = deck.renderSlide(deck.presentation.slides[slide], deck.presentation.slideSize);
-      const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+      const current = deck.presentation.slides[slide];
+      const { svg } = deck.renderSlide(current, deck.presentation.slideSize);
+      const animatedSvg = renderAnimationStep(svg, current.animations, step);
+      const url = URL.createObjectURL(new Blob([animatedSvg], { type: 'image/svg+xml' }));
       setImage(url);
       return () => URL.revokeObjectURL(url);
     } catch {
       setImage(undefined);
       setError('Bu slaydni ko‘rsatib bo‘lmadi.');
     }
-  }, [deck, slide]);
+  }, [deck, slide, step]);
 
   const count = deck?.presentation.slides.length ?? 0;
+  const stepCount = deck?.presentation.slides[slide]?.animations?.steps.length ?? 0;
 
-  function move(offset: number) {
-    const next = slide + offset;
-    if (next < 0 || next >= count) return;
+  function goTo(next: number, nextStep = 0) {
     setError('');
     setSlide(next);
+    setStep(nextStep);
+  }
+
+  function move(offset: number) {
+    if (offset > 0 && step < stepCount) {
+      setStep(step + 1);
+      return;
+    }
+    if (offset < 0 && step > 0) {
+      setStep(step - 1);
+      return;
+    }
+    const next = slide + offset;
+    if (next < 0 || next >= count) return;
+    goTo(next, offset < 0 ? deck?.presentation.slides[next].animations?.steps.length ?? 0 : 0);
   }
 
   return (
@@ -365,7 +384,8 @@ export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMater
       aria-label={file.title}
       onClose={onClose}
       onKeyDown={(event) => {
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' ||
+          (event.key === ' ' && !(event.target instanceof Element && event.target.closest('button, [role="button"]')))) {
           event.preventDefault();
           move(event.key === 'ArrowLeft' ? -1 : 1);
         }
@@ -377,7 +397,8 @@ export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMater
           <Button variant="ghost" onClick={() => dialog.current?.close()}>Yopish</Button>
         </div>
         <div className="presentation-viewer__stage" style={{ position: 'relative' }}>
-          {image && <img key={image} src={image} alt={'Slayd ' + (slide + 1)} style={expanded ? { height: '78dvh' } : undefined} onLoad={(event) => {
+          {image && <img key={image} src={image} alt={'Slayd ' + (slide + 1)} style={expanded ? { height: '78dvh' } : undefined} onClick={() => move(1)} onLoad={(event) => {
+              if (step > 0) return;
               if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
               const transition = deck?.presentation.slides[slide]?.transition;
               if (transition?.type === 'cut') return;
@@ -390,12 +411,11 @@ export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMater
                 <rect key={index} x={link.left} y={link.top} width={link.width} height={link.height}
                   fill="transparent" style={{ pointerEvents: 'all', cursor: 'pointer' }} role="button" tabIndex={0}
                   aria-label={link.label + ' — ' + (link.slide + 1) + '-slayd'}
-                  onClick={() => { setError(''); setSlide(link.slide); }}
+                  onClick={() => goTo(link.slide)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
-                      setError('');
-                      setSlide(link.slide);
+                      goTo(link.slide);
                     }
                   }} />
               ))}
@@ -405,14 +425,53 @@ export function PresentationViewer({ file, onClose }: { file: Pick<UploadedMater
         </div>
         {error && <p role="alert">{error}</p>}
         <div className="presentation-actions">
-          <Button variant="secondary" disabled={slide === 0} onClick={() => move(-1)}>Oldingi</Button>
-          <span aria-live="polite">{count > 0 ? (slide + 1) + ' / ' + count : '—'}</span>
-          <Button variant="secondary" disabled={slide + 1 >= count} onClick={() => move(1)}>Keyingi</Button>
+          <Button variant="secondary" disabled={slide === 0 && step === 0} onClick={() => move(-1)}>Oldingi</Button>
+          <span aria-live="polite">{count > 0 ? (slide + 1) + ' / ' + count : '—'}
+            {stepCount > 0 && <small> · Animatsiya {step}/{stepCount}</small>}
+          </span>
+          <Button variant="secondary" disabled={slide + 1 >= count && step >= stepCount} onClick={() => move(1)}>Keyingi</Button>
           <Button variant="secondary" onClick={() => setExpanded((current) => !current)}>{expanded ? 'Oddiy oyna' : 'To‘liq ekran'}</Button>
         </div>
       </div>
     </dialog>
   );
+}
+
+function renderAnimationStep(svg: string, animations: Presentation['slides'][number]['animations'], step: number) {
+  if (!animations?.steps.length) return svg;
+  const document = new DOMParser().parseFromString(svg, 'image/svg+xml');
+  const shapes = new Map(Array.from(document.querySelectorAll('[data-pagus-id]'), node =>
+    [node.getAttribute('data-pagus-id'), node]));
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const shown = new Set<Element>();
+
+  animations.steps.forEach(({ effects }, index) => {
+    for (const effect of effects) {
+      if (effect.animClass !== 'entrance') continue;
+      const shape = shapes.get(effect.targetId);
+      const target = effect.paragraphIndex === undefined ? shape
+        : Array.from(shape?.querySelectorAll('[data-pagus-p-idx]') ?? [])
+          .find(node => node.getAttribute('data-pagus-p-idx') === String(effect.paragraphIndex));
+      if (!target || shown.has(target)) continue;
+      if (index >= step) {
+        target.setAttribute('opacity', '0');
+      } else {
+        shown.add(target);
+        if (index !== step - 1 || reduced || effect.preset !== 'fade') continue;
+        const fade = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+        fade.setAttribute('attributeName', 'opacity');
+        fade.setAttribute('from', '0');
+        fade.setAttribute('to', target.getAttribute('opacity') ?? '1');
+        fade.setAttribute('dur', Math.max(1, effect.duration) + 'ms');
+        fade.setAttribute('begin', Math.max(0, effect.delay ?? 0) + 'ms');
+        fade.setAttribute('fill', 'freeze');
+        target.setAttribute('opacity', '0');
+        target.append(fade);
+      }
+    }
+  });
+
+  return new XMLSerializer().serializeToString(document);
 }
 
 type SlideLink = { left: number; top: number; width: number; height: number; slide: number; label: string };
