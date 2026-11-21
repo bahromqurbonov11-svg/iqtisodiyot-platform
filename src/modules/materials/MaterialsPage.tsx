@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText } from 'lucide-react';
+import { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText, FlaskConical } from 'lucide-react';
+import { ResearchTile } from './ResearchTile';
 import { PageHeader, Card, Badge, Button, Tabs } from '@/components/ui';
 import { materialCategories, type MaterialCategory } from '@/data/materials';
 import { catalogService } from '@/services/catalog.service';
@@ -17,7 +18,7 @@ const catColor: Record<string, string> = {
   syllabus: 'var(--g-teal)', lectures: 'var(--g-blue)', slides: 'var(--g-violet)', cases: 'var(--g-coral)', tests: 'var(--g-amber)', glossary: 'var(--g-teal)',
 };
 
-const icons: Record<MaterialCategory['icon'], typeof BookOpen> = { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText };
+const icons: Record<MaterialCategory['icon'], typeof BookOpen> = { BookOpen, Presentation, FileQuestion, Briefcase, BookA, Languages, ScrollText, FlaskConical };
 
 type ListedPresentation = { id: string; topicId: string; title: string; file_name: string; file_path: string };
 
@@ -183,6 +184,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
           <input className="search-control" type="search" value={categorySearch} onChange={event => setCategorySearch(event.target.value)} placeholder="Masalan, keys yoki sillabus" />
         </label>
         {materialCategories.filter(c => (c.title + ' ' + c.description).toLowerCase().includes(categorySearch.trim().toLowerCase())).map((c) => {
+          if (c.id === 'research') return <ResearchTile key={c.id} category={c} />;
           const Icon = icons[c.icon];
           const categories: Record<string, string> = { literature: 'adabiyotlar', cases: 'keyslar', syllabus: 'sillabus', slides: 'taqdimotlar', glossary: 'glossariy', lectures: 'maruzalar' };
           if (c.id === 'tests' || categories[c.id]) return (
