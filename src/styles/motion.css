@@ -25,11 +25,35 @@
 
 /* ---------- Bosh sahifa: sichqonchaga javob beradigan illyustratsiya ---------- */
 .tilt { --mx: 0; --my: 0; --rx: 0deg; --ry: 0deg; }
-.hero-visual__panel { transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .25s ease-out; will-change: transform; }
+.hero-visual__panel {
+  position: relative;
+  border-bottom: 7px solid #c4d6cc;
+  box-shadow: 0 9px 0 -3px #dce8e0, 0 24px 38px -18px #254f42;
+}
+.hero-visual__depth {
+  position: absolute;
+  inset: 11px;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #eef7f0, transparent 66%);
+  pointer-events: none;
+}
+.hero-visual__head, .hero-visual__chart { position: relative; }
+@media (min-width: 641px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hero-visual__panel {
+    transform: perspective(1000px) rotateX(calc(3deg + var(--rx, 0deg))) rotateY(calc(-5deg + var(--ry, 0deg)));
+    transition: transform .25s ease-out;
+  }
+}
 .hero-visual__float { translate: calc(var(--mx, 0) * -16px) calc(var(--my, 0) * -12px); transition: translate .25s ease-out; }
 @keyframes float-bob { 50% { transform: translateY(-6px); } }
 .hero-visual__float--a { animation: float-bob 5s ease-in-out infinite; }
 .hero-visual__float--b { animation: float-bob 6s ease-in-out -2s infinite; }
+@media (max-width: 640px), (prefers-reduced-motion: reduce) {
+  .hero-visual__float { animation: none; translate: none; transition: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pg-line, .pg-move { transition: none; }
+}
 
 /* ---------- O‘quv sikli: qadam kartalari ---------- */
 .step__icon { transition: transform .25s, background .2s, color .2s; }

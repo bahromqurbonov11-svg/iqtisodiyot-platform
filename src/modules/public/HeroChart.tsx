@@ -12,6 +12,7 @@ const A = 38, B = 176;     // D va S ning boshlang‘ich balandligi (x = 50 da)
 const XS = 50;
 
 export function HeroChart() {
+  const chart = useRef<SVGSVGElement>(null);
   const d = useRef<SVGGElement>(null);
   const s = useRef<SVGGElement>(null);
   const dot = useRef<SVGCircleElement>(null);
@@ -23,7 +24,8 @@ export function HeroChart() {
   const shade = useRef<SVGPathElement>(null);
 
   useEffect(() => {
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce), (max-width: 640px)');
+    let visible = false;
     let raf = 0;
     const draw = (t: number) => {
       const o1 = Math.sin(t / 1100) * 34 + Math.sin(t / 2300 + 1) * 10;      // talab siljishi
@@ -50,15 +52,31 @@ export function HeroChart() {
       qText.current?.setAttribute('x', (ex - 7).toFixed(2));
       shade.current?.setAttribute('d', 'M' + XS + ' ' + a.toFixed(1) + ' L' + ex.toFixed(1) + ' ' + ey.toFixed(1) + ' L' + XS + ' ' + b.toFixed(1) + ' Z');
     };
-    if (reduce) { draw(0); return; }
     const loop = (now: number) => { draw(now); raf = requestAnimationFrame(loop); };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    const sync = () => {
+      cancelAnimationFrame(raf);
+      if (motion.matches) draw(0);
+      else if (visible && !document.hidden) raf = requestAnimationFrame(loop);
+    };
+    draw(0);
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      sync();
+    });
+    if (chart.current) observer.observe(chart.current);
+    motion.addEventListener('change', sync);
+    document.addEventListener('visibilitychange', sync);
+    return () => {
+      observer.disconnect();
+      motion.removeEventListener('change', sync);
+      document.removeEventListener('visibilitychange', sync);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   const xe = X1 - XS;
   return (
-    <svg viewBox="0 0 320 220" className="hero-visual__chart" aria-hidden>
+    <svg ref={chart} viewBox="0 0 320 220" className="hero-visual__chart" aria-hidden>
       <defs>
         <clipPath id="hc-clip"><rect x={X0} y={Y0} width={X1 - X0 + 8} height={Y1 - Y0} /></clipPath>
         <linearGradient id="hc-shade" x1="0" x2="1" y1="0" y2="0">

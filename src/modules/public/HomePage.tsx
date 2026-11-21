@@ -231,8 +231,9 @@ export function HomePage() {
 /** Bosh sahifadagi illyustratsiya: talab-taklif grafigi + bilim kartochkalari */
 function HeroVisual() {
   return (
-    <Tilt className="hero-visual" aria-hidden>
+    <Tilt className="hero-visual" max={8} aria-hidden>
       <div className="hero-visual__panel">
+        <div className="hero-visual__depth" />
         <div className="hero-visual__head">
           <span>Bozor muvozanati</span>
           <span className="hero-visual__pill">6-mavzu</span>
