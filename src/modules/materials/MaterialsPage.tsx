@@ -11,7 +11,7 @@ import { materialsService } from '@/services/materials.service';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/services/auth/AuthContext';
 import { PresentationViewer } from '@/modules/catalog/TopicDetailPage';
-import { SlideShelf } from './SlideShelf';
+import { SlideCover } from './SlideCover';
 import { GlossaryPage } from './GlossaryPage';
 import { topicStyle } from '@/modules/catalog/topicStyle';
 
@@ -103,44 +103,51 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
   }, [signedIn, external, access.maximum]);
 
   const slideCounts = materialsService.countByTopic('slides');
-  const allTopics = catalogService.getTopics().data.filter(t => access.allows(t.globalOrder));
+  const allTopics = catalogService.getTopics().data;
   for (const { topicId } of uploaded ?? []) {
     slideCounts[topicId] = (slideCounts[topicId] ?? 0) + 1;
   }
-  const slideTotal = allTopics.reduce((total, topic) => total + (slideCounts[topic.id] ?? 0), 0);
+  const slideTotal = allTopics.reduce((total, topic) => total +
+    Math.max(slideCounts[topic.id] ?? 0, Number(Object.hasOwn(slidePreviews, topic.globalOrder))), 0);
   const fullCountReady = uploaded !== null;
-  const hasLibrary = signedIn || (uploaded?.length ?? 0) > 0;
-  const badgeText = fullCountReady ? slideTotal + ' ta fayl'
-    : !signedIn ? (slideTotal ? slideTotal + ' ta ochiq fayl' : allTopics.filter(t => Object.hasOwn(slidePreviews, t.globalOrder)).length + ' ta taqdimot')
-    : countError ? 'Jami sonni yuklab bo‘lmadi' : 'Hisoblanmoqda…';
+  const badgeText = slideTotal + ' ta fayl';
 
   if (showPresentations) return (
     <div className="container page stack">
       <PageHeader
         crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Taqdimotlar' }]}
         title="Taqdimotlar"
-        description={fullCountReady ? slideTotal + ' ta taqdimot · mavzular bo‘yicha' : 'Mavzular bo‘yicha taqdimotlar'}
+        description={slideTotal + ' ta taqdimot · mavzular bo‘yicha'}
         actions={<Button to={paths.materials} variant="secondary">Materiallarga qaytish</Button>}
       />
-          {!hasLibrary && !external && <SlideShelf />}
           {signedIn && !fullCountReady && !countError && <p role="status">Taqdimotlar yuklanmoqda…</p>}
           {countError && <p role="alert">Yuklangan taqdimotlar ro‘yxatini olib bo‘lmadi.</p>}
           {downloadError && <p role="alert">{downloadError}</p>}
           {fullCountReady && slideTotal === 0 && <p>Hali taqdimot yuklanmagan.</p>}
           <ul className="grid grid--3" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {!external && allTopics.filter((topic) => slideCounts[topic.id]).map((topic) => {
-              const libraryFiles = (uploaded ?? []).filter((file) => file.topicId === topic.id);
-              const repositoryFiles = materialsService.list(topic.id, 'slides').data;
+              {allTopics.filter((topic) => slideCounts[topic.id] || Object.hasOwn(slidePreviews, topic.globalOrder)).map((topic) => {
+              const allowed = access.allows(topic.globalOrder);
+              const libraryFiles = allowed && !external ? (uploaded ?? []).filter((file) => file.topicId === topic.id) : [];
+              const repositoryFiles = allowed && !external ? materialsService.list(topic.id, 'slides').data : [];
               const multiple = libraryFiles.length + repositoryFiles.length > 1;
               return (
                 <li key={topic.id} style={{ ['--gc' as string]: topicStyle(topic.globalOrder).color }}>
                   <Card title={topic.globalOrder + '-mavzu. ' + topic.title} className="stack stack--sm slide-card">
+                    {!libraryFiles.length && !repositoryFiles.length && <>
+                      <SlideCover number={topic.globalOrder} />
+                      <div className="presentation-actions">
+                        {allowed ? <Button size="sm" variant="secondary" to={paths.topic(topic.id) + '?tab=taqdimot'}>Ko‘rish</Button> :
+                          <><Button size="sm" variant="secondary" disabled>Ko‘rish</Button>
+                            <Button size="sm" variant="secondary" disabled>Yuklab olish</Button></>}
+                      </div>
+                    </>}
                     {libraryFiles.map((file) => {
                       const canPreview = /\.pptx$/i.test(file.file_name);
                       return (
                         <div key={file.id} className="stack stack--sm">
                           {multiple && <p className="small muted" style={{ overflowWrap: 'anywhere' }}>{file.file_name}</p>}
-                          <FirstSlidePreview filePath={canPreview ? file.file_path : undefined} />
+                          {canPreview ? <FirstSlidePreview filePath={file.file_path} fallbackTopic={topic.globalOrder} /> :
+                            <SlideCover number={topic.globalOrder} />}
                           <div className="presentation-actions">
                             {canPreview && <Button size="sm" variant="secondary" onClick={() => setPresentation(file)}>Ko‘rish</Button>}
                             <Button size="sm" variant="secondary" onClick={() => void download(file)}>Yuklab olish</Button>
@@ -167,7 +174,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
               );
             })}
           </ul>
-      {presentation && allTopics.some(t => t.id === presentation.topicId) &&
+      {presentation && allTopics.some(t => t.id === presentation.topicId && access.allows(t.globalOrder)) &&
         <PresentationViewer file={presentation} onClose={() => setPresentation(null)} />}
     </div>
   );

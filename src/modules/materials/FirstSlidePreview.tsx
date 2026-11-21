@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Presentation } from "lucide-react";
 import { supabase } from "@/services/supabase";
 
-export function FirstSlidePreview({ filePath, publicUrl, floating = false }: { filePath?: string; publicUrl?: string; floating?: boolean }) {
+export function FirstSlidePreview({ filePath, publicUrl, floating = false, fallbackTopic }: {
+  filePath?: string; publicUrl?: string; floating?: boolean; fallbackTopic?: number;
+}) {
   const frame = useRef<HTMLDivElement>(null);
   const [imageUrl, setImageUrl] = useState<string>();
   const [failed, setFailed] = useState(false);
@@ -55,6 +57,10 @@ export function FirstSlidePreview({ filePath, publicUrl, floating = false }: { f
     <div ref={frame} className={floating ? "topic-slide-preview" : undefined} style={{ aspectRatio: '16 / 9', display: 'grid', placeItems: 'center', overflow: 'hidden', background: 'var(--c-surface)', border: '1px solid var(--c-line)', borderRadius: 10 }}>
       {imageUrl && !failed ? (
         <img src={imageUrl} alt="Taqdimotning birinchi slaydi" onError={() => setFailed(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+      ) : fallbackTopic ? (
+        <img src={import.meta.env.BASE_URL + 'slide-covers/' + fallbackTopic + '.svg'}
+          alt={fallbackTopic + '-mavzu taqdimotining birinchi slaydi'} loading="lazy"
           style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
       ) : <Presentation size={27} aria-label={failed ? 'Oldindan ko‘rish mavjud emas' : 'Taqdimot'} />}
     </div>

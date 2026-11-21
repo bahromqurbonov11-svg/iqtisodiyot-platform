@@ -1,5 +1,6 @@
 import { ReadOnlySlides } from '@/modules/materials/ReadOnlySlides';
 import { FirstSlidePreview } from '@/modules/materials/FirstSlidePreview';
+import { SlideCover } from '@/modules/materials/SlideCover';
 import { powerpointEmbedUrl } from '@/services/powerpointEmbed';
 import { useTopicAccess } from '@/services/TopicAccess';
 import { useEffect, useRef, useState } from 'react';
@@ -83,6 +84,7 @@ export function TopicDetailPage() {
           {materialsOpen ? <UploadedMaterials topicId={topic.id} topicTitle={topic.title} /> :
             <div id="topic-locked-slides" className="topic-slide-anchor">
               <Card title="Taqdimotlar" subtitle="Bu mavzuning taqdimotlarini ko‘rish va yuklab olish cheklangan.">
+                <SlideCover number={topic.globalOrder} floating />
                 <div className="presentation-actions">
                   <Button variant="secondary" disabled>Slaydlarni ko‘rish</Button>
                   <Button variant="secondary" disabled>Yuklab olish</Button>
