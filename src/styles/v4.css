@@ -76,15 +76,15 @@
     transform-origin: 0 180px;
     animation: cycle-bar-lift 4s ease-in-out infinite;
   }
-  .economic-cycle__plot { animation: cycle-sway 10s ease-in-out infinite; }
+  .economic-cycle { animation: cycle-sway 7s ease-in-out infinite; }
 }
 @keyframes cycle-bar-lift {
   0%, 60%, 100% { transform: scaleY(1); }
   30% { transform: scaleY(.7); }
 }
 @keyframes cycle-sway {
-  0%, 100% { transform: perspective(850px) rotateY(-4deg); }
-  50% { transform: perspective(850px) rotateY(4deg); }
+  0%, 100% { transform: perspective(1000px) translateY(5px) rotateY(-5deg); }
+  50% { transform: perspective(1000px) translateY(-10px) rotateY(5deg); }
 }
 @keyframes cycle-highlight {
   0%, 34%, 100% { filter: brightness(1); }
