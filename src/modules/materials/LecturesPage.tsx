@@ -5,6 +5,7 @@ import { Card, PageHeader } from '@/components/ui';
 import { catalogService } from '@/services/catalog.service';
 import { TopicAccessNotice, useTopicAccess } from '@/services/TopicAccess';
 import { paths } from '@/navigation/paths';
+import { loadTopicContent } from './topicContent';
 
 type Block =
   | { type: 'heading' | 'paragraph'; text: string }
@@ -12,7 +13,6 @@ type Block =
   | { type: 'image'; src: string };
 
 const library = paths.materials + '?tur=maruzalar';
-const assets = import.meta.env.BASE_URL + 'maruzalar/';
 
 export function LecturesPage() {
   const access = useTopicAccess();
@@ -46,12 +46,25 @@ function LectureReader({ number }: { number: number }) {
   const [failed, setFailed] = useState(false);
   const [fontSize, setFontSize] = useState(16);
   useEffect(() => {
-    const request = new AbortController();
-    void fetch(assets + number + '.json', { signal: request.signal }).then(async response => {
-      if (!response.ok) throw new Error('Lecture unavailable');
-      setBlocks(await response.json());
-    }).catch(() => { if (!request.signal.aborted) setFailed(true); });
-    return () => request.abort();
+    let active = true;
+    const images: string[] = [];
+    void loadTopicContent(number).then(async zip => {
+      const file = zip.file('lecture.json');
+      if (!file) throw new Error('Lecture unavailable');
+      const content = JSON.parse(await file.async('string')) as Block[];
+      const prepared = await Promise.all(content.map(async block => {
+        if (block.type !== 'image') return block;
+        const image = zip.file(block.src);
+        if (!image) throw new Error('Lecture image unavailable');
+        const blob = await image.async('blob');
+        if (!active) return block;
+        const src = URL.createObjectURL(new Blob([blob], { type: 'image/png' }));
+        images.push(src);
+        return { ...block, src };
+      }));
+      if (active) setBlocks(prepared);
+    }).catch(() => { if (active) setFailed(true); });
+    return () => { active = false; images.forEach(src => URL.revokeObjectURL(src)); };
   }, [number]);
   return <Card className="lecture-reader">
     <div className="presentation-actions lecture-reading-tools" role="group" aria-label="Matn kattaligi">
@@ -65,7 +78,7 @@ function LectureReader({ number }: { number: number }) {
     {!failed && !blocks && <p role="status">Ma’ruza yuklanmoqda…</p>}
     <div style={{ fontSize }}>{blocks?.map((block, i) => {
       if (block.type === 'heading') return <h2 key={i}>{block.text}</h2>;
-      if (block.type === 'image') return <img key={i} src={assets + block.src} alt="Ma’ruzadagi chizma" loading="lazy" />;
+      if (block.type === 'image') return <img key={i} src={block.src} alt="Ma’ruzadagi chizma" loading="lazy" />;
       if (block.type === 'table') return <div key={i} className="lecture-table-scroll" tabIndex={0} aria-label="Ma’ruza jadvali">
         <table><tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => (
           <td key={cellIndex} colSpan={cell.span}>{cell.text}</td>

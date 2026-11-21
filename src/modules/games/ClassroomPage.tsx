@@ -159,7 +159,7 @@ export function ClassroomPage() {
             <li>Javob xato bo‘lsa, qolgan guruhlar o‘sha raund vaqti ichida javob bera oladi, lekin kamroq ball oladi: 1-guruh {RIGHT_BY_TURN[0]}, 2-guruh {RIGHT_BY_TURN[1]}, 3-guruh {RIGHT_BY_TURN[2]}, keyingilari {RIGHT_BY_TURN[3]} ball.</li>
           </ol>
           <Button className="mt-4" icon={<Play size={16} />} onClick={start}>O‘yinni boshlash</Button>
-          <p className="small muted mt-3"><Badge tone="demo">DEMO</Badge> Natijalar dars davomida ekranda turadi, saqlanmaydi.</p>
+          <p className="small muted mt-3">Natijalar dars davomida ekranda turadi, saqlanmaydi.</p>
         </Card>
       </div>
     );

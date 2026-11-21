@@ -22,6 +22,7 @@ type Resource = {
   topic_name: string | null;
   file_name: string;
   file_path: string;
+  deletion_pending?: boolean;
   powerpoint_embed_url?: string | null;
   file_type: string | null;
   file_size: number | null;
@@ -200,12 +201,19 @@ export function AdminContentPage() {
     setError('');
     setMessage('');
 
+    if (!resource.deletion_pending) {
+      const { error } = await supabase.from('learning_resources')
+        .update({ deletion_pending: true }).eq('id', resource.id).select('id').single();
+      if (error) { setError('O‘chirishni boshlashning imkoni bo‘lmadi.'); return; }
+      setResources(rows => rows.map(row => row.id === resource.id ? { ...row, deletion_pending: true } : row));
+    }
+
     const { error: storageError } = await supabase.storage
       .from(BUCKET)
       .remove([resource.file_path]);
 
     if (storageError) {
-      setError(storageError.message);
+      setError('Faylni o‘chirib bo‘lmadi. Shu resursda o‘chirishni qayta urining.');
       return;
     }
 
@@ -215,7 +223,7 @@ export function AdminContentPage() {
       .eq('id', resource.id);
 
     if (deleteError) {
-      setError(deleteError.message);
+      setError('Ro‘yxatdagi yozuvni tozalab bo‘lmadi. Shu resursda o‘chirishni qayta urining.');
       return;
     }
 
@@ -445,6 +453,7 @@ export function AdminContentPage() {
                     <tr key={resource.id}>
                       <td>
                         <strong>{resource.title}</strong>
+                        {resource.deletion_pending && <p className="small muted">O‘chirish yakunlanmagan</p>}
                         <div className="small muted">
                           {resource.file_name}
                         </div>

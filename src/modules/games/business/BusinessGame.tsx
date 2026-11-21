@@ -6,7 +6,7 @@ import { START_DEPOSIT, type Sector, type Stage } from './scenarios';
 import { allSectors as sectors } from './catalog';
 
 /**
- * "Biznes yo‘lak" — o‘qituvchi boshqaradigan guruhli o‘yin (DEMO o‘quv modeli).
+ * "Biznes yo‘lak" — o‘qituvchi boshqaradigan guruhli o‘yin.
  * Har bir jamo bir xil depozit bilan boshlaydi, o‘z sohasini tanlaydi va shu sohaning 6 bosqichli
  * yo‘lagidan o‘tadi: har bosqichda muammo, 3 ta qaror, xarajat va natija. Oxirida foyda yoki zarar hisoblanadi.
  */
@@ -100,7 +100,7 @@ export function BusinessGamePage() {
             <li>Ba’zi qarorlar tavakkalli: natijasi tasodifga bog‘liq. Oxirida jami daromad, xarajat va foyda yoki zarar hisoblanadi.</li>
           </ol>
           <Button className="mt-4" icon={<Play size={16} />} onClick={start}>O‘yinni boshlash</Button>
-          <p className="small muted mt-3"><Badge tone="demo">DEMO</Badge> Raqamlar o‘quv modeli uchun taxminiy, haqiqiy bozor ko‘rsatkichlari emas. Natijalar saqlanmaydi.</p>
+          <p className="small muted mt-3">Raqamlar o‘quv modeli uchun taxminiy. Natijalar saqlanmaydi.</p>
         </Card>
       </div>
     );

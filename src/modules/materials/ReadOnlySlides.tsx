@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Presentation } from 'lucide-react';
-import previews from '@/data/slide-previews.json';
+import { loadTopicContent } from './topicContent';
 import { topicStyle } from '@/modules/catalog/topicStyle';
-
-const slidesByTopic: Record<string, string[][]> = previews;
 
 /**
  * Taqdimotni ko‘rish: slaydlar mehmonlar va tashqi foydalanuvchilar uchun ham ochiq.
@@ -11,12 +9,24 @@ const slidesByTopic: Record<string, string[][]> = previews;
  * Boshqarish: tugmalar, klaviatura strelkalari yoki telefonda barmoq bilan surish.
  */
 export function ReadOnlySlides({ number }: { number: number }) {
-  const slides = slidesByTopic[number] ?? [];
+  const [slides, setSlides] = useState<string[][]>();
+  const [failed, setFailed] = useState(false);
   const [index, setIndex] = useState(0);
   const [full, setFull] = useState(false);
   const touch = useRef<number | null>(null);
   const strip = useRef<HTMLDivElement>(null);
   const style = topicStyle(number);
+
+  useEffect(() => {
+    let active = true;
+    void loadTopicContent(number).then(async zip => {
+      const file = zip.file('slides.json');
+      if (!file) throw new Error('Slides unavailable');
+      const pages = JSON.parse(await file.async('string')) as string[][];
+      if (active) setSlides(pages);
+    }).catch(() => { if (active) setFailed(true); });
+    return () => { active = false; };
+  }, [number]);
 
   useEffect(() => {
     strip.current?.querySelector('.slide-thumb.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
@@ -30,7 +40,9 @@ export function ReadOnlySlides({ number }: { number: number }) {
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
   }, [full]);
 
-  if (!slides.length) return <div className="slides-empty"><Presentation size={22} aria-hidden /><div><strong>Bu mavzu uchun slayd hali yo‘q</strong></div></div>;
+  if (!slides?.length) return <div className="slides-empty" role="status"><Presentation size={22} aria-hidden />
+    <strong>{failed ? 'Taqdimotni ochib bo‘lmadi.' : slides ? 'Bu mavzu uchun slayd hali yo‘q' : 'Taqdimot yuklanmoqda…'}</strong>
+  </div>;
 
   const move = (d: number) => setIndex((i) => Math.min(slides.length - 1, Math.max(0, i + d)));
   const lines = slides[index];

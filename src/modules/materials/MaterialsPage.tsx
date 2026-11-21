@@ -107,8 +107,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
   for (const { topicId } of uploaded ?? []) {
     slideCounts[topicId] = (slideCounts[topicId] ?? 0) + 1;
   }
-  const slideTotal = allTopics.reduce((total, topic) => total +
-    Math.max(slideCounts[topic.id] ?? 0, Number(Object.hasOwn(slidePreviews, topic.globalOrder))), 0);
+  const slideTotal = allTopics.reduce((total, topic) => total + Math.max(slideCounts[topic.id] ?? 0, 1), 0);
   const fullCountReady = uploaded !== null;
   const badgeText = slideTotal + ' ta fayl';
 
@@ -125,7 +124,7 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
           {downloadError && <p role="alert">{downloadError}</p>}
           {fullCountReady && slideTotal === 0 && <p>Hali taqdimot yuklanmagan.</p>}
           <ul className="grid grid--3" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {allTopics.filter((topic) => slideCounts[topic.id] || Object.hasOwn(slidePreviews, topic.globalOrder)).map((topic) => {
+              {allTopics.map((topic) => {
               const allowed = access.allows(topic.globalOrder);
               const libraryFiles = allowed && !external ? (uploaded ?? []).filter((file) => file.topicId === topic.id) : [];
               const repositoryFiles = allowed && !external ? materialsService.list(topic.id, 'slides').data : [];
@@ -262,10 +261,8 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
                   ? <Link className="link" to={paths.materials + '?tur=maruzalar&mavzu=' + t.globalOrder}>O‘qish</Link>
                   : <span className="muted small">Yopiq</span>}</td>
                 <td className="center" data-label="Taqdimot">
-                  {!access.allows(t.globalOrder) ? <span className="muted small">Yopiq</span> : slideCounts[t.id] || Object.hasOwn(slidePreviews, t.globalOrder) ? (
+                  {!access.allows(t.globalOrder) ? <span className="muted small">Yopiq</span> : (
                     <Link to={paths.topic(t.id) + '?tab=taqdimot'} className="link">Ko‘rish</Link>
-                  ) : (
-                    <span className="muted small">{signedIn && !fullCountReady ? 'Yuklanmoqda…' : 'Tez orada'}</span>
                   )}
                 </td>
                 <td className="center" data-label="Glossariy"><Link className="link" to={paths.topic(t.id) + '?tab=tushunchalar'}>Atamalar</Link></td>
@@ -286,7 +283,6 @@ import { LecturesPage } from './LecturesPage';
 import { LiteraturePage } from './LiteraturePage';
 import { PdfViewer } from './PdfViewer';
 import caseEntries from '@/data/cases.json';
-import slidePreviews from '@/data/slide-previews.json';
 
 function SyllabusPage() {
   const [open, setOpen] = useState<number | null>(null);

@@ -350,6 +350,7 @@ export function PresentationViewer({ file, onClose }: { file: PresentationFile; 
 
 function LocalPresentationViewer({ file, onClose }: { file: PresentationFile; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const [deck, setDeck] = useState<{ presentation: Presentation; renderSlide: SlideRenderer; links: Awaited<ReturnType<typeof readSlideLinks>> | null } | null>(null);
   const [slide, setSlide] = useState(0);
   const [step, setStep] = useState(0);
@@ -359,6 +360,12 @@ function LocalPresentationViewer({ file, onClose }: { file: PresentationFile; on
 
   useEffect(() => {
     dialog.current?.showModal();
+  }, []);
+
+  useEffect(() => {
+    const syncFullscreen = () => { if (!document.fullscreenElement) setExpanded(false); };
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);
 
   useEffect(() => {
@@ -390,7 +397,7 @@ function LocalPresentationViewer({ file, onClose }: { file: PresentationFile; on
     try {
       const current = deck.presentation.slides[slide];
       const { svg } = deck.renderSlide(current, deck.presentation.slideSize);
-      const animatedSvg = renderAnimationStep(svg, current.animations, step);
+      const animatedSvg = renderAnimationStep(repairSlideArtwork(svg), current.animations, step);
       const url = URL.createObjectURL(new Blob([animatedSvg], { type: 'image/svg+xml' }));
       setImage(url);
       return () => URL.revokeObjectURL(url);
@@ -423,6 +430,16 @@ function LocalPresentationViewer({ file, onClose }: { file: PresentationFile; on
     goTo(next, offset < 0 ? deck?.presentation.slides[next].animations?.steps.length ?? 0 : 0);
   }
 
+  async function toggleFullscreen() {
+    if (expanded) {
+      if (document.fullscreenElement === frame.current) await document.exitFullscreen();
+      setExpanded(false);
+      return;
+    }
+    try { await frame.current?.requestFullscreen?.(); } catch { /* Use the enlarged dialog on browsers without fullscreen. */ }
+    setExpanded(true);
+  }
+
   return (
     <dialog
       ref={dialog}
@@ -438,7 +455,7 @@ function LocalPresentationViewer({ file, onClose }: { file: PresentationFile; on
         }
       }}
     >
-      <div>
+      <div ref={frame} className="presentation-viewer__frame">
         <div className="presentation-viewer__header">
           <strong>{file.title}</strong>
           <Button variant="ghost" onClick={() => dialog.current?.close()}>Yopish</Button>
@@ -477,11 +494,40 @@ function LocalPresentationViewer({ file, onClose }: { file: PresentationFile; on
             {stepCount > 0 && <small> · Animatsiya {step}/{stepCount}</small>}
           </span>
           <Button variant="secondary" disabled={slide + 1 >= count && step >= stepCount} onClick={() => move(1)}>Keyingi</Button>
-          <Button variant="secondary" onClick={() => setExpanded((current) => !current)}>{expanded ? 'Oddiy oyna' : 'To‘liq ekran'}</Button>
+          <Button variant="secondary" onClick={() => void toggleFullscreen()}>{expanded ? 'Oddiy oyna' : 'To‘liq ekran'}</Button>
         </div>
       </div>
     </dialog>
   );
+}
+
+function repairSlideArtwork(svg: string) {
+  const spaced = svg.replace(/((?:NOTO‘G‘RI|TO‘G‘RI))(<\/span><span[^>]*>)(?=\p{L})/gu, '$1$2&#160;');
+  if (!spaced.includes('Ishlab chiqarish imkoniyatlari chegarasi') || !spaced.includes('Shartli grafik') ||
+      !spaced.includes('Tegirmon, ming')) return spaced;
+
+  // The embedded PowerPoint scatter chart is omitted by the SVG renderer.
+  const plot = `<svg x="4%" y="14%" width="48%" height="70%" viewBox="0 0 346 284">
+    <g fill="none" stroke="#cbd5df" stroke-width="1">
+      <path d="M49 32H318M49 75H318M49 118H318M49 161H318M49 204H318"/>
+      <path d="M49 28V247H320" stroke="#627483"/>
+    </g>
+    <g fill="#344c5b" font-family="sans-serif" font-size="12">
+      <text x="49" y="18">Tegirmon, ming</text>
+      <text x="28" y="36">10</text><text x="34" y="79">8</text><text x="34" y="122">6</text>
+      <text x="34" y="165">4</text><text x="34" y="208">2</text><text x="34" y="251">0</text>
+      <text x="46" y="264">0</text><text x="108" y="264">1</text><text x="170" y="264">2</text>
+      <text x="232" y="264">3</text><text x="294" y="264">4</text><text x="255" y="281">Non, mln</text>
+    </g>
+    <polyline points="49,32 111,53.5 173,96.5 235,161 297,247" fill="none" stroke="#D9662B" stroke-width="3"/>
+    <g fill="#D9662B"><circle cx="49" cy="32" r="4"/><circle cx="111" cy="53.5" r="4"/>
+      <circle cx="173" cy="96.5" r="4"/><circle cx="235" cy="161" r="4"/><circle cx="297" cy="247" r="4"/></g>
+    <circle cx="173" cy="161" r="5" fill="#2B6C8F"/><circle cx="235" cy="96.5" r="5" fill="#B03A2E"/>
+    <g font-family="sans-serif" font-size="12" font-weight="700">
+      <text x="181" y="157" fill="#2B6C8F">M (2; 4)</text><text x="243" y="92" fill="#B03A2E">N (3; 7)</text>
+    </g>
+  </svg>`;
+  return spaced.replace(/<\/svg>\s*$/, plot + '</svg>');
 }
 
 function renderAnimationStep(svg: string, animations: Presentation['slides'][number]['animations'], step: number) {

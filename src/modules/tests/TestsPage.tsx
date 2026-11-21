@@ -8,6 +8,7 @@ import { paths } from '@/navigation/paths';
 
 interface Attempt {
   id: string;
+  deadline?: string;
   questions: { question: string; options: string[] }[];
 }
 
@@ -30,8 +31,9 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
     if (!storageKey) return;
     try {
       const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null') as Draft | null;
-      if (saved?.attempt?.questions.length && saved.answers.length === saved.attempt.questions.length &&
-          Number.isInteger(saved.index) && saved.index >= 0 && saved.index <= saved.answers.length &&
+      if (saved?.attempt?.questions.length &&
+          (saved.attempt.deadline ? saved.answers.length === saved.index : saved.answers.length === saved.attempt.questions.length) &&
+          Number.isInteger(saved.index) && saved.index >= 0 && saved.index <= saved.attempt.questions.length &&
           Number.isFinite(saved.deadline)) return saved;
     } catch { /* The test can still run without browser storage. */ }
   });
@@ -52,7 +54,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
 
   useEffect(() => {
     if (user) void supabase.rpc('econ_test_counts').then(({ data }) => { if (data) setCounts(data); });
-  }, [user]);
+  }, [user, access.maximum]);
   const [attempt, setAttempt] = useState<Attempt | undefined>(draft?.attempt);
   const [answers, setAnswers] = useState<number[]>(draft?.answers ?? []);
   const [score, setScore] = useState<number>();
@@ -76,7 +78,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
       setSeconds(remaining);
       if (!remaining && !resolving.current) {
         resolving.current = true;
-        advance(4);
+        void advance(4);
       }
     };
     const timer = window.setInterval(tick, 200);
@@ -89,25 +91,46 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   function choose(choice: number) {
     if (!attempt || resolving.current) return;
     resolving.current = true;
+    if (attempt.deadline) {
+      setPicked(choice);
+      void advance(choice);
+      return;
+    }
     const final = Date.now() >= deadline ? 4 : choice;
     const nextAnswers = answers.map((value, position) => position === index ? final : value);
     setAnswers(nextAnswers);
     saveDraft({ attempt, answers: nextAnswers, index: index + 1, deadline: Date.now() + 90_520 });
     setPicked(choice);
-    pickTimer.current = window.setTimeout(() => advance(final), 520);
+    pickTimer.current = window.setTimeout(() => void advance(final), 520);
   }
 
-  function advance(choice: number) {
+  async function advance(choice: number) {
     if (!attempt) return;
     window.clearTimeout(pickTimer.current);
     setPicked(null);
-    const nextAnswers = answers.map((value, position) => position === index ? choice : value);
-    const nextDeadline = Date.now() + 90_000;
+    let nextAnswers = answers.map((value, position) => position === index ? choice : value);
+    let nextDeadline = Date.now() + 90_000;
+    let nextIndex = index + 1;
+    if (attempt.deadline) {
+      const { data, error } = await supabase.rpc('econ_record_timed_answer', {
+        attempt_id: attempt.id, question_index: index, choice,
+      });
+      if (error || !Array.isArray(data?.answers)) {
+        setMessage('Javobni saqlab bo‘lmadi. Qayta urining.');
+        setDeadline(0);
+        resolving.current = false;
+        return;
+      }
+      setMessage('');
+      nextAnswers = data.answers;
+      nextIndex = nextAnswers.length;
+      nextDeadline = Date.parse(data.deadline);
+    }
     setAnswers(nextAnswers);
-    setIndex(index + 1);
+    setIndex(nextIndex);
     setDeadline(nextDeadline);
-    setSeconds(90);
-    saveDraft({ attempt, answers: nextAnswers, index: index + 1, deadline: nextDeadline });
+    setSeconds(Math.max(0, Math.ceil((nextDeadline - Date.now()) / 1000)));
+    saveDraft({ attempt, answers: nextAnswers, index: nextIndex, deadline: nextDeadline });
     resolving.current = false;
   }
 
@@ -132,8 +155,8 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
     setPicked(null);
     setIndex(0);
     setSeconds(90);
-    const nextDeadline = Date.now() + 90_000;
-    const nextAnswers = data.questions.map(() => -1);
+    const nextDeadline = data.deadline ? Date.parse(data.deadline) : Date.now() + 90_000;
+    const nextAnswers = data.deadline ? [] : data.questions.map(() => -1);
     resolving.current = false;
     setDeadline(nextDeadline);
     setAnswers(nextAnswers);
