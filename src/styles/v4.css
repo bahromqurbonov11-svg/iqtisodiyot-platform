@@ -71,13 +71,16 @@
 .economic-cycle figcaption span { color: #c4e0d3; }
 .economic-cycle__plot { display: block; width: 100%; height: auto; margin-top: 16px; }
 @media (prefers-reduced-motion: no-preference) {
-  .economic-cycle__cap { animation: cycle-highlight 6s ease-in-out infinite; }
-  .economic-cycle__bar { animation: cycle-bar-lift 6s ease-in-out infinite; }
+  .economic-cycle__cap { animation: cycle-highlight 4s ease-in-out infinite; }
+  .economic-cycle__bar {
+    transform-origin: 0 180px;
+    animation: cycle-bar-lift 4s ease-in-out infinite;
+  }
   .economic-cycle__plot { animation: cycle-sway 10s ease-in-out infinite; }
 }
 @keyframes cycle-bar-lift {
-  0%, 34%, 100% { transform: translateY(0); }
-  15% { transform: translateY(-7px); }
+  0%, 60%, 100% { transform: scaleY(1); }
+  30% { transform: scaleY(.7); }
 }
 @keyframes cycle-sway {
   0%, 100% { transform: perspective(850px) rotateY(-4deg); }
