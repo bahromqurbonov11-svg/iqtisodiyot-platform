@@ -11,14 +11,33 @@ const base = import.meta.env.BASE_URL;
 export function LiteraturePage() {
   const [items, setItems] = useState<Item[] | null>(null);
   const [open, setOpen] = useState<Item | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [request, setRequest] = useState(0);
   useEffect(() => {
-    fetch(base + 'adabiyotlar/index.json').then(r => r.json()).then(d => setItems(d.items ?? [])).catch(() => setItems([]));
-  }, []);
+    const controller = new AbortController();
+    fetch(base + 'adabiyotlar/index.json', { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error('Literature index unavailable');
+        return response.json();
+      })
+      .then(data => {
+        if (!Array.isArray(data.items)) throw new Error('Invalid literature index');
+        if (!controller.signal.aborted) setItems(data.items);
+      })
+      .catch(() => { if (!controller.signal.aborted) setFailed(true); });
+    return () => controller.abort();
+  }, [request]);
   return (
     <div className="container page">
       <PageHeader title="Adabiyotlar" crumbs={[{ label: 'Materiallar', to: paths.materials }, { label: 'Adabiyotlar' }]}
         description="Darslik va qo‘shimcha adabiyotlar. Hujjatlar faqat saytda ko‘rish uchun ochiladi." />
-      {!items && <p role="status">Yuklanmoqda…</p>}
+      {!items && !failed && <p role="status">Yuklanmoqda…</p>}
+      {failed && <div className="slides-empty" role="alert">
+        <div><strong>Adabiyotlar ro‘yxati yuklanmadi</strong>
+          <p className="small muted">Internet aloqasini tekshirib, qayta urinib ko‘ring.</p>
+          <Button onClick={() => { setFailed(false); setRequest(value => value + 1); }}>Qayta urinish</Button>
+        </div>
+      </div>}
       {items && items.length === 0 && <div className="slides-empty"><BookMarked size={22} aria-hidden /><div>
         <strong>Adabiyotlar hali yuklanmagan</strong>
         <p className="small muted">O‘qituvchi PDF fayllarni yuklagach, shu yerda ko‘rish mumkin bo‘ladi.</p></div></div>}

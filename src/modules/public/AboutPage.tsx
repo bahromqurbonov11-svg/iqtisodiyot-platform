@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, BookOpen, ChevronDown, Clock, GraduationCap, Layers, Pause, Play, Target, Brain, Compass,
@@ -10,6 +10,25 @@ import { references } from '@/data/subject';
 import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
 import { EconomicCycleDiagram } from './EconomicCycleDiagram';
+import { useI18n } from '@/i18n';
+
+const aboutHeadings = {
+  uz: ['Iqtisodiyot nazariyasi: fan nimani o‘rgatadi?', 'Qismni tanlang', 'O‘quv yuklamasi', 'Mavzular yo‘l xaritasi', 'Ta’lim natijalari'],
+  ru: ['Экономическая теория: чему учит курс?', 'Выберите часть', 'Учебная нагрузка', 'Карта тем', 'Результаты обучения'],
+  en: ['Economic theory: what will you learn?', 'Choose a course part', 'Course workload', 'Topic roadmap', 'Learning outcomes'],
+} as const;
+
+function navigateTabs(event: KeyboardEvent<HTMLDivElement>) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  const index = tabs.findIndex(tab => tab === event.target);
+  if (index < 0) return;
+  event.preventDefault();
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+    : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  tabs[next].focus();
+  tabs[next].click();
+}
 
 const kindLabel = { knowledge: 'Bilim', skill: 'Ko‘nikma', competence: 'Malaka' } as const;
 type Kind = keyof typeof kindLabel;
@@ -93,6 +112,8 @@ function Donut({ items, active, selected, onPreview, onSelect }: {
 }
 
 export function AboutPage() {
+  const { locale } = useI18n();
+  const [title, choosePart, workload, roadmap, learningOutcomes] = aboutHeadings[locale];
   const subject = catalogService.getSubject().data;
   const allTopics = catalogService.getTopics().data;
   const [partId, setPartId] = useState(subject.parts[0].id);
@@ -126,7 +147,7 @@ export function AboutPage() {
   const cur = chain[step];
 
   return (
-    <div className="about">
+    <div className="about" lang="uz">
       {/* ---------- Kirish bloki ---------- */}
       <section className="about-hero">
         <span className="about-hero__orb about-hero__orb--a" aria-hidden />
@@ -138,7 +159,7 @@ export function AboutPage() {
           <div className="about-hero__grid">
           <div>
           <div className="eyebrow about-hero__eyebrow">Fan kodi {subject.code} · {appConfig.organization.name}</div>
-          <h1 className="about-hero__title">Iqtisodiyot nazariyasi: fan nimani o‘rgatadi?</h1>
+          <h1 className="about-hero__title" lang={locale}>{title}</h1>
           <p className="about-hero__lead">
             Fan iqtisodiy tafakkurni shakllantiradi: cheklangan resurslar sharoitida tanlov, bozor mexanizmlari,
             makroiqtisodiy jarayonlar va davlat siyosatini tahlil qilishga o‘rgatadi.
@@ -159,13 +180,13 @@ export function AboutPage() {
       <div className="container about-body">
         {/* ---------- Qism tanlash ---------- */}
         <Reveal>
-          <h2 className="about-h">Qismni tanlang</h2>
-          <div className="part-pick" role="tablist" aria-label="Fan qismlari">
+          <h2 className="about-h" lang={locale}>{choosePart}</h2>
+          <div className="part-pick" role="tablist" aria-label="Fan qismlari" onKeyDown={navigateTabs}>
             {subject.parts.map((p, i) => {
               const n = allTopics.filter((t) => t.partId === p.id).length;
               return (
                 <button
-                  key={p.id} type="button" role="tab" aria-selected={p.id === partId}
+                  key={p.id} type="button" role="tab" aria-selected={p.id === partId} tabIndex={p.id === partId ? 0 : -1}
                   className={'part-pick__card' + (p.id === partId ? ' is-on' : '')}
                   style={{ ['--gc' as string]: i === 0 ? 'var(--g-teal)' : 'var(--g-blue)' }}
                   onClick={() => { setPartId(p.id); setOpenTopic(null); setHoverSeg(null); setSelectedSeg(null); }}
@@ -187,7 +208,7 @@ export function AboutPage() {
               <Donut items={donut} active={activeSeg} selected={selectedSeg} onPreview={setHoverSeg} onSelect={selectSegment} />
             </div>
             <div className="about-load__text">
-              <h2 className="about-h"><Clock size={22} aria-hidden /> O‘quv yuklamasi</h2>
+              <h2 className="about-h" lang={locale}><Clock size={22} aria-hidden /> {workload}</h2>
               <p className="muted small">Diagramma bo‘laklariga bosing yoki ustiga olib boring.</p>
               <ul className="about-legend">
                 {donut.map((d) => (
@@ -219,7 +240,7 @@ export function AboutPage() {
 
         {/* ---------- Yo‘l xaritasi ---------- */}
         <Reveal>
-          <h2 className="about-h"><Compass size={22} aria-hidden /> Mavzular yo‘l xaritasi</h2>
+          <h2 className="about-h" lang={locale}><Compass size={22} aria-hidden /> {roadmap}</h2>
           <p className="muted small">Mavzuga bosing — kichik mavzular ochiladi.</p>
           <ol className="road" key={partId}>
             {partTopics.map((t, i) => {
@@ -249,13 +270,13 @@ export function AboutPage() {
 
         {/* ---------- Ta'lim natijalari ---------- */}
         <Reveal>
-          <h2 className="about-h"><GraduationCap size={22} aria-hidden /> Ta’lim natijalari</h2>
+          <h2 className="about-h" lang={locale}><GraduationCap size={22} aria-hidden /> {learningOutcomes}</h2>
           <p className="muted small">Fanni o‘zlashtirgan talaba…</p>
-          <div className="chips" role="tablist" aria-label="Ta’lim natijasi turi">
+          <div className="chips" role="tablist" aria-label="Ta’lim natijasi turi" onKeyDown={navigateTabs}>
             {(['all', 'knowledge', 'skill', 'competence'] as const).map((k) => {
               const count = k === 'all' ? part.outcomes.length : part.outcomes.filter((o) => o.kind === k).length;
               return (
-                <button key={k} type="button" role="tab" aria-selected={kind === k} className={'chip' + (kind === k ? ' is-on' : '')} onClick={() => setKind(k)}>
+                <button key={k} type="button" role="tab" aria-selected={kind === k} tabIndex={kind === k ? 0 : -1} className={'chip' + (kind === k ? ' is-on' : '')} onClick={() => setKind(k)}>
                   {k === 'all' ? 'Barchasi' : kindLabel[k]} <span>{count}</span>
                 </button>
               );

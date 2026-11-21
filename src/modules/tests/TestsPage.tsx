@@ -13,12 +13,30 @@ interface Attempt {
 
 export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   const { user } = useAuth();
+  return <TestSession key={user?.id ?? 'guest'} initialTopic={initialTopic} />;
+}
+
+type Draft = { attempt: Attempt; index: number; deadline: number; answers: number[] };
+
+function TestSession({ initialTopic }: { initialTopic?: number }) {
+  const { user } = useAuth();
+  const storageKey = user ? 'econ-test-draft:' + user.id : undefined;
+  const [draft] = useState<Draft | undefined>(() => {
+    if (!storageKey) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null') as Draft | null;
+      if (saved?.attempt?.questions.length && saved.answers.length === saved.attempt.questions.length &&
+          Number.isInteger(saved.index) && saved.index >= 0 && saved.index <= saved.answers.length &&
+          Number.isFinite(saved.deadline)) return saved;
+    } catch { /* The test can still run without browser storage. */ }
+  });
   const [topic, setTopic] = useState(initialTopic?.toString() ?? '');
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(draft?.index ?? 0);
   const [picked, setPicked] = useState<number | null>(null);
   const pickTimer = useRef<number | undefined>(undefined);
-  const [deadline, setDeadline] = useState(0);
-  const [seconds, setSeconds] = useState(90);
+  const resolving = useRef(false);
+  const [deadline, setDeadline] = useState(draft?.deadline ?? 0);
+  const [seconds, setSeconds] = useState(() => draft ? Math.max(0, Math.ceil((draft.deadline - Date.now()) / 1000)) : 90);
   const [count, setCount] = useState('20');
   const [counts, setCounts] = useState<Record<string, number>>({});
   const broad = !topic || topic.startsWith('-');
@@ -29,20 +47,31 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   useEffect(() => {
     if (user) void supabase.rpc('econ_test_counts').then(({ data }) => { if (data) setCounts(data); });
   }, [user]);
-  const [attempt, setAttempt] = useState<Attempt>();
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [attempt, setAttempt] = useState<Attempt | undefined>(draft?.attempt);
+  const [answers, setAnswers] = useState<number[]>(draft?.answers ?? []);
   const [score, setScore] = useState<number>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [file, setFile] = useState<File>();
   const topics = catalogService.getTopics().data;
 
+  function saveDraft(value?: Draft) {
+    if (!storageKey) return;
+    try {
+      if (value) sessionStorage.setItem(storageKey, JSON.stringify(value));
+      else sessionStorage.removeItem(storageKey);
+    } catch { /* The current attempt remains available in memory. */ }
+  }
+
   useEffect(() => {
     if (!attempt || index >= attempt.questions.length || !deadline) return;
     const tick = () => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setSeconds(remaining);
-      if (!remaining) advance(4);
+      if (!remaining && !resolving.current) {
+        resolving.current = true;
+        advance(4);
+      }
     };
     const timer = window.setInterval(tick, 200);
     return () => window.clearInterval(timer);
@@ -52,19 +81,28 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
 
   /** Javob tanlanganda belgi ko‘rinib turadi, so‘ng savol silliq almashadi. */
   function choose(choice: number) {
-    if (picked !== null) return;
+    if (!attempt || resolving.current) return;
+    resolving.current = true;
     const final = Date.now() >= deadline ? 4 : choice;
+    const nextAnswers = answers.map((value, position) => position === index ? final : value);
+    setAnswers(nextAnswers);
+    saveDraft({ attempt, answers: nextAnswers, index: index + 1, deadline: Date.now() + 90_520 });
     setPicked(choice);
     pickTimer.current = window.setTimeout(() => advance(final), 520);
   }
 
   function advance(choice: number) {
+    if (!attempt) return;
     window.clearTimeout(pickTimer.current);
     setPicked(null);
-    setAnswers((previous) => previous.map((value, position) => position === index ? choice : value));
+    const nextAnswers = answers.map((value, position) => position === index ? choice : value);
+    const nextDeadline = Date.now() + 90_000;
+    setAnswers(nextAnswers);
     setIndex(index + 1);
-    setDeadline(Date.now() + 90_000);
+    setDeadline(nextDeadline);
     setSeconds(90);
+    saveDraft({ attempt, answers: nextAnswers, index: index + 1, deadline: nextDeadline });
+    resolving.current = false;
   }
 
   async function startTest() {
@@ -87,8 +125,12 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
     setPicked(null);
     setIndex(0);
     setSeconds(90);
-    setDeadline(Date.now() + 90_000);
-    setAnswers(data.questions.map(() => -1));
+    const nextDeadline = Date.now() + 90_000;
+    const nextAnswers = data.questions.map(() => -1);
+    resolving.current = false;
+    setDeadline(nextDeadline);
+    setAnswers(nextAnswers);
+    saveDraft({ attempt: data, index: 0, deadline: nextDeadline, answers: nextAnswers });
     setScore(undefined);
   }
 
@@ -99,7 +141,7 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
     const { data, error } = await supabase.rpc('econ_submit_test', { attempt_id: attempt.id, answers });
     setBusy(false);
     if (error) setMessage('Javoblarni yuborishda xatolik yuz berdi.');
-    else setScore(data);
+    else { saveDraft(); setScore(data); }
   }
 
   async function importBank() {

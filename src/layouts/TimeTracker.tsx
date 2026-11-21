@@ -17,6 +17,8 @@ export function TimeTracker() {
     if (!id) return;
     let lastActive = Date.now();
     let pending = 0;
+    let sending = false;
+    let disposed = false;
     const touch = () => { lastActive = Date.now(); };
     const events = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart', 'wheel'] as const;
     for (const name of events) window.addEventListener(name, touch, { passive: true });
@@ -25,15 +27,23 @@ export function TimeTracker() {
       if (!document.hidden && Date.now() - lastActive < IDLE_MS) pending += 1;
     }, 1000);
 
-    function flush() {
+    async function flush() {
       const seconds = Math.min(30, pending);
-      if (seconds <= 0) return;
-      pending -= seconds;
-      void supabase.rpc('econ_time_report', { elapsed: seconds });
+      if (seconds <= 0 || sending || disposed) return;
+      sending = true;
+      try {
+        const { error } = await supabase.rpc('econ_time_report', { elapsed: seconds });
+        if (!error) pending -= seconds;
+      } catch {
+        // Keep the interval pending for the next report.
+      } finally {
+        sending = false;
+      }
     }
     const send = window.setInterval(flush, 15_000);
     document.addEventListener('visibilitychange', flush);
     return () => {
+      disposed = true;
       for (const name of events) window.removeEventListener(name, touch);
       window.clearInterval(tick);
       window.clearInterval(send);
