@@ -24,10 +24,12 @@ export function EconomicCycleDiagram() {
           const x = 49 + index * 72;
           const y = 180 - value * 1.35;
           return <g key={label}>
+            <g className="economic-cycle__bar" style={{ animationDelay: index * 0.55 + 's' }}>
             <path d={`M${x} ${y}h35v${180 - y}h-35Z`} fill={index === 3 ? '#af8946' : '#48a78b'} />
             <path d={`M${x + 35} ${y}l12 -9V171l-12 9Z`} fill={index === 3 ? '#805c31' : '#25725f'} />
             <path className="economic-cycle__cap" style={{ animationDelay: index * 0.55 + 's' }}
               d={`M${x} ${y}l12 -9h35l-12 9Z`} fill={index === 3 ? '#f0cc85' : '#a5dfbf'} />
+            </g>
             <text x={x + 21} y={y - 16} fill="#f4fff9" fontSize="14" fontWeight="700" textAnchor="middle">{value}</text>
             <text x={x + 21} y="212" fill="#e4f2ea" fontSize="13" textAnchor="middle">{label}</text>
           </g>;
