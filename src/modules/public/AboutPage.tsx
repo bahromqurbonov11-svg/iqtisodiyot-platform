@@ -162,7 +162,7 @@ export function AboutPage() {
           <h1 className="about-hero__title" lang={locale}>{title}</h1>
           <p className="about-hero__lead">
             Fan iqtisodiy tafakkurni shakllantiradi: cheklangan resurslar sharoitida tanlov, bozor mexanizmlari,
-            makroiqtisodiy jarayonlar va davlat siyosatini tahlil qilishga o‘rgatadi.
+            makroiqtisodiy jarayonlar hamda davlatning iqtisodiyotdagi rolini tahlil qilishga o‘rgatadi.
           </p>
           <div className="about-hero__stats">
             <div><b><CountUp to={allTopics.length} /></b><span>mavzu</span></div>
