@@ -9,7 +9,7 @@ import { topicStyle } from '@/modules/catalog/topicStyle';
 import { references } from '@/data/subject';
 import { paths } from '@/navigation/paths';
 import { appConfig } from '@/config/app.config';
-import { ProductionSurface } from './ProductionSurface';
+import { EconomicCycleDiagram } from './EconomicCycleDiagram';
 
 const kindLabel = { knowledge: 'Bilim', skill: 'Ko‘nikma', competence: 'Malaka' } as const;
 type Kind = keyof typeof kindLabel;
@@ -151,7 +151,7 @@ export function AboutPage() {
           </div>
           <p className="about-hero__src">Manba: rasmiy sillabuslar (2026–2027)</p>
           </div>
-          <ProductionSurface />
+          <EconomicCycleDiagram />
           </div>
         </div>
       </section>
