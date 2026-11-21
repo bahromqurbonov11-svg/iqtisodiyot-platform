@@ -85,6 +85,7 @@ export function TopicDetailPage() {
             <div id="topic-locked-slides" className="topic-slide-anchor">
               <Card title="Taqdimotlar" subtitle="Bu mavzuning taqdimotlarini ko‘rish va yuklab olish cheklangan.">
                 <SlideCover number={topic.globalOrder} floating />
+                <p className="small muted">Keyingi mavzuni ochish uchun oldingi mavzularning har birida 80 foizdan yuqori natija oling.</p>
                 <div className="presentation-actions">
                   <Button variant="secondary" disabled>Slaydlarni ko‘rish</Button>
                   <Button variant="secondary" disabled>Yuklab olish</Button>

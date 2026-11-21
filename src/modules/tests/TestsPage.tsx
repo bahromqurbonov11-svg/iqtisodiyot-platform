@@ -148,7 +148,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
     const { data, error } = await supabase.rpc('econ_submit_test', { attempt_id: attempt.id, answers });
     setBusy(false);
     if (error) setMessage('Javoblarni yuborishda xatolik yuz berdi.');
-    else { saveDraft(); setScore(data); }
+    else { saveDraft(); setScore(data); access.refresh(); }
   }
 
   async function importBank() {

@@ -1,30 +1,40 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '@/services/auth/AuthContext';
 import { supabase } from '@/services/supabase';
 
-const TopicAccess = createContext({ maximum: null as number | null, failed: false, setMaximum: (_value: number) => {} });
+const TopicAccess = createContext({ maximum: null as number | null, failed: false,
+  setMaximum: (_value: number) => {}, refresh: () => {} });
 
 export function TopicAccessProvider({ children }: { children: ReactNode }) {
-  const [maximum, setMaximum] = useState<number | null>(null);
-  const [failed, setFailed] = useState(false);
+  const { user } = useAuth();
+  const id = user?.id ?? 'guest';
+  const [state, setState] = useState<{ id: string; maximum: number | null; failed: boolean }>();
+  const request = useRef(0);
+  const refresh = useCallback(() => {
+    const current = ++request.current;
+    void supabase.rpc('econ_topic_mastery_limit').then(({ data, error }) => {
+      if (current !== request.current) return;
+      setState({ id, maximum: typeof data === 'number' ? data : null, failed: Boolean(error) });
+    });
+  }, [id]);
+  function setMaximum(maximum: number) {
+    request.current += 1;
+    setState({ id, maximum, failed: false });
+  }
   useEffect(() => {
-    let active = true;
-    async function refresh() {
-      const { data, error } = await supabase.rpc('econ_public_topic_limit');
-      if (!active) return;
-      setFailed(Boolean(error));
-      setMaximum(typeof data === 'number' ? data : null);
-    }
-    void refresh();
-    const timer = window.setInterval(() => { if (!document.hidden) void refresh(); }, 30000);
+    refresh();
+    const timer = window.setInterval(() => { if (!document.hidden) refresh(); }, 30000);
     window.addEventListener('focus', refresh);
     return () => {
-      active = false;
+      request.current += 1;
       window.clearInterval(timer);
       window.removeEventListener('focus', refresh);
     };
-  }, []);
-  return <TopicAccess.Provider value={{ maximum, failed, setMaximum }}>{children}</TopicAccess.Provider>;
+  }, [refresh]);
+  const current = state?.id === id ? state : undefined;
+  return <TopicAccess.Provider value={{ maximum: current?.maximum ?? null, failed: current?.failed ?? false, setMaximum, refresh }}>
+    {children}
+  </TopicAccess.Provider>;
 }
 
 export function useTopicAccess() {

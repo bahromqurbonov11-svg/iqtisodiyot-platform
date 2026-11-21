@@ -59,7 +59,7 @@ export function AdminOverviewPage() {
 
       <LoyaltyAdminCard />
       <ResearchLinkAdminCard />
-      <Card title="Mavzu materiallari va testlariga kirish" subtitle="Tanlangan mavzugacha taqdimotlar, ma’ruzalar va mavzu testlari ochiq bo‘ladi." className="mt-5">
+      <Card title="Mavzu materiallari va testlariga kirish" subtitle="Tanlangan mavzugacha materiallar va testlar ochiq. Talaba har bir mavzu testida 80 foizdan yuqori natija bilan keyingi mavzuni ochishi mumkin." className="mt-5">
         <div className="stack">
           <label htmlFor="public-topic-limit">Materiallari va testi ochiq bo‘ladigan oxirgi mavzu</label>
           <select id="public-topic-limit" className="search-control" value={topicDraft ?? access.maximum ?? ''}
