@@ -35,14 +35,19 @@ const faq = [
 
 type DonutItem = { key: string; label: string; value: number; color: string };
 
-function Donut({ items, active, onActive }: { items: DonutItem[]; active: string | null; onActive: (k: string | null) => void }) {
+function Donut({ items, active, selected, onPreview, onSelect }: {
+  items: DonutItem[];
+  active: string | null;
+  selected: string | null;
+  onPreview: (key: string | null) => void;
+  onSelect: (key: string) => void;
+}) {
   const total = items.reduce((s, i) => s + i.value, 0);
   const r = 70;
   const c = 2 * Math.PI * r;
   let offset = 0;
-  const current = items.find((i) => i.key === active);
   return (
-    <svg viewBox="0 0 200 200" className="donut" role="img" aria-label="O‘quv yuklamasi taqsimoti">
+    <svg viewBox="0 0 200 200" className="donut" role="group" aria-label="O‘quv yuklamasi taqsimoti">
       <circle cx="100" cy="100" r={r} fill="none" stroke="#edf0ea" strokeWidth="26" />
       {items.map((i, idx) => {
         const len = (c * i.value) / total;
@@ -52,22 +57,37 @@ function Donut({ items, active, onActive }: { items: DonutItem[]; active: string
             className={'donut__seg' + (active === i.key ? ' is-on' : '') + (active && active !== i.key ? ' is-dim' : '')}
             style={{ animationDelay: idx * 0.18 + 's' }}
             cx="100" cy="100" r={r} fill="none" stroke={i.color}
-            strokeWidth={active === i.key ? 34 : 26}
+            strokeWidth={26}
             strokeDasharray={len + ' ' + (c - len)} strokeDashoffset={-offset}
             transform="rotate(-90 100 100)"
             tabIndex={0}
-            onMouseEnter={() => onActive(i.key)} onMouseLeave={() => onActive(null)}
-            onFocus={() => onActive(i.key)} onBlur={() => onActive(null)}
-            onClick={() => onActive(active === i.key ? null : i.key)}
+            role="button"
+            aria-label={i.label + ', ' + i.value + ' soat'}
+            aria-pressed={selected === i.key}
+            onPointerEnter={event => { if (event.pointerType === 'mouse') onPreview(i.key); }}
+            onPointerLeave={event => { if (event.pointerType === 'mouse') onPreview(null); }}
+            onFocus={event => { if (event.currentTarget.matches(':focus-visible')) onPreview(i.key); }}
+            onBlur={() => onPreview(null)}
+            onClick={() => onSelect(i.key)}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSelect(i.key);
+              }
+            }}
           />
         );
         offset += len;
         return seg;
       })}
-      <text x="100" y="96" textAnchor="middle" className="donut__big">{current ? current.value : total}</text>
-      <text x="100" y="118" textAnchor="middle" className="donut__small">
-        {current ? current.label + ' · ' + Math.round((100 * current.value) / total) + '%' : 'soat jami'}
-      </text>
+      {[{ key: null, value: total, label: 'soat jami' },
+        ...items.map(i => ({ ...i, label: i.label + ' · ' + Math.round((100 * i.value) / total) + '%' })),
+      ].map(i => (
+        <g key={i.key ?? 'total'} className={'donut__readout' + (i.key === active ? ' is-on' : '')} aria-hidden="true">
+          <text x="100" y="96" textAnchor="middle" className="donut__big">{i.value}</text>
+          <text x="100" y="118" textAnchor="middle" className="donut__small">{i.label}</text>
+        </g>
+      ))}
     </svg>
   );
 }
@@ -78,6 +98,9 @@ export function AboutPage() {
   const [partId, setPartId] = useState(subject.parts[0].id);
   const [kind, setKind] = useState<Kind | 'all'>('all');
   const [hoverSeg, setHoverSeg] = useState<string | null>(null);
+  const [selectedSeg, setSelectedSeg] = useState<string | null>(null);
+  const activeSeg = hoverSeg ?? selectedSeg;
+  const selectSegment = (key: string) => setSelectedSeg(current => current === key ? null : key);
   const [openTopic, setOpenTopic] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -145,7 +168,7 @@ export function AboutPage() {
                   key={p.id} type="button" role="tab" aria-selected={p.id === partId}
                   className={'part-pick__card' + (p.id === partId ? ' is-on' : '')}
                   style={{ ['--gc' as string]: i === 0 ? 'var(--g-teal)' : 'var(--g-blue)' }}
-                  onClick={() => { setPartId(p.id); setOpenTopic(null); setHoverSeg(null); }}
+                  onClick={() => { setPartId(p.id); setOpenTopic(null); setHoverSeg(null); setSelectedSeg(null); }}
                 >
                   <span className="part-pick__num">{p.order}</span>
                   <strong>{p.title}</strong>
@@ -161,7 +184,7 @@ export function AboutPage() {
         <Reveal>
           <div className="about-load">
             <div className="about-load__chart" key={partId}>
-              <Donut items={donut} active={hoverSeg} onActive={setHoverSeg} />
+              <Donut items={donut} active={activeSeg} selected={selectedSeg} onPreview={setHoverSeg} onSelect={selectSegment} />
             </div>
             <div className="about-load__text">
               <h2 className="about-h"><Clock size={22} aria-hidden /> O‘quv yuklamasi</h2>
@@ -170,13 +193,17 @@ export function AboutPage() {
                 {donut.map((d) => (
                   <li key={d.key}>
                     <button
-                      type="button" className={'about-legend__btn' + (hoverSeg === d.key ? ' is-on' : '')}
-                      onMouseEnter={() => setHoverSeg(d.key)} onMouseLeave={() => setHoverSeg(null)}
-                      onClick={() => setHoverSeg(hoverSeg === d.key ? null : d.key)}
+                      type="button" className={'about-legend__btn' + (activeSeg === d.key ? ' is-on' : '')}
+                      aria-pressed={selectedSeg === d.key}
+                      onPointerEnter={event => { if (event.pointerType === 'mouse') setHoverSeg(d.key); }}
+                      onPointerLeave={event => { if (event.pointerType === 'mouse') setHoverSeg(null); }}
+                      onFocus={event => { if (event.currentTarget.matches(':focus-visible')) setHoverSeg(d.key); }}
+                      onBlur={() => setHoverSeg(null)}
+                      onClick={() => selectSegment(d.key)}
                     >
                       <i style={{ background: d.color }} aria-hidden />
                       <span>{d.label}</span>
-                      <b>{d.value} soat</b>
+                      <b>{d.value} soat <small>{Math.round(100 * d.value / part.totalHours)}%</small></b>
                     </button>
                   </li>
                 ))}
