@@ -19,8 +19,11 @@ interface Result {
   student_id: string;
   group_id: string | null;
   group_name: string | null;
-  items: { bank: string; number: number; question: string; topic: number | null; correct: boolean }[] | null;
+  items: { bank: string; number: number; question: string; topic: number | null; correct: boolean | null }[] | null;
 }
+
+const localDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' });
+const groupKey = (id: string | number | null) => id == null ? 'ungrouped' : String(id);
 
 export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const [results, setResults] = useState<Result[]>();
@@ -31,6 +34,8 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const [group, setGroup] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
   const [kind, setKind] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [report, setReport] = useState('tests');
   const [limit, setLimit] = useState(12);
   const [practice, setPractice] = useState<string>();
@@ -60,33 +65,45 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   }, [admin]);
 
   const kindOf = (scope: number | null) => scope === null ? 'general' : scope > 0 ? 'topic' : 'semester';
+  const inDateRange = (timestamp: string) => {
+    if (!fromDate && !toDate) return true;
+    const date = localDate.format(new Date(timestamp));
+    return (!fromDate || date >= fromDate) && (!toDate || date <= toDate);
+  };
   const baseMatching = (results ?? []).filter(result =>
-    (!student || result.student_id === student) && (!group || String(result.group_id) === group));
+    (!student || result.student_id === student) && (!group || groupKey(result.group_id) === group) && inDateRange(result.taken_at));
   const matching = baseMatching.filter(result => !kind || kindOf(result.test_scope) === kind);
+  const filtered = matching.flatMap(row => {
+    const items = row.items?.filter(item => typeof item.correct === 'boolean') ?? [];
+    const detailed = items.length === row.total && row.total > 0;
+    if (!topicFilter) return [{ ...row, items }];
+    const selectedTopicNumber = Number(topicFilter);
+    if (row.test_scope === selectedTopicNumber) return [{ ...row, items }];
+    if (!detailed || (row.test_scope ?? 0) > 0) return [];
+    const selected = items.filter(item => item.topic === selectedTopicNumber);
+    return selected.length ? [{ ...row, items: selected, total: selected.length, points: selected.filter(item => item.correct).length }] : [];
+  });
   const kindLabels: Record<string, string> = { topic: 'Mavzulashtirilgan testlar', general: 'Umumiy testlar', semester: 'Semestr testlari' };
-  const kindRows = Object.entries(kindLabels).map(([key, label]) => {
-    const rows = baseMatching.filter(result => kindOf(result.test_scope) === key);
+  const kindRows = Object.entries(kindLabels).filter(([key]) => !kind || key === kind).map(([key, label]) => {
+    const rows = filtered.filter(result => kindOf(result.test_scope) === key);
     const total = rows.reduce((sum, row) => sum + row.total, 0);
     const points = rows.reduce((sum, row) => sum + row.points, 0);
     return { key, label, attempts: rows.length, students: new Set(rows.map(row => row.student_id)).size, total, percent: total ? Math.round(100 * points / total) : 0 };
   });
   /** Har bir mavzu bo‘yicha: mavzulashtirilgan va umumiy/semestr testlaridagi javoblar. */
-  const perTopic = topics.map(topic => {
+  const perTopic = topics.filter(topic => !topicFilter || topic.globalOrder === Number(topicFilter)).map(topic => {
     let sTotal = 0, sCorrect = 0, gTotal = 0, gCorrect = 0;
-    for (const row of baseMatching) {
+    for (const row of filtered) {
       if (row.test_scope === topic.globalOrder) {
-        const answers = row.items?.filter(item => item.topic === topic.globalOrder);
-        sTotal += answers ? answers.length : row.total; sCorrect += answers ? answers.filter(item => item.correct).length : row.points;
+        sTotal += row.total;
+        sCorrect += row.points;
       } else if (row.test_scope === null || row.test_scope < 0) {
         for (const item of row.items ?? []) if (item.topic === topic.globalOrder) { gTotal++; gCorrect += Number(item.correct); }
       }
     }
     return { topic, sTotal, sCorrect, gTotal, gCorrect };
   });
-  const items = matching.flatMap(result => result.items ?? []);
-  const filtered = matching.filter(result => !topicFilter || result.test_scope === Number(topicFilter) ||
-    result.items?.some(item => item.topic === Number(topicFilter)));
-  const visibleItems = items.filter(item => !topicFilter || item.topic === Number(topicFilter));
+  const visibleItems = filtered.flatMap(result => result.items);
   const questionGroups = new Map<string, typeof visibleItems>();
   visibleItems.forEach(item => {
     const key = item.bank + ':' + item.number + ':' + item.question;
@@ -100,22 +117,20 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     percent: Math.round(100 * answers.filter(item => item.correct).length / answers.length),
     topic: answers[0].topic,
   })).filter(item => item.wrong > 0).sort((a, b) => b.wrong - a.wrong || a.percent - b.percent);
-  const groups = new Map((results ?? []).filter(row => row.group_id != null).map(row => [String(row.group_id), row.group_name]));
+  const groups = new Map((results ?? []).map(row => [groupKey(row.group_id), row.group_name ?? 'Guruhsiz']));
   activity.data?.groups.forEach(entry => groups.set(String(entry.id), entry.name));
-  const trend = (topicFilter ? [] : filtered).slice(0, 12).reverse();
-  const answeredCount = visibleItems.length;
-  const correctCount = visibleItems.filter(item => item.correct).length;
-  const students = new Map((results ?? []).filter(row => !group || String(row.group_id) === group).map(row => [row.student_id, row.student]));
-  const gameStudents = (activity.data?.students ?? []).filter(row => (!group || String(row.group_id) === group) && (!student || row.id === student));
-  activity.data?.students.filter(row => !group || String(row.group_id) === group)
+  if (activity.data?.students.some(row => row.group_id == null)) groups.set('ungrouped', 'Guruhsiz');
+  const trend = filtered.filter(row => row.total > 0).slice(0, 12).reverse();
+  const students = new Map((results ?? []).filter(row => !group || groupKey(row.group_id) === group).map(row => [row.student_id, row.student]));
+  const gameStudents = (activity.data?.students ?? []).filter(row => (!group || groupKey(row.group_id) === group) && (!student || row.id === student));
+  activity.data?.students.filter(row => !group || groupKey(row.group_id) === group)
     .forEach(row => students.set(row.id, row.name));
   const testGroups = new Map<string, { label: string; total: number; points: number }>();
   for (const attempt of filtered) {
     const key = String(attempt.group_id ?? '');
     const category = testGroups.get(key) ?? { label: attempt.group_name ?? 'Guruh biriktirilmagan', total: 0, points: 0 };
-    const answers = topicFilter ? attempt.items?.filter(item => item.topic === Number(topicFilter)) : undefined;
-    category.total += answers ? answers.length : attempt.total;
-    category.points += answers ? answers.filter(item => item.correct).length : attempt.points;
+    category.total += attempt.total;
+    category.points += attempt.points;
     testGroups.set(key, category);
   }
 
@@ -124,8 +139,13 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     const old = mapStats.get(topic) ?? { total: 0, correct: 0 };
     mapStats.set(topic, { total: old.total + total, correct: old.correct + correct });
   };
-  for (const item of items) if (item.topic) addStat(item.topic, 1, Number(item.correct));
-  for (const row of matching) if (!row.items && row.test_scope && row.test_scope > 0) addStat(row.test_scope, row.total, row.points);
+  for (const row of filtered) {
+    if (row.test_scope && row.test_scope > 0) {
+      addStat(row.test_scope, row.total, row.points);
+    } else {
+      for (const item of row.items) if (item.topic) addStat(item.topic, 1, Number(item.correct));
+    }
+  }
   const selectedTopic = topicFilter ? topics.find(topic => topic.globalOrder === Number(topicFilter)) : undefined;
   const toggleTopic = (n: number) => { setTopicFilter(current => current === String(n) ? '' : String(n)); setLimit(12); };
   const mapParts = catalogService.getSubject().data.parts.map(part => ({
@@ -134,7 +154,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   const gapCount = [...mapStats.values()].filter(stat => stat.total > 0 && 100 * stat.correct / stat.total < 60).length;
   const sumTotal = filtered.reduce((sum, row) => sum + row.total, 0);
   const sumPoints = filtered.reduce((sum, row) => sum + row.points, 0);
-  const overall = answeredCount > 0 ? Math.round(100 * correctCount / answeredCount) : sumTotal > 0 ? Math.round(100 * sumPoints / sumTotal) : 0;
+  const overall = sumTotal > 0 ? Math.round(100 * sumPoints / sumTotal) : 0;
   const trendPoints = trend.map(result => ({
     label: new Date(result.taken_at).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent' }),
     percent: Math.round(100 * result.points / result.total),
@@ -177,23 +197,29 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
               {[...students].map(([id, name]) => <option key={id} value={id}>{name || id}</option>)}
             </select></label>
           </>}
-          <label>Test turi<select className="search-control" value={kind} onChange={event => { setKind(event.target.value); setLimit(12); }}>
+          {showTests && <label>Test turi<select className="search-control" value={kind} onChange={event => { setKind(event.target.value); setLimit(12); }}>
             <option value="">Barcha testlar</option>
             {Object.entries(kindLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-          </select></label>
+          </select></label>}
           <label>Mavzu<select className="search-control" value={topicFilter} onChange={event => { setTopicFilter(event.target.value); setLimit(12); }}>
             <option value="">Barcha mavzular</option>
             {topics.map(topic => <option key={topic.id} value={topic.globalOrder}>{topic.globalOrder}-mavzu · {topic.title}</option>)}
           </select></label>
+          {admin && <>
+            <label>Boshlanish sanasi<input type="date" className="search-control" value={fromDate}
+              max={toDate || undefined} onChange={event => { setFromDate(event.target.value); setLimit(12); }} /></label>
+            <label>Tugash sanasi<input type="date" className="search-control" value={toDate}
+              min={fromDate || undefined} onChange={event => { setToDate(event.target.value); setLimit(12); }} /></label>
+          </>}
         </div>
-        {(group || student || topicFilter || kind) && <Button className="mt-3" variant="secondary" onClick={() => {
-          setGroup(''); setStudent(''); setTopicFilter(''); setKind(''); setLimit(12);
+        {(group || student || topicFilter || (showTests && kind) || fromDate || toDate) && <Button className="mt-3" variant="secondary" onClick={() => {
+          setGroup(''); setStudent(''); setTopicFilter(''); setKind(''); setFromDate(''); setToDate(''); setLimit(12);
         }}>Filtrlarni tozalash</Button>}
       </Card>
       {showTests && results && <>
         <div className="mt-5"><KpiTiles tiles={[
           { label: 'Test urinishlari', value: filtered.length, hint: admin ? new Set(filtered.map(row => row.student_id)).size + ' ta talaba qatnashgan' : 'topshirilgan testlar', tone: 'primary', icon: <ListChecks size={20} /> },
-          { label: 'O‘rtacha natija', value: overall, suffix: '%', hint: answeredCount + ' ta javob asosida', tone: overall >= 80 ? 'success' : overall >= 60 ? 'warning' : 'danger', icon: <Gauge size={20} /> },
+          { label: 'O‘rtacha natija', value: sumTotal ? overall : null, suffix: sumTotal ? '%' : undefined, hint: sumTotal ? sumTotal + ' ta savol asosida' : 'Natija mavjud emas', tone: !sumTotal ? 'info' : overall >= 80 ? 'success' : overall >= 60 ? 'warning' : 'danger', icon: <Gauge size={20} /> },
           { label: 'Natijasi bor mavzular', value: mapStats.size, suffix: ' / ' + topics.length, hint: 'qolganlarida ma’lumot hali yo‘q', tone: 'info', icon: <Activity size={20} /> },
           { label: 'Bo‘shliq kuzatilgan mavzu', value: gapCount, hint: '60% dan past natija', tone: gapCount ? 'danger' : 'success', icon: <ShieldAlert size={20} /> },
         ]} /></div>
@@ -248,8 +274,20 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
             return (
               <div key={result.attempt_id} className="card card--pad">
                 <strong>{admin ? result.student + ' · ' : ''}{mode}</strong>
-                <div>{result.points} / {result.total} · {Math.round(100 * result.points / result.total)}%</div>
+                <div>{selectedTopic && <span>{selectedTopic.globalOrder}-mavzu kesimi · </span>}
+                  {result.total ? result.points + ' / ' + result.total + ' · ' + Math.round(100 * result.points / result.total) + '%' : '—'}</div>
                 <small>{new Date(result.taken_at).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}</small>
+                <details className="mt-3">
+                  <summary>Savolma-savol tafsilot</summary>
+                  {!!result.items.length && <ol className="stack mt-3">
+                    {result.items.map((item, i) => <li key={item.bank + ':' + item.number + ':' + i}>
+                      <strong>{item.correct ? 'To‘g‘ri' : 'Xato'}</strong>{' · '}{item.question}
+                    </li>)}
+                  </ol>}
+                  {result.items.length < result.total && <p className="small muted mt-3">
+                    {result.items.length ? 'Ayrim savollarning tafsiloti saqlanmagan.' : 'Bu urinishning savolma-savol tafsiloti saqlanmagan.'}
+                  </p>}
+                </details>
               </div>
             );
           })}
@@ -260,7 +298,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
       </Card>}
       {admin && activity.error && <p role="alert">O‘yin va guruh ma’lumotlarini yuklab bo‘lmadi.</p>}
       {!showTests && !activity.data && !activity.error && <p role="status">O‘yin natijalari yuklanmoqda…</p>}
-      {!showTests && activity.data && <AdminGameCharts games={activity.data.games} students={gameStudents}
+      {!showTests && activity.data && <AdminGameCharts games={activity.data.games.filter(row => inDateRange(row.played_at))} students={gameStudents}
         groups={activity.data.groups} topic={topicFilter} />}
     </>
   );

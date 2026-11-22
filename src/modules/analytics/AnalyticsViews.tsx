@@ -35,7 +35,7 @@ function useMounted() {
 }
 
 /* ---------- Asosiy ko‘rsatkichlar ---------- */
-export type Kpi = { label: string; value: number; suffix?: string; hint: string; tone: 'primary' | 'success' | 'warning' | 'danger' | 'info'; icon: ReactNode };
+export type Kpi = { label: string; value: number | null; suffix?: string; hint: string; tone: 'primary' | 'success' | 'warning' | 'danger' | 'info'; icon: ReactNode };
 
 export function KpiTiles({ tiles }: { tiles: Kpi[] }) {
   return (
@@ -44,7 +44,7 @@ export function KpiTiles({ tiles }: { tiles: Kpi[] }) {
         <div key={k.label} className={'kpi kpi--' + k.tone}>
           <span className="kpi__icon" aria-hidden>{k.icon}</span>
           <div>
-            <div className="kpi__value"><CountUp to={k.value} duration={900} />{k.suffix}</div>
+            <div className="kpi__value">{k.value === null ? '—' : <CountUp to={k.value} duration={900} />}{k.suffix}</div>
             <div className="kpi__label">{k.label}</div>
             <div className="kpi__hint">{k.hint}</div>
           </div>

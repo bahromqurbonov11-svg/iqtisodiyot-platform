@@ -16,7 +16,9 @@ export function AdminGameCharts({ games, students, groups, topic }: {
   const filtered = games.filter(row => roster.has(row.player) && (!mode || row.game === mode));
   const items = filtered.flatMap(row => (row.items ?? []).map(item => ({ ...item, topic: item.topic ?? row.topic })));
   const scoped = items.filter(item => !topic || item.topic === Number(topic));
-  const scopedGames = filtered.filter(row => !topic || row.topic === Number(topic) || row.items?.some(item => item.topic === Number(topic)));
+  const scopedGames = filtered.filter(row => !topic || (row.items?.length
+    ? row.items.some(item => (item.topic ?? row.topic) === Number(topic))
+    : row.topic === Number(topic)));
   const played = [...new Set(scopedGames.map(row => row.game))];
   const topics = catalogService.getTopics().data;
   const counts = new Map<string, { label: string; total: number; wrong: number }>();
