@@ -126,13 +126,28 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   activity.data?.students.filter(row => !group || groupKey(row.group_id) === group)
     .forEach(row => students.set(row.id, row.name));
   const testGroups = new Map<string, { label: string; total: number; points: number }>();
+  const totalsByStudent = new Map<string, {
+    id: string; name: string; group: string; attempts: number; total: number; points: number;
+  }>();
   for (const attempt of filtered) {
     const key = String(attempt.group_id ?? '');
     const category = testGroups.get(key) ?? { label: attempt.group_name ?? 'Guruh biriktirilmagan', total: 0, points: 0 };
     category.total += attempt.total;
     category.points += attempt.points;
     testGroups.set(key, category);
+    if (admin && attempt.total > 0) {
+      const learner = totalsByStudent.get(attempt.student_id) ?? {
+        id: attempt.student_id, name: attempt.student || 'Ism kiritilmagan',
+        group: attempt.group_name ?? 'Guruhsiz', attempts: 0, total: 0, points: 0,
+      };
+      learner.attempts++;
+      learner.total += attempt.total;
+      learner.points += attempt.points;
+      totalsByStudent.set(learner.id, learner);
+    }
   }
+  const ranking = [...totalsByStudent.values()].sort((a, b) =>
+    b.points * a.total - a.points * b.total || b.total - a.total || a.name.localeCompare(b.name, 'uz'));
 
   const mapStats = new Map<number, Stat>();
   const addStat = (topic: number, total: number, correct: number) => {
@@ -236,7 +251,23 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
             <TrendChart points={trendPoints} />
           </Card>
         </div>
-                {admin && <Card title="Testlar · guruhlar bo‘yicha" className="mt-5">
+        {admin && <Card title="Talabalar reytingi" subtitle="Tanlangan testlardagi to‘g‘ri javoblar ulushi bo‘yicha. Ulush teng bo‘lsa, ko‘proq savol ishlagan talaba yuqorida turadi." className="mt-5">
+          {ranking.length ? <div className="table-wrap"><table className="table">
+            <thead><tr><th>O‘rin</th><th>Talaba</th><th>Guruh</th><th>Testlar</th><th>To‘g‘ri javoblar</th><th>Natija</th></tr></thead>
+            <tbody>{ranking.map((row, index) => <tr key={row.id}>
+              <td data-label="O‘rin">{index + 1}</td>
+              <td data-label="Talaba"><button type="button" className="analytics-topic-button"
+                aria-pressed={student === row.id} onClick={() => { setStudent(current => current === row.id ? '' : row.id); setLimit(12); }}>
+                {row.name}
+              </button></td>
+              <td data-label="Guruh">{row.group}</td>
+              <td data-label="Testlar">{row.attempts}</td>
+              <td data-label="To‘g‘ri javoblar">{row.points} / {row.total}</td>
+              <td data-label="Natija"><strong>{(100 * row.points / row.total).toFixed(2).replace('.', ',')}%</strong></td>
+            </tr>)}</tbody>
+          </table></div> : <p>Bu tanlov bo‘yicha reyting uchun test natijasi yo‘q.</p>}
+        </Card>}
+        {admin && <Card title="Testlar · guruhlar bo‘yicha" className="mt-5">
           <div className="admin-summary"><strong>{filtered.length} ta test urinish</strong><strong>{new Set(filtered.map(row => row.student_id)).size} ta qatnashgan talaba</strong></div>
           {testGroups.size ? bars([...testGroups.values()].filter(row => row.total > 0)
             .map(row => ({ ...row, percent: Math.round(100 * row.points / row.total), wrong: row.total - row.points }))) : <p>Bu tanlov uchun test natijasi yo‘q.</p>}
