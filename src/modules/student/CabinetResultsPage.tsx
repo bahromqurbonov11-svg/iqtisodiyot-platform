@@ -71,9 +71,9 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     return (!fromDate || date >= fromDate) && (!toDate || date <= toDate);
   };
   const baseMatching = (results ?? []).filter(result =>
-    (!student || result.student_id === student) && (!group || groupKey(result.group_id) === group) && inDateRange(result.taken_at));
+    (!group || groupKey(result.group_id) === group) && inDateRange(result.taken_at));
   const matching = baseMatching.filter(result => !kind || kindOf(result.test_scope) === kind);
-  const filtered = matching.flatMap(row => {
+  const comparison = matching.flatMap(row => {
     const items = row.items?.filter(item => typeof item.correct === 'boolean') ?? [];
     const detailed = items.length === row.total && row.total > 0;
     if (!topicFilter) return [{ ...row, items }];
@@ -83,6 +83,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     const selected = items.filter(item => item.topic === selectedTopicNumber);
     return selected.length ? [{ ...row, items: selected, total: selected.length, points: selected.filter(item => item.correct).length }] : [];
   });
+  const filtered = student ? comparison.filter(row => row.student_id === student) : comparison;
   const kindLabels: Record<string, string> = { topic: 'Mavzulashtirilgan testlar', general: 'Umumiy testlar', semester: 'Semestr testlari' };
   const kindRows = Object.entries(kindLabels).filter(([key]) => !kind || key === kind).map(([key, label]) => {
     const rows = filtered.filter(result => kindOf(result.test_scope) === key);
@@ -135,16 +136,17 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
     category.total += attempt.total;
     category.points += attempt.points;
     testGroups.set(key, category);
-    if (admin && attempt.total > 0) {
-      const learner = totalsByStudent.get(attempt.student_id) ?? {
-        id: attempt.student_id, name: attempt.student || 'Ism kiritilmagan',
-        group: attempt.group_name ?? 'Guruhsiz', attempts: 0, total: 0, points: 0,
-      };
-      learner.attempts++;
-      learner.total += attempt.total;
-      learner.points += attempt.points;
-      totalsByStudent.set(learner.id, learner);
-    }
+  }
+  for (const attempt of admin ? comparison : []) {
+    if (attempt.total <= 0) continue;
+    const learner = totalsByStudent.get(attempt.student_id) ?? {
+      id: attempt.student_id, name: attempt.student || 'Ism kiritilmagan',
+      group: attempt.group_name ?? 'Guruhsiz', attempts: 0, total: 0, points: 0,
+    };
+    learner.attempts++;
+    learner.total += attempt.total;
+    learner.points += attempt.points;
+    totalsByStudent.set(learner.id, learner);
   }
   const ranking = [...totalsByStudent.values()].sort((a, b) =>
     b.points * a.total - a.points * b.total || b.total - a.total || a.name.localeCompare(b.name, 'uz'));
@@ -254,7 +256,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
         {admin && <Card title="Talabalar reytingi" subtitle="Tanlangan testlardagi to‘g‘ri javoblar ulushi bo‘yicha. Ulush teng bo‘lsa, ko‘proq savol ishlagan talaba yuqorida turadi." className="mt-5">
           {ranking.length ? <div className="table-wrap"><table className="table">
             <thead><tr><th>O‘rin</th><th>Talaba</th><th>Guruh</th><th>Testlar</th><th>To‘g‘ri javoblar</th><th>Natija</th></tr></thead>
-            <tbody>{ranking.map((row, index) => <tr key={row.id}>
+            <tbody>{ranking.map((row, index) => (!student || row.id === student) && <tr key={row.id}>
               <td data-label="O‘rin">{index + 1}</td>
               <td data-label="Talaba"><button type="button" className="analytics-topic-button"
                 aria-pressed={student === row.id} onClick={() => { setStudent(current => current === row.id ? '' : row.id); setLimit(12); }}>
