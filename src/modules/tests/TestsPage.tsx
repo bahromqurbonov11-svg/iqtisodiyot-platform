@@ -5,6 +5,7 @@ import { catalogService } from '@/services/catalog.service';
 import { useAuth } from '@/services/auth/AuthContext';
 import { supabase } from '@/services/supabase';
 import { paths } from '@/navigation/paths';
+import { TestCopyGuard } from './TestCopyGuard';
 
 interface Attempt {
   id: string;
@@ -239,12 +240,14 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
               <Card className="test-question" key={index}>
                 <div className="test-meta"><strong>{index + 1} / {attempt.questions.length}</strong><span aria-label="Qolgan vaqt" className={seconds <= 15 ? 'is-urgent' : ''}>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
                 <div className="test-progress" aria-hidden><i style={{ width: (100 * index / attempt.questions.length) + '%' }} /></div>
-                <h2>{attempt.questions[index].question}</h2>
-                <div className="stack">
+                <TestCopyGuard>
+                  <h2>{attempt.questions[index].question}</h2>
+                  <div className="stack">
                   {attempt.questions[index].options.map((option, choice) => (
                     <button type="button" className={'test-option' + (picked === choice ? ' is-picked' : picked !== null ? ' is-dim' : '')} key={index + '-' + choice} disabled={picked !== null && picked !== choice} aria-pressed={picked === choice} onClick={() => choose(choice)}><b aria-hidden>{String.fromCharCode(65 + choice)}</b><span>{option}</span></button>
                   ))}
-                </div>
+                  </div>
+                </TestCopyGuard>
               </Card>
             ) : <Button disabled={busy} onClick={() => void submitTest()}>Natijani hisoblash</Button>}
           </>

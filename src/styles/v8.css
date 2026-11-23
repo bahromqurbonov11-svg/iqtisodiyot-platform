@@ -1,5 +1,10 @@
 /* ===== v8: test, telefon va sensorli ekranlar ===== */
 .test-question { animation: v8-q-in .38s cubic-bezier(.2,.7,.2,1) both; }
+.test-copy-guard, .test-copy-guard * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 @keyframes v8-q-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
 .test-option.is-picked { border-color: var(--c-primary); background: var(--c-mint); transform: translateX(6px); box-shadow: 0 8px 18px rgba(39,110,89,.18); }
 .test-option.is-picked b { background: var(--c-primary); color: #fff; }
