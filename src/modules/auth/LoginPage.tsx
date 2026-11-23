@@ -1,6 +1,6 @@
 
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button, Notice } from '@/components/ui';
 import { paths } from '@/navigation/paths';
@@ -10,6 +10,7 @@ import { AuthShell } from './AuthShell';
 export function LoginPage() {
   const { provider } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,10 @@ export function LoginPage() {
     try {
       const user = await provider.signIn(login, password);
 
-      if (user.role === 'admin') {
+      const room = params.get('xona') ?? '';
+      if (/^[A-F0-9]{6}$/.test(room)) {
+        navigate(paths.game('jonli') + '?tur=' + (params.get('tur') === 'graph' ? 'graph' : 'quiz') + '&xona=' + room, { replace: true });
+      } else if (user.role === 'admin') {
         navigate(paths.admin, { replace: true });
       } else {
         navigate(paths.cabinet, { replace: true });

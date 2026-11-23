@@ -49,7 +49,7 @@ function Segmented({ label, value, onChange, options, short, disabled }: {
   );
 }
 
-function Chart({ values }: { values: number[] }) {
+export function Chart({ values }: { values: number[] }) {
   const [d, s, p] = values;
   const dem = BASE_D + d * STEP;
   const sup = BASE_S - s * STEP;

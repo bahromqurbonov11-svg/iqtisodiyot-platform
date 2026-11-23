@@ -60,6 +60,14 @@ export function GamesPage() {
       <PageHeader crumbs={[{ label: 'Bosh sahifa', to: paths.home }, { label: 'O‘yinlar' }]}
         title="Iqtisodiyot o‘yinlari" description="Marraga yuguring yoki mavzu bo‘yicha mashq qiling." />
 
+      <section className="games-section stack" aria-labelledby="live-games">
+        <h2 id="live-games">Jonli mashg‘ulot</h2>
+        <div className="presentation-actions">
+          <Button to={paths.game('jonli') + '?tur=quiz'} icon={<Users size={18} />}>Jonli viktorina</Button>
+          <Button to={paths.game('jonli') + '?tur=graph'} variant="secondary" icon={<SlidersHorizontal size={18} />}>Jonli grafikni boshqarish</Button>
+        </div>
+      </section>
+
       <section className="games-section" aria-labelledby="class-h">
         <div className="games-section__head">
           <h2 id="class-h">Dars rejimi</h2>
