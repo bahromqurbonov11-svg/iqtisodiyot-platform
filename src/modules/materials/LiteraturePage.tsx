@@ -4,7 +4,7 @@ import { paths } from '@/navigation/paths';
 
 const library = 'https://oliymaktab.uz/uz/students/library/books';
 const resources = [
-  { title: 'Darslik', book: 3, Icon: BookMarked, color: 'var(--g-teal)' },
+  { title: 'Darslik', book: 31, Icon: BookMarked, color: 'var(--g-teal)' },
   { title: 'O‘quv qo‘llanma', book: 32, Icon: BookOpen, color: 'var(--g-blue)' },
   { title: 'Ma’ruza matnlari to‘plami', book: 3, Icon: LibraryBig, color: 'var(--g-violet)' },
 ];
