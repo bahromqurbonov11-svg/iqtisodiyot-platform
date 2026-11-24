@@ -1,6 +1,7 @@
 begin;
 alter table public.econ_live_rooms add column if not exists round_kind text;
 alter table public.econ_live_rooms add column if not exists round_visual jsonb;
+alter table public.econ_live_rooms add column if not exists round_plan text[];
 alter table public.econ_live_players add column if not exists correct_count integer not null default 0;
 alter table public.econ_live_players add column if not exists response_count integer not null default 0;
 
@@ -20,17 +21,23 @@ begin
   if operation = 'create' then
     base := public.econ_live_game('create', '', jsonb_build_object('mode','graph','topic',payload->'topic'));
     room_code := base->>'code';
+    update public.econ_live_rooms
+    set round_plan=(select array_agg(item order by random())
+      from unnest(array['quiz','quiz','quiz','quiz','quiz','match','match','match','graph','graph']) item)
+    where code=room_code;
   elsif operation in ('start','answer') then
     select * into r from public.econ_live_rooms where code=upper(btrim(room_code)) for update;
     if r.code is null or r.finished or r.expires_at<=clock_timestamp() then raise exception 'Room unavailable'; end if;
     if operation='start' then
       if uid<>r.host or not coalesce(public.is_admin(),false) or r.deadline>clock_timestamp()
       then raise exception 'Round cannot start'; end if;
-      kind := (array['quiz','match','graph'])[1+mod(r.round,3)];
+      if r.round_plan is not null and r.round>=10 then raise exception 'All rounds complete'; end if;
+      kind := coalesce(r.round_plan[r.round+1], (array['quiz','match','graph'])[1+mod(r.round,3)]);
       if kind='quiz' then
         select t.question, s.options, s.answer, t.bank||':'||t.source_number as ref into task
         from (select * from public.econ_test_questions
           where topic between 1 and r.topic and not (bank||':'||source_number=any(r.used))
+            and not ('quiz-text:'||md5(regexp_replace(lower(question),'[^[:alnum:]]','','g'))=any(r.used))
           order by (topic=r.topic) desc, random() limit 1) t
         cross join lateral (
           select jsonb_agg(o.option order by o.position) as options,
@@ -39,16 +46,21 @@ begin
             from unnest(t.options) with ordinality source(option,original)) o
         ) s;
       else
-        if coalesce((payload->>'topic')::integer,0) not between 1 and r.topic
+        if (kind='match' and coalesce((payload->>'topic')::integer,0) not between 1 and r.topic)
+          or (kind='graph' and coalesce((payload->>'topic')::integer,0)<>6)
           or length(coalesce(payload->>'prompt','')) not between 1 and 1500 or choice is null or choice='null'::jsonb
         then raise exception 'Invalid task'; end if;
         select payload->>'prompt' as question, payload->'options' as options, choice as answer,
           kind||':'||(payload->>'id') as ref into task;
       end if;
       if task.question is null then raise exception 'Question bank exhausted'; end if;
+      if task.ref is null or task.ref=any(r.used) then raise exception 'Task already used'; end if;
       update public.econ_live_rooms set round=r.round+1, round_kind=kind, prompt=task.question, options=task.options,
         answer=task.answer, deadline=clock_timestamp()+interval '45 seconds', used=array_append(r.used,task.ref),
         round_visual=case when kind='quiz' then null else payload->'visual' end where code=r.code;
+      if kind='quiz' then
+        update public.econ_live_rooms set used=array_append(used,'quiz-text:'||md5(regexp_replace(lower(task.question),'[^[:alnum:]]','','g'))) where code=r.code;
+      end if;
     else
       if r.deadline is null or (payload->>'round')::integer is distinct from r.round
         or choice is null or choice='null'::jsonb then raise exception 'Round closed'; end if;
@@ -65,6 +77,8 @@ begin
   end if;
   select * into r from public.econ_live_rooms where code=base->>'code';
   return base || jsonb_build_object('topic',r.topic,'roundKind',r.round_kind,'visual',r.round_visual,
+    'nextKind',case when r.host=uid then r.round_plan[r.round+1] end,'fixedRounds',r.round_plan is not null,
+    'serverNow',clock_timestamp(),
     'top',coalesce((select jsonb_agg(jsonb_build_object('name',s.name,'score',s.score) order by s.score desc,s.name,s.player)
       from (select name,score,player from public.econ_live_players where code=r.code order by score desc,name,player limit 3) s),'[]'),
     'ranking',case when r.finished then (select coalesce(jsonb_agg(jsonb_build_object('name',name,'score',score,'correct',correct_count,'responses',response_count) order by score desc,name,player),'[]') from public.econ_live_players where code=r.code) end,
