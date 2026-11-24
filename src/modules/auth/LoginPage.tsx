@@ -39,7 +39,7 @@ export function LoginPage() {
 
       const room = params.get('xona') ?? '';
       if (/^[A-F0-9]{6}$/.test(room)) {
-        navigate(paths.game('jonli') + '?tur=' + (params.get('tur') === 'graph' ? 'graph' : 'quiz') + '&xona=' + room, { replace: true });
+        navigate(paths.game('jonli') + '?xona=' + room, { replace: true });
       } else if (user.role === 'admin') {
         navigate(paths.admin, { replace: true });
       } else {

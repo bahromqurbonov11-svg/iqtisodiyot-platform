@@ -7,15 +7,27 @@ import { supabase } from '@/services/supabase';
 import { paths } from '@/navigation/paths';
 import { Chart } from './GraphGame';
 import { graphQuestions } from './graph/questions';
+import { topicGameBank } from '@/data/topicGames';
+import { topicVisuals } from '@/modules/catalog/TopicsPage';
 
-type Mode = 'quiz' | 'graph';
+type Visual = { title: string; values: number[]; labels: string[] };
 type Room = {
-  code: string; mode: Mode; host: boolean; round: number; prompt: string | null; options: string[] | null;
+  code: string; topic: number; roundKind: 'quiz' | 'match' | 'graph' | null; visual: Visual | null;
+  host: boolean; round: number; prompt: string | null; options: string[] | null;
   deadline: string | null; closed: boolean; finished: boolean; answer: number | number[] | null;
   own: number | number[] | null; used: string[] | null; players: number; answered: number;
-  ranking: { name: string; score: number }[] | null; distribution: number[] | null;
+  top: { name: string; score: number }[];
+  ranking: { name: string; score: number; correct: number; responses: number }[] | null; distribution: number[] | null;
 };
-const titles = { quiz: 'Jonli viktorina', graph: 'Jonli grafikni boshqarish' };
+const titles = { quiz: 'Viktorina', match: 'Tushunchalarni moslashtirish', graph: 'Grafikni boshqarish' };
+const shuffle = <T,>(values: readonly T[]) => {
+  const result = [...values];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
 const ranges = [
   { label: 'Talab egri chizig‘i', values: ['Keskin kamayadi', 'Biroz kamayadi', 'O‘zgarmaydi', 'Biroz ortadi', 'Keskin ortadi'], start: -2 },
   { label: 'Taklif egri chizig‘i', values: ['Keskin kamayadi', 'Biroz kamayadi', 'O‘zgarmaydi', 'Biroz ortadi', 'Keskin ortadi'], start: -2 },
@@ -30,7 +42,6 @@ export function LiveGamesPage() {
 function LiveGame() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
-  const mode: Mode = params.get('tur') === 'graph' ? 'graph' : 'quiz';
   const [code, setCode] = useState(params.get('xona') ?? '');
   const [topic, setTopic] = useState(1);
   const [room, setRoom] = useState<Room>();
@@ -47,7 +58,7 @@ function LiveGame() {
     const version = ++sequence.current;
     setBusy(true);
     setMessage('');
-    const { data, error } = await supabase.rpc('econ_live_game', { operation, room_code: overrideCode, payload });
+    const { data, error } = await supabase.rpc('econ_live_mixed', { operation, room_code: overrideCode, payload });
     if (version === sequence.current) {
       if (error || !data) {
         setMessage(operation === 'join' ? 'Xona topilmadi yoki mashg‘ulot tugagan.'
@@ -57,7 +68,7 @@ function LiveGame() {
         const next = data as Room;
         setRoom(next);
         if (operation === 'create' || operation === 'join') {
-          setParams({ tur: next.mode, xona: next.code }, { replace: true });
+          setParams({ xona: next.code }, { replace: true });
         }
       }
     }
@@ -73,7 +84,7 @@ function LiveGame() {
       if (locked.current || polling || document.hidden) return;
       polling = true;
       const version = sequence.current;
-      const { data, error } = await supabase.rpc('econ_live_game', { operation: 'state', room_code: roomId });
+      const { data, error } = await supabase.rpc('econ_live_mixed', { operation: 'state', room_code: roomId });
       polling = false;
       if (active && version === sequence.current && !error && data) setRoom(data);
     }
@@ -92,18 +103,48 @@ function LiveGame() {
   }, [room?.deadline, room?.closed]);
 
   function start() {
-    if (room?.mode === 'graph') {
-      const remaining = graphQuestions.filter(q => !room.used?.includes('graph:' + q.id));
-      const next = remaining[Math.floor(Math.random() * remaining.length)];
-      if (next) void action('start', next);
-      else setMessage('Barcha grafik topshiriqlari berildi.');
-    } else void action('start');
+    if (!room) return;
+    if (room.round % 3 === 0) { void action('start'); return; }
+    if (room.round % 3 === 1) {
+      const candidates = Array.from({ length: room.topic }, (_, i) => room.topic - i);
+      for (const number of candidates) {
+        const pool = topicGameBank[number - 1];
+        const indices = shuffle(pool.map((_, i) => i).filter(i => !room.used?.includes('match:' + number + '-' + i)));
+        if (indices.length < 3) continue;
+        const chosen = indices.slice(0, 3);
+        const options = shuffle(chosen);
+        void action('start', { topic: number, id: number + '-' + chosen[0],
+          prompt: chosen.map((i, position) => (position + 1) + '. ' + pool[i][1]).join('\n'),
+          options: options.map(i => pool[i][0]), answer: chosen.map(i => options.indexOf(i)) });
+        return;
+      }
+      setMessage('Moslashtirish uchun yangi atamalar qolmadi.');
+      return;
+    }
+    const visualIndex = room.topic - 1 - [...topicVisuals.slice(0, room.topic)].reverse().findIndex(item =>
+      item.kind === 'market' || new Set(item.values).size === item.values.length && item.values.length >= 2);
+    const visual = topicVisuals[visualIndex];
+    if (visual.kind === 'market') {
+      const unused = graphQuestions.filter(item => !room.used?.includes('graph:6-' + item.id));
+      const next = shuffle(unused.length ? unused : graphQuestions)[0];
+      void action('start', { ...next, topic: 6, id: '6-' + next.id });
+      return;
+    }
+    const high = Math.floor(room.round / 3) % 2 === 0;
+    const extreme = (high ? Math.max : Math.min)(...visual.values);
+    const labels = visual.values.map((_, i) => visual.steps[i]?.[0] ?? (i + 1) + '-holat');
+    const options = shuffle(labels.map((label, i) => ({ label, i })));
+    void action('start', { topic: visualIndex + 1, id: visualIndex + '-' + room.round,
+      prompt: 'Grafikdagi eng ' + (high ? 'yuqori' : 'past') + ' qiymat qaysi holatga tegishli?',
+      options: options.map(item => item.label), answer: options.findIndex(item => item.i === visual.values.indexOf(extreme)),
+      visual: { title: visual.title, values: visual.values, labels } });
   }
 
   return <div className="container page stack">
-    <PageHeader title={titles[room?.mode ?? mode]} crumbs={[{ label: 'O‘yinlar', to: paths.games }, { label: 'Jonli mashg‘ulot' }]} />
+    <PageHeader title="Jonli aralash o‘yin" description="Har mashg‘ulotda viktorina, tushunchalarni moslashtirish va grafik raundlari navbat bilan chiqadi."
+      crumbs={[{ label: 'O‘yinlar', to: paths.games }, { label: 'Jonli mashg‘ulot' }]} />
     {!user ? <Card title="Mashg‘ulotga kirish"><p>Telefoningizda sayt hisobiga kiring, so‘ng o‘qituvchi bergan xona kodini kiriting.</p>
-      <Button to={paths.login + (code ? '?tur=' + mode + '&xona=' + encodeURIComponent(code) : '')}>Tizimga kirish</Button></Card> : !room ? <>
+      <Button to={paths.login + (code ? '?xona=' + encodeURIComponent(code) : '')}>Tizimga kirish</Button></Card> : !room ? <>
       <Card title="Xonaga qo‘shilish">
         <form className="stack" onSubmit={event => { event.preventDefault(); void action('join'); }}>
           <label htmlFor="live-code">Xona kodi</label>
@@ -113,10 +154,10 @@ function LiveGame() {
         </form>
       </Card>
       {user.role === 'admin' && <Card title="Mashg‘ulot ochish"><div className="stack">
-        {mode === 'quiz' && <label>Mavzu<select className="search-control" value={topic} onChange={event => setTopic(Number(event.target.value))}>
+        <label>Mavzu<select className="search-control" value={topic} onChange={event => setTopic(Number(event.target.value))}>
           {catalogService.getTopics().data.map(t => <option key={t.id} value={t.globalOrder}>{t.globalOrder}. {t.title}</option>)}
-        </select></label>}
-        <Button disabled={busy} onClick={() => void action('create', { mode, topic: mode === 'graph' ? 6 : topic })}>Xona yaratish</Button>
+        </select></label>
+        <Button disabled={busy} onClick={() => void action('create', { topic })}>Xona yaratish</Button>
       </div></Card>}
     </> : <>
       <Card title={'Xona kodi ' + room.code}>
@@ -133,10 +174,21 @@ function LiveGame() {
           </>}
         </div>}
       </Card>
-      {room.prompt && <Card title={room.round + '-raund'} subtitle={room.closed ? 'Raund yopildi' : seconds + ' soniya qoldi'}>
+      {!room.finished && <Card title="Jonli top uchlik" subtitle="To‘g‘ri javob uchun 100 ball va tezlikka qarab 99 ballgacha qo‘shimcha ball.">
+        {room.top.length ? <ol>{room.top.map((row, i) => <li key={i}>{i + 1}. {row.name} · {row.score} ball</li>)}</ol> : <p>Ishtirokchilar kutilmoqda.</p>}
+      </Card>}
+      {room.prompt && <Card title={room.round + '-raund · ' + (room.roundKind ? titles[room.roundKind] : '')} subtitle={room.closed ? 'Raund yopildi' : seconds + ' soniya qoldi'}>
         <div className="stack">
-          <p><strong>{room.prompt}</strong></p>
-          {room.mode === 'quiz' ? room.options?.map((option, i) => <button key={i} type="button"
+          <p style={{ whiteSpace: 'pre-line' }}><strong>{room.prompt}</strong></p>
+          {room.visual && <Card title={room.visual.title}>
+            {room.visual.values.map((value, i) => <div key={i} className="analytics-bar">
+              <span>{room.visual?.labels[i]} · {value}</span>
+              <progress max={Math.max(...room.visual!.values.map(Math.abs), 1)} value={Math.abs(value)} aria-label={room.visual?.labels[i]} />
+            </div>)}
+          </Card>}
+          {room.roundKind === 'match' ? <MatchRound key={room.round} room={room} disabled={busy || seconds <= 0}
+            submit={answer => void action('answer', { round: room.round, answer })} />
+          : room.options ? room.options.map((option, i) => <button key={i} type="button"
             className={'test-option' + (room.own === i ? ' is-picked' : '')}
             disabled={busy || room.host || room.closed || seconds <= 0 || room.own !== null}
             onClick={() => void action('answer', { round: room.round, answer: i })}>
@@ -151,12 +203,33 @@ function LiveGame() {
       </Card>}
       {!room.round && !room.finished && <p role="status">O‘qituvchi birinchi raundni boshlashini kuting.</p>}
       {room.ranking && <Card title={room.finished ? 'Yakuniy reyting' : 'Joriy reyting'}>
-        {room.ranking.length ? <ol>{room.ranking.map((row, i) => <li key={i}>{i + 1}. {row.name} · {row.score} ball</li>)}</ol>
+        {room.ranking.length ? <div className="table-wrap"><table className="table">
+          <thead><tr><th>O‘rin</th><th>Talaba</th><th>Ball</th><th>To‘g‘ri javob</th><th>Yuborilgan javob</th></tr></thead>
+          <tbody>{room.ranking.map((row, i) => <tr key={i}><td data-label="O‘rin">{i + 1}</td>
+            <td data-label="Talaba">{row.name}</td><td data-label="Ball">{row.score}</td>
+            <td data-label="To‘g‘ri javob">{row.correct}</td><td data-label="Yuborilgan javob">{row.responses}</td></tr>)}</tbody>
+        </table></div>
           : <p>Ishtirokchilar yo‘q.</p>}
       </Card>}
       {room.finished && <Button to={paths.games} variant="secondary">O‘yinlarga qaytish</Button>}
     </>}
     {message && <p role="status">{message}</p>}
+  </div>;
+}
+
+function MatchRound({ room, disabled, submit }: { room: Room; disabled: boolean; submit: (values: number[]) => void }) {
+  const [values, setValues] = useState<number[]>(Array.isArray(room.own) ? room.own : [-1, -1, -1]);
+  const frozen = disabled || room.host || room.closed || room.own !== null;
+  return <div className="stack">
+    {values.map((value, i) => <label key={i}>{i + 1}-ta’rifga mos atama
+      <select className="search-control" value={value} disabled={frozen}
+        onChange={event => setValues(current => current.map((entry, j) => i === j ? Number(event.target.value) : entry))}>
+        <option value={-1}>Atamani tanlang</option>
+        {room.options?.map((option, j) => <option key={j} value={j} disabled={values.some((choice, k) => k !== i && choice === j)}>{option}</option>)}
+      </select>
+    </label>)}
+    {!room.host && !room.closed && <Button disabled={frozen || values.includes(-1)} onClick={() => submit(values)}>Javobni yuborish</Button>}
+    {room.closed && Array.isArray(room.answer) && <p>To‘g‘ri juftliklar · {room.answer.map((answer, i) => (i + 1) + '. ' + room.options?.[answer]).join(' · ')}</p>}
   </div>;
 }
 

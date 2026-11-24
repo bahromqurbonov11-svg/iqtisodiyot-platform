@@ -63,8 +63,7 @@ export function GamesPage() {
       <section className="games-section stack" aria-labelledby="live-games">
         <h2 id="live-games">Jonli mashg‘ulot</h2>
         <div className="presentation-actions">
-          <Button to={paths.game('jonli') + '?tur=quiz'} icon={<Users size={18} />}>Jonli viktorina</Button>
-          <Button to={paths.game('jonli') + '?tur=graph'} variant="secondary" icon={<SlidersHorizontal size={18} />}>Jonli grafikni boshqarish</Button>
+          <Button to={paths.game('jonli')} icon={<Users size={18} />}>Jonli aralash o‘yin</Button>
         </div>
       </section>
 
