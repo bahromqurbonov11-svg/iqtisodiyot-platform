@@ -8,7 +8,7 @@ import { useRecordGame } from './recordGame';
 import { pickQuestions, type GraphQuestion } from './graph/questions';
 
 const ROUND = 10;
-const SECONDS = 60;
+const SECONDS = 45;
 const STEP = 12;
 
 /* Model: talab P = D - Q, taklif P = S + Q. Boshlang‘ich D = 95, S = 25 (muvozanat: P = 60, Q = 35). */

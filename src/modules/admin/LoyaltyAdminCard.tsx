@@ -16,7 +16,7 @@ export function LoyaltyAdminCard() {
           <p><b>{holder ? 'Hozirgi egasi: ' + holder.name : 'Nishon hali hech kimda emas (10 soatga yetgan talaba yo‘q).'}</b></p>
           <ol>
             {list.map((row, index) => (
-              <li key={row.name + index}>{row.name} — {spent(row.seconds)}{index > 0 && list[0] ? ' (egasidan ' + spent(list[0].seconds - row.seconds) + ' kam)' : ''}</li>
+              <li key={row.name + index}>{row.name} — {spent(row.seconds)}{index > 0 && list[0] ? ' (birinchi o‘rindagi natijadan ' + spent(list[0].seconds - row.seconds) + ' kam)' : ''}</li>
             ))}
           </ol>
         </>

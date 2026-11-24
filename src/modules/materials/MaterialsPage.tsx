@@ -196,13 +196,13 @@ function MaterialsLibrary({ signedIn, showPresentations, external }: {
           if (c.id === 'research') return <ResearchTile key={c.id} category={c} />;
           const Icon = icons[c.icon];
           if (c.id === 'literature') return (
-            <a key={c.id} href="https://oliymaktab.uz/uz/students/library/books" className="card card--pad cat-card"
+            <Link key={c.id} to={paths.materials + '?tur=adabiyotlar'} className="card card--pad cat-card"
               style={{ color: 'inherit', ['--gc' as string]: catColor[c.id] ?? 'var(--g-teal)' }}>
               <span className="cat-card__icon"><Icon size={22} aria-hidden /></span>
               <strong>{c.title}</strong>
               <span className="small muted" style={{ flex: 1 }}>{c.description}</span>
-              <span className="cat-card__foot"><Badge tone="success">Kutubxonani ochish</Badge></span>
-            </a>
+              <span className="cat-card__foot"><Badge tone="success">Adabiyotlarni ko‘rish</Badge></span>
+            </Link>
           );
           const categories: Record<string, string> = { cases: 'keyslar', syllabus: 'sillabus', slides: 'taqdimotlar', glossary: 'glossariy', lectures: 'maruzalar' };
           if (c.id === 'tests' || categories[c.id]) return (
