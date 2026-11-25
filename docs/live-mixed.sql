@@ -56,7 +56,7 @@ begin
       if task.question is null then raise exception 'Question bank exhausted'; end if;
       if task.ref is null or task.ref=any(r.used) then raise exception 'Task already used'; end if;
       update public.econ_live_rooms set round=r.round+1, round_kind=kind, prompt=task.question, options=task.options,
-        answer=task.answer, deadline=clock_timestamp()+interval '45 seconds', used=array_append(r.used,task.ref),
+        answer=task.answer, deadline=clock_timestamp()+interval '100 seconds', used=array_append(r.used,task.ref),
         round_visual=case when kind='quiz' then null else payload->'visual' end where code=r.code;
       if kind='quiz' then
         update public.econ_live_rooms set used=array_append(used,'quiz-text:'||md5(regexp_replace(lower(task.question),'[^[:alnum:]]','','g'))) where code=r.code;
@@ -68,10 +68,17 @@ begin
       if remaining<=0 then raise exception 'Round closed'; end if;
       update public.econ_live_players set answered_round=r.round, last_answer=choice, response_count=response_count+1,
         correct_count=correct_count+case when choice=r.answer then 1 else 0 end,
-        score=score+case when choice=r.answer then 100+floor(100*least(remaining,45)/45)::integer else 0 end
+        score=score+case when choice=r.answer then 100+floor(least(remaining,100))::integer else 0 end
         where code=r.code and player=uid and answered_round<r.round;
     end if;
     base := public.econ_live_game('state',room_code);
+  elsif operation='close' then
+    select * into r from public.econ_live_rooms where code=upper(btrim(room_code)) for update;
+    if r.deadline>clock_timestamp() and (
+      not exists(select from public.econ_live_players where code=r.code)
+      or exists(select from public.econ_live_players where code=r.code and answered_round<>r.round)
+    ) then raise exception 'Waiting for answers'; end if;
+    base := public.econ_live_game('close',room_code);
   else
     base := public.econ_live_game(operation,room_code);
   end if;

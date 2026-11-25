@@ -28,7 +28,7 @@ const shuffle = <T,>(values: readonly T[]) => {
   }
   return result;
 };
-const ROUND_SECONDS = 45;
+const ROUND_SECONDS = 100;
 
 export function LiveGamesPage() {
   const { user } = useAuth();
@@ -63,6 +63,7 @@ function LiveGame() {
       if (error || !data) {
         setMessage(operation === 'join' ? 'Xona topilmadi yoki mashg‘ulot tugagan.'
           : error?.message === 'Round closed' ? 'Raund vaqti tugadi. Keyingi raundni kuting.'
+          : error?.message === 'Waiting for answers' ? 'Ayrim talabalar hali javob bermadi.'
           : error?.message === 'Question bank exhausted' ? 'Bu mavzudagi barcha savollar berildi.'
           : 'Amal bajarilmadi. Xona holatini tekshirib, qayta urining.');
       } else {
@@ -138,7 +139,7 @@ function LiveGame() {
   }
 
   return <div className="container page stack">
-    <PageHeader title="Jonli aralash o‘yin" description="5 ta test, 3 ta moslashtirish va 2 ta grafik. Har bir raund uchun 45 soniya."
+    <PageHeader title="Jonli aralash o‘yin" description="5 ta test, 3 ta moslashtirish va 2 ta grafik. Har bir raund uchun 100 soniya."
       crumbs={[{ label: 'O‘yinlar', to: paths.games }, { label: 'Jonli mashg‘ulot' }]} />
     {!user ? <Card title="Mashg‘ulotga kirish"><p>Telefoningizda sayt hisobiga kiring, so‘ng o‘qituvchi bergan xona kodini kiriting.</p>
       <Button to={paths.login + (code ? '?xona=' + encodeURIComponent(code) : '')}>Tizimga kirish</Button></Card> : !room ? <>
@@ -168,6 +169,8 @@ function LiveGame() {
           }}>Havolani nusxalash</Button>
           {!room.finished && <>
             {(!room.fixedRounds || room.round < 10) && <Button disabled={busy || (room.round > 0 && !room.closed)} onClick={start}>{room.round ? 'Keyingi raund' : 'Birinchi raund'}</Button>}
+            {room.round > 0 && !room.closed && room.players > 0 && room.answered === room.players &&
+              <Button disabled={busy} onClick={() => void action('close')}>Raundni yakunlash</Button>}
             <Button disabled={busy} variant="secondary" onClick={() => void action('finish')}>Mashg‘ulotni yakunlash</Button>
           </>}
         </div>}
