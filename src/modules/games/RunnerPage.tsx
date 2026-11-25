@@ -76,7 +76,7 @@ function RunnerSession({ discard }: { discard: () => void }) {
 
   const finish = useCallback(() => {
     setPhase('over');
-    if (run.current && user?.role !== 'admin') void runner('finish', run.current);
+    if (run.current && user?.role !== 'admin') void runner('finish', run.current).then(() => refreshRank());
     if (user && !user.external) saveGameRecord(user.id, { game: 'runner', score: world.current.score, total: 0 });
     void refreshRank();
   }, [refreshRank, user]);
@@ -85,7 +85,7 @@ function RunnerSession({ discard }: { discard: () => void }) {
     setPhase('loading');
     if (user?.role === 'admin') {
       const bank = await loadAdminBank();
-      if (!bank?.length) { setMessage('Marradagi savolni yuklab bo‘lmadi.'); finish(); return; }
+      if (!bank?.length) { setMessage('Marradagi savolni yuklab bo‘lmadi. Urinish bekor qilindi.'); setPhase('ready'); return; }
       const item = bank[Math.floor(Math.random() * bank.length)];
       const order = item.options.map((_, i) => i).sort(() => Math.random() - .5);
       localQ.current = { options: order.map(i => item.options[i]), right: order.indexOf(item.correct_index), topic: item.topic };
@@ -96,14 +96,14 @@ function RunnerSession({ discard }: { discard: () => void }) {
     }
     const { data, error } = await runner('question', run.current);
     if (error || data?.status !== 'ok') {
-      setMessage('Marradagi savolni yuklab bo‘lmadi.');
-      finish();
+      setMessage('Marradagi savolni yuklab bo‘lmadi. Urinish bekor qilindi.');
+      setPhase('ready');
       return;
     }
     setQuiz(data);
     setQuizResult(undefined);
     setPhase('quiz');
-  }, [finish, user?.role]);
+  }, [user?.role]);
 
   useEffect(() => {
     if (phase !== 'running') return;
@@ -211,8 +211,11 @@ function RunnerSession({ discard }: { discard: () => void }) {
       setFrame({ ...world.current });
       setQuiz(undefined);
       setPhase('running');
-    } else if (quizResult) {
+    } else if (quizResult === 'wrong') {
       finish();
+    } else if (quizResult === 'error') {
+      setMessage('Javobni saqlab bo‘lmadi. Urinish bekor qilindi.');
+      setPhase('ready');
     }
   }
 
