@@ -17,6 +17,7 @@ type Room = {
   deadline: string | null; closed: boolean; finished: boolean; answer: number | number[] | null;
   own: number | number[] | null; used: string[] | null; players: number; answered: number;
   top: { name: string; score: number }[];
+  personal?: { place: number; score: number; correct: number; responses: number } | null;
   ranking: { name: string; score: number; correct: number; responses: number }[] | null; distribution: number[] | null;
 };
 const titles = { quiz: 'Viktorina', match: 'Tushunchalarni moslashtirish', graph: 'Grafikni boshqarish' };
@@ -43,11 +44,13 @@ function LiveGame() {
   const [room, setRoom] = useState<Room>();
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [connectionLost, setConnectionLost] = useState(false);
   const locked = useRef(false);
   const sequence = useRef(0);
   const [now, setNow] = useState(Date.now);
   const clockOffset = useRef(0);
   const roomId = room?.code;
+  const savedCode = params.get('xona');
   const seconds = room?.deadline
     ? Math.max(0, Math.min(ROUND_SECONDS, Math.ceil((Date.parse(room.deadline) - now - clockOffset.current) / 1000)))
     : ROUND_SECONDS;
@@ -71,6 +74,7 @@ function LiveGame() {
         if (next.serverNow) clockOffset.current = Date.parse(next.serverNow) - Date.now();
         setNow(Date.now());
         setRoom(next);
+        setConnectionLost(false);
         if (operation === 'create' || operation === 'join') {
           setParams({ xona: next.code }, { replace: true });
         }
@@ -79,6 +83,19 @@ function LiveGame() {
     setBusy(false);
     locked.current = false;
   }
+
+  useEffect(() => {
+    if (!user || !savedCode || roomId) return;
+    let active = true;
+    const version = sequence.current;
+    void supabase.rpc('econ_live_mixed', { operation: 'state', room_code: savedCode }).then(({ data, error }) => {
+      if (!active || version !== sequence.current || error || !data) return;
+      if (data.serverNow) clockOffset.current = Date.parse(data.serverNow) - Date.now();
+      setNow(Date.now());
+      setRoom(data);
+    });
+    return () => { active = false; };
+  }, [user, savedCode, roomId]);
 
   useEffect(() => {
     if (!roomId || room?.finished) return;
@@ -90,7 +107,9 @@ function LiveGame() {
       const version = sequence.current;
       const { data, error } = await supabase.rpc('econ_live_mixed', { operation: 'state', room_code: roomId });
       polling = false;
-      if (active && version === sequence.current && !error && data) {
+      if (!active || version !== sequence.current) return;
+      setConnectionLost(Boolean(error || !data));
+      if (!error && data) {
         if (data.serverNow) clockOffset.current = Date.parse(data.serverNow) - Date.now();
         setNow(Date.now());
         setRoom(data);
@@ -98,7 +117,15 @@ function LiveGame() {
     }
     const timer = window.setInterval(refresh, 1500);
     window.addEventListener('focus', refresh);
-    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); };
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [roomId, room?.finished]);
 
   useEffect(() => {
@@ -175,7 +202,12 @@ function LiveGame() {
           </>}
         </div>}
       </Card>
-      {!room.finished && <Card title="Jonli top uchlik" subtitle="To‘g‘ri javob uchun 100 ball va tezlikka qarab 99 ballgacha qo‘shimcha ball.">
+      {connectionLost && <p role="status">Xona bilan aloqa uzildi. Sayt xonaga qayta ulanishga urinmoqda.</p>}
+      {room.personal && <Card title="Mening natijam">
+        <p><strong>{room.personal.place}-o‘rin</strong> / {room.players} · <strong>{room.personal.score} ball</strong></p>
+        <p>{room.personal.responses} ta javobdan {room.personal.correct} tasi to‘g‘ri.</p>
+      </Card>}
+      {!room.host && !room.finished && <Card title="Jonli top uchlik" subtitle="To‘g‘ri javob uchun 100 ball va tezlikka qarab 99 ballgacha qo‘shimcha ball.">
         {room.top.length ? <ol>{room.top.map((row, i) => <li key={i}>{i + 1}. {row.name} · {row.score} ball</li>)}</ol> : <p>Ishtirokchilar kutilmoqda.</p>}
       </Card>}
       {room.prompt && <Card title={room.round + (room.fixedRounds ? ' / 10' : '') + '-raund · ' + (room.roundKind ? titles[room.roundKind] : '')} subtitle={room.closed ? 'Raund yopildi' : seconds + ' soniya qoldi'}>

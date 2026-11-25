@@ -88,7 +88,10 @@ begin
     'serverNow',clock_timestamp(),
     'top',coalesce((select jsonb_agg(jsonb_build_object('name',s.name,'score',s.score) order by s.score desc,s.name,s.player)
       from (select name,score,player from public.econ_live_players where code=r.code order by score desc,name,player limit 3) s),'[]'),
-    'ranking',case when r.finished then (select coalesce(jsonb_agg(jsonb_build_object('name',name,'score',score,'correct',correct_count,'responses',response_count) order by score desc,name,player),'[]') from public.econ_live_players where code=r.code) end,
+    'ranking',case when r.finished or r.host=uid then (select coalesce(jsonb_agg(jsonb_build_object('name',name,'score',score,'correct',correct_count,'responses',response_count) order by score desc,name,player),'[]') from public.econ_live_players where code=r.code) end,
+    'personal',(select jsonb_build_object('place',place,'score',score,'correct',correct_count,'responses',response_count)
+      from (select player, score, correct_count, response_count, row_number() over(order by score desc,name,player) as place
+        from public.econ_live_players where code=r.code) standings where player=uid),
     'distribution',case when (base->>'closed')::boolean and (r.round_kind='quiz' or jsonb_typeof(r.answer)='number') then
       (select jsonb_agg((select count(*) from public.econ_live_players where code=r.code and answered_round=r.round and last_answer=to_jsonb(i)) order by i)
        from generate_series(0,jsonb_array_length(r.options)-1) i) end);

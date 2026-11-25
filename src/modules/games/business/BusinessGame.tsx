@@ -36,7 +36,8 @@ export function BusinessGamePage() {
   function start() {
     setTeams(Array.from({ length: count }, (_, i) => {
       const sector = sectors.find(s => s.id === picked[i]) ?? sectors[0];
-      return { name: names[i] || (i + 1) + '-jamoa', sector, stages: draw(sector.stages, STAGES),
+      return { name: names[i] || (i + 1) + '-jamoa', sector, stages: draw(sector.stages, STAGES)
+        .map(s => ({ ...s, options: draw(s.options, s.options.length) as Stage['options'] })),
         cash: START_DEPOSIT, picks: Array(stageCount).fill(null), log: [] };
     }));
     setStage(0); setDone(false);
@@ -59,7 +60,7 @@ export function BusinessGamePage() {
         cost = o[1]; income = o[2];
         if (o[4] !== undefined) { if (Math.random() < 0.5) gamble = 'win'; else { income = o[4]; gamble = 'lose'; } }
       }
-      const entry: Entry = { stage, pick: cost || income ? pick : null, cost, income, overhead: t.sector.overhead, gamble };
+      const entry: Entry = { stage, pick: pick !== null && st.options[pick][1] <= t.cash ? pick : null, cost, income, overhead: t.sector.overhead, gamble };
       return { ...t, cash: t.cash - cost + income - t.sector.overhead, log: [...t.log, entry] };
     }));
   }
@@ -142,11 +143,11 @@ export function BusinessGamePage() {
                 <ol className="small" style={{ paddingLeft: 18 }}>
                   {t.log.map(e => {
                     const st = t.stages[e.stage];
-                    const best = Math.max(...st.options.map(o => o[2] - o[1]));
-                    const net = e.income - e.cost;
+                    const best = Math.max(...st.options.map(o => o[2] - o[1] - e.overhead));
+                    const net = e.income - e.cost - e.overhead;
                     return (
                       <li key={e.stage}><b>{st.title}</b>: {net === best ? 'eng yaxshi qaror ✓' : (net >= 0 ? 'foyda ' : 'zarar ') + fmt(net) + ' mln'}
-                        {net < best && <span className="muted"> (eng yaxshi variant: {fmt(best)} mln)</span>}
+                        {net < best && <span className="muted"> (eng yuqori mumkin bo‘lgan natija: {fmt(best)} mln)</span>}
                         {e.gamble === 'lose' && <span style={{ color: '#c0453a' }}> · tavakkal o‘zini oqlamadi</span>}
                       </li>
                     );
@@ -194,7 +195,13 @@ export function BusinessGamePage() {
                         <b>{String.fromCharCode(65 + k)}.</b> {o[0]} <span className="muted small">· xarajat {o[1]} mln{!afford ? ' (mablag‘ yetmaydi)' : ''}</span>
                         {chosen && !entry && <Check size={14} aria-label="Tanlangan" style={{ marginLeft: 6 }} />}
                       </button>
-                      {entry && (taken || o === st.options[entry.pick ?? -1]) && (
+                      {entry && !taken && <p className="small muted" style={{ margin: '6px 4px' }}>
+                        {o[4] === undefined
+                          ? <>Daromad {o[2]} mln · Sof natija <b>{fmt(o[2] - o[1] - entry.overhead)} mln</b></>
+                          : <>Sof natija · omadsiz holatda <b>{fmt(o[4] - o[1] - entry.overhead)} mln</b>, omadli holatda <b>{fmt(o[2] - o[1] - entry.overhead)} mln</b></>}
+                        <br />{o[3]}
+                      </p>}
+                      {entry && taken && (
                         <p className="small" style={{ margin: '6px 4px' }}>
                           {entry.gamble && <Dices size={14} aria-hidden />} Daromad {entry.income} mln, xarajat {entry.cost} mln, doimiy xarajat {entry.overhead} mln → <b style={{ color: entry.income - entry.cost - entry.overhead >= 0 ? '#1f7a4d' : '#c0453a' }}>{fmt(entry.income - entry.cost - entry.overhead)} mln</b>
                           <br /><span className="muted">{entry.gamble === 'lose' ? 'Tavakkal o‘zini oqlamadi. ' : entry.gamble === 'win' ? 'Tavakkal omadli chiqdi. ' : ''}{o[3]}</span>
