@@ -6,6 +6,7 @@ import { useAuth } from '@/services/auth/AuthContext';
 import { supabase } from '@/services/supabase';
 import { paths } from '@/navigation/paths';
 import { TestCopyGuard } from './TestCopyGuard';
+import { AWAY_LIMIT_MS, useAwayReset } from '@/services/useAwayReset';
 
 interface Attempt {
   id: string;
@@ -22,7 +23,7 @@ export function TestsPage({ initialTopic }: { initialTopic?: number }) {
   return <TestSession key={user?.id ?? 'guest'} initialTopic={initialTopic} />;
 }
 
-type Draft = { attempt: Attempt; index: number; deadline: number; answers: number[] };
+type Draft = { attempt: Attempt; index: number; deadline: number; answers: number[]; topic?: string; count?: string };
 
 function TestSession({ initialTopic }: { initialTopic?: number }) {
   const { user } = useAuth();
@@ -32,20 +33,28 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
     if (!storageKey) return;
     try {
       const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null') as Draft | null;
+      const hiddenAt = Number(sessionStorage.getItem(storageKey + ':hidden'));
+      if (hiddenAt && Date.now() - hiddenAt >= AWAY_LIMIT_MS) {
+        sessionStorage.removeItem(storageKey);
+        sessionStorage.removeItem(storageKey + ':hidden');
+        return;
+      }
       if (saved?.attempt?.questions.length &&
           (saved.attempt.deadline ? saved.answers.length === saved.index : saved.answers.length === saved.attempt.questions.length) &&
           Number.isInteger(saved.index) && saved.index >= 0 && saved.index <= saved.attempt.questions.length &&
           Number.isFinite(saved.deadline)) return saved;
     } catch { /* The test can still run without browser storage. */ }
   });
-  const [topic, setTopic] = useState(initialTopic?.toString() ?? '');
+  const [topic, setTopic] = useState(draft?.topic ?? initialTopic?.toString() ?? '');
   const [index, setIndex] = useState(draft?.index ?? 0);
   const [picked, setPicked] = useState<number | null>(null);
   const pickTimer = useRef<number | undefined>(undefined);
   const resolving = useRef(false);
+  const generation = useRef(0);
+  const [restart, setRestart] = useState(false);
   const [deadline, setDeadline] = useState(draft?.deadline ?? 0);
   const [seconds, setSeconds] = useState(() => draft ? Math.max(0, Math.ceil((draft.deadline - Date.now()) / 1000)) : 90);
-  const [count, setCount] = useState('20');
+  const [count, setCount] = useState(draft?.count ?? '20');
   const [counts, setCounts] = useState<Record<string, number>>({});
   const broad = !topic || topic.startsWith('-');
   const topicLocked = !broad && !access.allows(Number(topic));
@@ -63,14 +72,57 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   const [message, setMessage] = useState('');
   const [file, setFile] = useState<File>();
   const topics = catalogService.getTopics().data;
+  const unfinished = useRef(false);
+  unfinished.current = Boolean(attempt && score === undefined);
+
+  useEffect(() => () => {
+    if (!storageKey || !unfinished.current) return;
+    try {
+      if (!sessionStorage.getItem(storageKey + ':hidden')) {
+        sessionStorage.setItem(storageKey + ':hidden', String(Date.now()));
+      }
+    } catch { /* Browser storage may be unavailable. */ }
+  }, [storageKey]);
 
   function saveDraft(value?: Draft) {
     if (!storageKey) return;
     try {
-      if (value) sessionStorage.setItem(storageKey, JSON.stringify(value));
-      else sessionStorage.removeItem(storageKey);
+      if (value) sessionStorage.setItem(storageKey, JSON.stringify({ ...value, topic, count }));
+      else {
+        sessionStorage.removeItem(storageKey);
+        sessionStorage.removeItem(storageKey + ':hidden');
+      }
     } catch { /* The current attempt remains available in memory. */ }
   }
+
+  useAwayReset(Boolean(attempt && score === undefined), () => {
+    generation.current++;
+    window.clearTimeout(pickTimer.current);
+    saveDraft();
+    setAttempt(undefined);
+    setBusy(false);
+    setPicked(null);
+    setRestart(true);
+    resolving.current = false;
+  }, at => {
+    if (!storageKey) return;
+    try {
+      if (at === null) sessionStorage.removeItem(storageKey + ':hidden');
+      else sessionStorage.setItem(storageKey + ':hidden', String(at));
+    } catch { /* The active tab still enforces the limit. */ }
+  });
+
+  useEffect(() => {
+    if (!restart) return;
+    function resume() {
+      if (document.hidden) return;
+      setRestart(false);
+      void startTest('Test sahifasi kamida 3 soniya yashirin qoldi. Yangi urinish boshlandi.');
+    }
+    document.addEventListener('visibilitychange', resume);
+    resume();
+    return () => document.removeEventListener('visibilitychange', resume);
+  }, [restart]);
 
   useEffect(() => {
     if (!attempt || index >= attempt.questions.length || !deadline) return;
@@ -90,7 +142,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
 
   /** Javob tanlanganda belgi ko‘rinib turadi, so‘ng savol silliq almashadi. */
   function choose(choice: number) {
-    if (!attempt || resolving.current) return;
+    if (!attempt || resolving.current || document.hidden) return;
     resolving.current = true;
     if (attempt.deadline) {
       setPicked(choice);
@@ -107,6 +159,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
 
   async function advance(choice: number) {
     if (!attempt) return;
+    const version = generation.current;
     window.clearTimeout(pickTimer.current);
     setPicked(null);
     let nextAnswers = answers.map((value, position) => position === index ? choice : value);
@@ -116,6 +169,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
       const { data, error } = await supabase.rpc('econ_record_timed_answer', {
         attempt_id: attempt.id, question_index: index, choice,
       });
+      if (version !== generation.current) return;
       if (error || !Array.isArray(data?.answers)) {
         setMessage('Javobni saqlab bo‘lmadi. Qayta urining.');
         setDeadline(0);
@@ -135,10 +189,10 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
     resolving.current = false;
   }
 
-  async function startTest() {
+  async function startTest(notice = '') {
     if (topicLocked) return;
     setBusy(true);
-    setMessage('');
+    setMessage(notice);
     const { data, error } = await supabase.rpc('econ_start_selected_test', {
       question_limit: broad ? (count === 'all' ? null : Number(count)) : 20,
       wanted_topic: topic ? Number(topic) : null,
@@ -166,10 +220,12 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   }
 
   async function submitTest() {
-    if (!attempt) return;
+    if (!attempt || document.hidden) return;
+    const version = generation.current;
     setBusy(true);
     setMessage('');
     const { data, error } = await supabase.rpc('econ_submit_test', { attempt_id: attempt.id, answers });
+    if (version !== generation.current) return;
     setBusy(false);
     if (error) setMessage('Javoblarni yuborishda xatolik yuz berdi.');
     else { saveDraft(); setScore(data); access.refresh(); }
@@ -229,6 +285,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
                 <li><ListChecks size={16} aria-hidden /> {broad ? (selectedCount !== undefined ? selectedCount + ' ta savol' : 'Savollar soni tanlanadi') : 'Mavzu bo‘yicha 20 tagacha savol'}</li>
                 <li><Clock size={16} aria-hidden /> Har bir savolga 90 soniya</li>
                 <li><TimerOff size={16} aria-hidden /> Vaqt tugasa — javob xato hisoblanadi</li>
+                <li>Sahifa 3 soniya yoki ko‘proq yashirin qolsa, test yakunlanmagan urinish sifatida bekor qilinadi.</li>
               </ul>
               <Button disabled={busy || topicLocked} onClick={() => void startTest()}>Boshlash</Button>
             </div>

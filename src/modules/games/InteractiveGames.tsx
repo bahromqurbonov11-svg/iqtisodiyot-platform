@@ -7,6 +7,7 @@ import { useAuth } from '@/services/auth/AuthContext';
 import { supabase } from '@/services/supabase';
 import { GameTopThree, type RankedPlayer } from './GameTopThree';
 import { useRecordGame } from './recordGame';
+import { useAwayReset } from '@/services/useAwayReset';
 import { saveGameRecord } from '@/modules/student/gameStats';
 
 function bonusQuestion(maxTopic: number) {
@@ -30,6 +31,7 @@ export function TargetGamePage() {
   const [rankError, setRankError] = useState('');
   const roundId = useRef<string | undefined>(undefined);
   const savedRound = useRef<string | undefined>(undefined);
+  const bonusAnswers = useRef(new Map<number, { question: string; correct: boolean }[]>());
   const [phase, setPhase] = useState<'ready' | 'playing' | 'question' | 'over'>('ready');
   const [score, setScore] = useState(0);
   const [arrows, setArrows] = useState(10);
@@ -48,6 +50,11 @@ export function TargetGamePage() {
   const feedbackPanel = useRef<HTMLParagraphElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const speed = 0.9 * 1.01 ** shots;
+  useAwayReset(phase === 'playing' || phase === 'question', () => {
+    roundId.current = undefined;
+    bonusAnswers.current.clear();
+    setPhase('ready');
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -57,6 +64,7 @@ export function TargetGamePage() {
       if (phase === 'over' && roundId.current && user && !user.external) {
         if (savedRound.current !== roundId.current) {
           savedRound.current = roundId.current;
+          for (const [topic, answers] of bonusAnswers.current) record('target-answer', topic, answers);
           saveGameRecord(user.id, { game: 'target', score, total: shots });
         }
       }
@@ -101,14 +109,17 @@ export function TargetGamePage() {
 
   function start() {
     roundId.current = crypto.randomUUID();
+    bonusAnswers.current.clear();
     setScore(0); setArrows(10); setShots(0); setNote(''); setQuestion(undefined); setFeedback(undefined); setImpact(undefined);
     motion.current = -650;
     setPhase('playing');
   }
 
   async function loadBonusQuestion() {
+    const id = roundId.current;
     setQuestionError(false);
     const { data, error } = await supabase.rpc('econ_game_topic_limit');
+    if (id !== roundId.current) return;
     if (error || !Number.isInteger(data) || data < 1) {
       setQuestionError(true);
       return;
@@ -138,7 +149,9 @@ export function TargetGamePage() {
   function answer(correct: boolean) {
     if (phase !== 'question' || !question || feedback !== undefined) return;
     setFeedback(correct);
-    record('target-answer', question.topic, [{ question: question.prompt, correct }]);
+    const entries = bonusAnswers.current.get(question.topic) ?? [];
+    entries.push({ question: question.prompt, correct });
+    bonusAnswers.current.set(question.topic, entries);
     if (correct) setArrows(value => value + question.reward);
   }
 

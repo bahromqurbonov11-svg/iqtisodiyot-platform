@@ -4,6 +4,7 @@ import { Badge, Button, Card, PageHeader } from '@/components/ui';
 import { paths } from '@/navigation/paths';
 import { START_DEPOSIT, type Sector, type Stage } from './scenarios';
 import { allSectors as sectors } from './catalog';
+import { useAwayReset } from '@/services/useAwayReset';
 
 /**
  * "Biznes yo‘lak" — o‘qituvchi boshqaradigan guruhli o‘yin.
@@ -31,6 +32,7 @@ export function BusinessGamePage() {
   const [teams, setTeams] = useState<Team[]>();
   const [stage, setStage] = useState(0);
   const [done, setDone] = useState(false);
+  useAwayReset(Boolean(teams && !done), () => setTeams(undefined));
   const stageCount = STAGES;
 
   function start() {

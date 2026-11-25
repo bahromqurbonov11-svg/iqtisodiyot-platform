@@ -5,6 +5,7 @@ import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
 import { useTopicAccess } from '@/services/TopicAccess';
 import { TestCopyGuard } from './TestCopyGuard';
+import { useAwayReset } from '@/services/useAwayReset';
 
 export function GuestTest({ initialTopic }: { initialTopic?: number }) {
   const access = useTopicAccess();
@@ -14,6 +15,12 @@ export function GuestTest({ initialTopic }: { initialTopic?: number }) {
   const [picked, setPicked] = useState<number | null>(null);
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
+  useAwayReset(index >= 0 && index < 3, () => {
+    window.clearTimeout(timer.current);
+    setPicked(null);
+    setScore(0);
+    setIndex(0);
+  });
   const topics = catalogService.getTopics().data;
   const bank = topicGameBank[topic - 1];
   const question = bank[index];

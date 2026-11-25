@@ -4,6 +4,7 @@ import { Badge, Button, Card, PageHeader } from '@/components/ui';
 import { topicConcepts } from '@/data/topicConcepts';
 import { catalogService } from '@/services/catalog.service';
 import { paths } from '@/navigation/paths';
+import { useAwayReset } from '@/services/useAwayReset';
 
 /**
  * DARS REJIMI — o‘qituvchi boshqaradigan jamoaviy o‘yinlar sahifasi.
@@ -68,16 +69,20 @@ export function ClassroomPage() {
   const deadline = useRef(0);
 
   const names6 = names.slice(0, setup.groups);
+  const selectedTopic = setup.scope.startsWith('t') ? Number(setup.scope.slice(1)) : null;
   const pool = classroomTerms.filter(({ topic }) => {
     if (setup.scope === 'p1') return topic <= 12;
     if (setup.scope === 'p2') return topic > 12;
-    return setup.scope === 'all' || topic === Number(setup.scope.slice(1));
+    return selectedTopic === null || topic <= selectedTopic;
   });
   const roundCounts = [...new Set([6, 8, 10, 12, 15].map(count => Math.min(count, pool.length)))];
   const roundCount = Math.min(setup.rounds, pool.length);
 
   function start() {
-    const chosen = shuffle(pool).slice(0, roundCount);
+    const chosen = selectedTopic === null ? shuffle(pool).slice(0, roundCount) : [
+      ...shuffle(pool.filter(item => item.topic === selectedTopic)),
+      ...shuffle(pool.filter(item => item.topic < selectedTopic)),
+    ].slice(0, roundCount);
     setRounds(chosen);
     setScores(Array(setup.groups).fill(0));
     begin(0);
@@ -138,6 +143,10 @@ export function ClassroomPage() {
   }
 
   const finished = rounds && index >= rounds.length;
+  useAwayReset(Boolean(rounds && !finished), () => {
+    setRounds(undefined);
+    setScores([]);
+  });
   const ranking = useMemo(() => scores.map((score, i) => ({ i, score })).sort((a, b) => b.score - a.score), [scores]);
   const round = rounds?.[index];
   const topicTitle = round ? topics.find(t => t.globalOrder === round.topic)?.title : '';
@@ -185,6 +194,8 @@ export function ClassroomPage() {
             <li>Javob xato bo‘lsa, qolgan guruhlar o‘sha raund vaqti ichida javob bera oladi, lekin kamroq ball oladi: 1-guruh {RIGHT_BY_TURN[0]}, 2-guruh {RIGHT_BY_TURN[1]}, 3-guruh {RIGHT_BY_TURN[2]}, keyingilari {RIGHT_BY_TURN[3]} ball.</li>
           </ol>
           <Button className="mt-4" icon={<Play size={16} />} onClick={start} disabled={!roundCount}>O‘yinni boshlash</Button>
+          {selectedTopic !== null && roundCount > pool.filter(item => item.topic === selectedTopic).length &&
+            <p className="small muted">Raundlar avval tanlangan mavzudan, so‘ng oldingi mavzulardan olinadi.</p>}
           <p className="small muted mt-3">Natijalar dars davomida ekranda turadi, saqlanmaydi.</p>
         </Card>
       </div>

@@ -12,6 +12,8 @@ type Quiz = { question: string; options: string[] };
 type Phase = 'ready' | 'running' | 'loading' | 'quiz' | 'over';
 const initial = () => ({ x: 520, y: 0, velocity: 0, counted: false, score: 0, heights: [30] });
 const encouragement = ['Diqqatni jamlang!', 'Yana bir to‘siq ortda!', 'Keyingi marraga yaqinlashyapsiz!', 'Shu sur’atda davom eting!'];
+import { useAwayReset } from '@/services/useAwayReset';
+
 const runner = (action: string, run?: string, choice?: number) =>
   supabase.rpc('econ_runner', { action, run_id: run ?? null, choice: choice ?? null });
 
@@ -27,8 +29,14 @@ async function loadAdminBank() {
 }
 
 export function RunnerPage() {
+  const [attempt, setAttempt] = useState(0);
+  return <RunnerSession key={attempt} discard={() => setAttempt(value => value + 1)} />;
+}
+
+function RunnerSession({ discard }: { discard: () => void }) {
   const { user } = useAuth();
   const [phase, setPhase] = useState<Phase>('ready');
+  useAwayReset(phase !== 'ready' && phase !== 'over', discard);
   const [quiz, setQuiz] = useState<Quiz>();
   const [quizResult, setQuizResult] = useState<'correct' | 'wrong' | 'error'>();
   const [score, setScore] = useState(0);

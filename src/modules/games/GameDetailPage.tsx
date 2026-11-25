@@ -5,6 +5,7 @@ import { topicGameBank, type GameConcept } from '@/data/topicGames';
 import { paths } from '@/navigation/paths';
 import { catalogService } from '@/services/catalog.service';
 import { useRecordGame } from './recordGame';
+import { useAwayReset } from '@/services/useAwayReset';
 
 const gameTypes = {
   moslashtirish: { title: 'Tushunchalarni moslashtirish', other: 'vaziyatli-qaror' },
@@ -83,6 +84,8 @@ function MatchingGame({ concepts, restart, topic }: { concepts: readonly GameCon
   const [pairs, setPairs] = useState<Record<number, number>>({});
   const [checked, setChecked] = useState(false);
   const [score, setScore] = useState(0);
+  const [results, setResults] = useState<{ question: string; correct: boolean }[]>([]);
+  useAwayReset(round < 2, restart);
   const roundScore = Object.entries(pairs).filter(([left, right]) => Number(left) === right).length;
   const board = useRef<HTMLDivElement>(null);
   const [arrows, setArrows] = useState<{ id: number; path: string; color: string }[]>([]);
@@ -174,10 +177,12 @@ function MatchingGame({ concepts, restart, topic }: { concepts: readonly GameCon
           <Button onClick={advance}>{round === 0 ? 'Keyingi bosqich' : 'Natijani ko‘rish'}</Button>
         ) : (
           <Button disabled={Object.keys(pairs).length !== concepts.length} onClick={() => {
-            record('matching', topic, left.map(id => ({
+            const nextResults = [...results, ...left.map(id => ({
               question: (round === 0 ? 'Ta’rifni moslang · ' : 'Atamani moslang · ') + concepts[id][round === 0 ? 0 : 1],
               correct: pairs[id] === id,
-            })));
+            }))];
+            setResults(nextResults);
+            if (round === 1) record('matching', topic, nextResults);
             setChecked(true); setPicked(null);
           }}>Juftliklarni tekshirish</Button>
         )}</div>
@@ -197,6 +202,8 @@ function SituationGame({ concepts, restart, topic }: { concepts: readonly GameCo
   const [checked, setChecked] = useState(false);
   const [score, setScore] = useState(0);
   const question = questions[index];
+  const [results, setResults] = useState<{ question: string; correct: boolean }[]>([]);
+  useAwayReset(Boolean(question) && !(checked && index === questions.length - 1), restart);
   if (!question) return <Score score={score} restart={restart} />;
 
   const { answer, reverse } = question;
@@ -256,7 +263,9 @@ function SituationGame({ concepts, restart, topic }: { concepts: readonly GameCo
           </Button>
         ) : <Button disabled={!complete} onClick={() => {
           if (correct) setScore(score + 1);
-          record('situation', topic, [{ question: concepts[answer][reverse ? 1 : 2], correct }]);
+          const nextResults = [...results, { question: concepts[answer][reverse ? 1 : 2], correct }];
+          setResults(nextResults);
+          if (index === questions.length - 1) record('situation', topic, nextResults);
           setChecked(true);
         }}>Tahlilni tekshirish</Button>}
       </div>

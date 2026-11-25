@@ -5,6 +5,7 @@ import { paths } from '@/navigation/paths';
 import { useAuth } from '@/services/auth/AuthContext';
 import { saveGameRecord } from '@/modules/student/gameStats';
 import { useRecordGame } from './recordGame';
+import { useAwayReset } from '@/services/useAwayReset';
 import { pickQuestions, type GraphQuestion } from './graph/questions';
 
 const ROUND = 10;
@@ -139,14 +140,21 @@ export function GraphGamePage() {
   const [left, setLeft] = useState(SECONDS);
   const deadline = useRef(0);
   const next = useRef<number | undefined>(undefined);
+  const answers = useRef<{ question: string; correct: boolean }[]>([]);
   const question = questions[index];
   const student = Boolean(user) && !user?.external;
 
   useEffect(() => () => window.clearTimeout(next.current), []);
+  useAwayReset(phase === 'play', () => {
+    window.clearTimeout(next.current);
+    answers.current = [];
+    setPhase('intro');
+  });
 
   function finish(ok: boolean, at: number) {
     const q = questions[at];
-    record('graph', 6, [{ question: q.prompt, correct: ok }]);
+    answers.current.push({ question: q.prompt, correct: ok });
+    if (!ok || at === ROUND - 1) record('graph', 6, answers.current);
     if (!ok) { setPhase('lost'); return; }
     if (at === ROUND - 1) {
       if (student && user) saveGameRecord(user.id, { game: 'graphwin', score: 1, total: 1 });
@@ -169,7 +177,7 @@ export function GraphGamePage() {
     const timer = window.setInterval(() => {
       const remain = Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000));
       setLeft(remain);
-      if (remain === 0) { window.clearInterval(timer); setPhase('lost'); record('graph', 6, [{ question: questions[index].prompt, correct: false }]); }
+      if (remain === 0 && !document.hidden) { window.clearInterval(timer); finish(false, index); }
     }, 250);
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,6 +185,7 @@ export function GraphGamePage() {
 
   function start() {
     window.clearTimeout(next.current);
+    answers.current = [];
     setQuestions(pickQuestions(ROUND)); setIndex(0); setValues([0, 0, 0]); setRight(false);
     deadline.current = Date.now() + SECONDS * 1000; setLeft(SECONDS); setPhase('play');
   }
