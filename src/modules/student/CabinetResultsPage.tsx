@@ -52,7 +52,17 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
       inFlight = false;
       if (!active) return;
       setFailed(Boolean(error));
-      if (!error) setResults(data ?? []);
+      if (!error) {
+        const counts = new Map<string, number>();
+        const chronological = [...((data ?? []) as Result[])].sort((a, b) =>
+          Date.parse(b.taken_at) - Date.parse(a.taken_at) || b.attempt_id.localeCompare(a.attempt_id));
+        setResults(chronological.filter(result => {
+          const count = counts.get(result.student_id) ?? 0;
+          if (count >= 2) return false;
+          counts.set(result.student_id, count + 1);
+          return true;
+        }));
+      }
     }
     void refresh();
     const timer = admin ? window.setInterval(refresh, 60_000) : undefined;
@@ -199,7 +209,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   return (
     <>
       <PageHeader eyebrow={admin ? 'Analitika' : 'Shaxsiy natijalar'} title={admin ? 'Talabalar natijalari' : 'Mening natijalarim'}
-        description="Mavzuni xaritadan tanlang: shu mavzu bo‘yicha natija, xatolar va tavsiyalar ochiladi." />
+        description={showTests ? 'Test tahlili har bir talabaning eng so‘nggi 2 ta topshirilgan natijasi asosida shakllanadi.' : 'O‘yin natijalarini guruh, talaba, mavzu va sana bo‘yicha ko‘ring.'} />
       {admin && <Tabs ariaLabel="Hisobot turi" value={report} onChange={setReport}
         items={[{ value: 'tests', label: 'Test natijalari' }, { value: 'games', label: 'O‘yinlar statistikasi' }]} />}
       <Card title="Natijalarni filtrlash" className="mt-5">
