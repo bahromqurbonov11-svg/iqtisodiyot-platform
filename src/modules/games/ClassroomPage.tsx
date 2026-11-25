@@ -13,6 +13,32 @@ import { paths } from '@/navigation/paths';
 type Phase = 'ask' | 'answer' | 'reveal';
 interface Round { term: string; definition: string; topic: number }
 
+// These definitions need more context or overlap with another valid answer.
+const excludedTerms = new Set([
+  'Ehtiyoj',
+  'Iqtisodiy resurslar',
+  'Ishchi kuchi',
+  'Yalpi mahsulot',
+  'Qo‘shilgan omil unumdorligining kamayishi',
+  'Pulning vazifalari',
+  'Bozor muvozanati',
+  'Monopsoniya',
+  'Aylanma kapital',
+  'Jami tushum',
+  'Yalpi milliy mahsulot',
+  'O‘sish sur’ati',
+  'Iqtisodiy mutanosiblik',
+  'Soliq',
+  'Pul bozori',
+  'Ixtisoslashuv',
+  'Xalqaro kredit',
+]);
+
+const classroomTerms: Round[] = topicConcepts.flatMap((list, i) =>
+  list.filter(([term]) => !excludedTerms.has(term) && !term.includes(' va '))
+    .map(([term, definition]) => ({ term, definition, topic: i + 1 })),
+);
+
 const COLORS = ['#1f8f78', '#2b6cb0', '#c2562d', '#7a3fb0', '#b8860b', '#c0453a'];
 /** To‘g‘ri javob bali urinish tartibiga bog‘liq: birinchi guruh 10, keyingilar kamroq oladi. */
 const RIGHT_BY_TURN = [10, 7, 5, 3];
@@ -42,16 +68,16 @@ export function ClassroomPage() {
   const deadline = useRef(0);
 
   const names6 = names.slice(0, setup.groups);
+  const pool = classroomTerms.filter(({ topic }) => {
+    if (setup.scope === 'p1') return topic <= 12;
+    if (setup.scope === 'p2') return topic > 12;
+    return setup.scope === 'all' || topic === Number(setup.scope.slice(1));
+  });
+  const roundCounts = [...new Set([6, 8, 10, 12, 15].map(count => Math.min(count, pool.length)))];
+  const roundCount = Math.min(setup.rounds, pool.length);
 
   function start() {
-    const pool: Round[] = topicConcepts.flatMap((list, i) => {
-      const topic = i + 1;
-      if (setup.scope === 'p1' && topic > 12) return [];
-      if (setup.scope === 'p2' && topic <= 12) return [];
-      if (/^t\d+$/.test(setup.scope) && topic !== Number(setup.scope.slice(1))) return [];
-      return list.map(([term, definition]) => ({ term, definition, topic }));
-    });
-    const chosen = shuffle(pool).slice(0, setup.rounds);
+    const chosen = shuffle(pool).slice(0, roundCount);
     setRounds(chosen);
     setScores(Array(setup.groups).fill(0));
     begin(0);
@@ -128,8 +154,8 @@ export function ClassroomPage() {
                 {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} ta guruh</option>)}
               </select></label>
             <label>Raundlar soni
-              <select className="search-control" value={setup.rounds} onChange={e => setSetup({ ...setup, rounds: Number(e.target.value) })}>
-                {[6, 8, 10, 12, 15].map(n => <option key={n} value={n}>{n} ta raund{n === 10 ? ' (~30 daqiqa)' : ''}</option>)}
+              <select className="search-control" value={roundCount} onChange={e => setSetup({ ...setup, rounds: Number(e.target.value) })}>
+                {roundCounts.map(n => <option key={n} value={n}>{n} ta raund{n === 10 ? ' (~30 daqiqa)' : ''}</option>)}
               </select></label>
             <label>Bir raund vaqti
               <select className="search-control" value={setup.seconds} onChange={e => setSetup({ ...setup, seconds: Number(e.target.value) })}>
@@ -158,7 +184,7 @@ export function ClassroomPage() {
             <li>Javob ekranda ko‘rinmaydi: uni faqat o‘qituvchi “Javobni ko‘rish” tugmasi bilan ko‘radi va "To‘g‘ri" yoki "Noto‘g‘ri" ({WRONG}) ni bosadi.</li>
             <li>Javob xato bo‘lsa, qolgan guruhlar o‘sha raund vaqti ichida javob bera oladi, lekin kamroq ball oladi: 1-guruh {RIGHT_BY_TURN[0]}, 2-guruh {RIGHT_BY_TURN[1]}, 3-guruh {RIGHT_BY_TURN[2]}, keyingilari {RIGHT_BY_TURN[3]} ball.</li>
           </ol>
-          <Button className="mt-4" icon={<Play size={16} />} onClick={start}>O‘yinni boshlash</Button>
+          <Button className="mt-4" icon={<Play size={16} />} onClick={start} disabled={!roundCount}>O‘yinni boshlash</Button>
           <p className="small muted mt-3">Natijalar dars davomida ekranda turadi, saqlanmaydi.</p>
         </Card>
       </div>
