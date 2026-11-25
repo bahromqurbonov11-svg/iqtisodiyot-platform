@@ -49,6 +49,19 @@ function Segmented({ label, value, onChange, options, short, disabled }: {
   );
 }
 
+export function GraphControls({ values, onChange, disabled }: {
+  values: number[]; onChange: (values: number[]) => void; disabled?: boolean;
+}) {
+  return <>
+    <Segmented label="Talab" value={values[0]} options={demandLabels} short={demandShort} disabled={disabled}
+      onChange={v => onChange([v, values[1], values[2]])} />
+    <Segmented label="Taklif" value={values[1]} options={demandLabels} short={demandShort} disabled={disabled}
+      onChange={v => onChange([values[0], v, values[2]])} />
+    <Segmented label="Bozor narxi (avvalgiga nisbatan)" value={values[2]} options={priceLabels} disabled={disabled}
+      onChange={v => onChange([values[0], values[1], v])} />
+  </>;
+}
+
 export function Chart({ values }: { values: number[] }) {
   const [d, s, p] = values;
   const dem = BASE_D + d * STEP;
@@ -212,12 +225,7 @@ export function GraphGamePage() {
             <div className="gg-bar" aria-hidden><i style={{ width: (100 * left / SECONDS) + '%' }} /></div>
             <p className="gg-qno">{index + 1} / {ROUND} · Topshiriq</p>
             <p className="gg-prompt" key={question.id}>{question.prompt}</p>
-            <Segmented label="Talab" value={values[0]} options={demandLabels} short={demandShort} disabled={right}
-              onChange={v => setValues(p => [v, p[1], p[2]])} />
-            <Segmented label="Taklif" value={values[1]} options={demandLabels} short={demandShort} disabled={right}
-              onChange={v => setValues(p => [p[0], v, p[2]])} />
-            <Segmented label="Bozor narxi (avvalgiga nisbatan)" value={values[2]} options={priceLabels} disabled={right}
-              onChange={v => setValues(p => [p[0], p[1], v])} />
+            <GraphControls values={values} onChange={setValues} disabled={right} />
             {right ? <p className="gg-ok" role="status">✓ To‘g‘ri! Keyingi savol…</p> : <Button size="lg" onClick={submit}>Javobni tekshirish</Button>}
           </Card>
         </div>

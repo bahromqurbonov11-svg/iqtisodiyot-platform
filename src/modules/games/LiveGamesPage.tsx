@@ -5,7 +5,7 @@ import { useAuth } from '@/services/auth/AuthContext';
 import { catalogService } from '@/services/catalog.service';
 import { supabase } from '@/services/supabase';
 import { paths } from '@/navigation/paths';
-import { Chart } from './GraphGame';
+import { Chart, GraphControls } from './GraphGame';
 import { graphQuestions } from './graph/questions';
 import { topicGameBank } from '@/data/topicGames';
 
@@ -28,11 +28,7 @@ const shuffle = <T,>(values: readonly T[]) => {
   }
   return result;
 };
-const ranges = [
-  { label: 'Talab egri chizig‘i', values: ['Keskin kamayadi', 'Biroz kamayadi', 'O‘zgarmaydi', 'Biroz ortadi', 'Keskin ortadi'], start: -2 },
-  { label: 'Taklif egri chizig‘i', values: ['Keskin kamayadi', 'Biroz kamayadi', 'O‘zgarmaydi', 'Biroz ortadi', 'Keskin ortadi'], start: -2 },
-  { label: 'Bozor narxi avvalgiga nisbatan', values: ['Pasayadi', 'O‘zgarmaydi', 'Oshadi'], start: -1 },
-];
+const ROUND_SECONDS = 45;
 
 export function LiveGamesPage() {
   const { user } = useAuth();
@@ -49,9 +45,12 @@ function LiveGame() {
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
   const sequence = useRef(0);
-  const [seconds, setSeconds] = useState(45);
+  const [now, setNow] = useState(Date.now);
   const clockOffset = useRef(0);
   const roomId = room?.code;
+  const seconds = room?.deadline
+    ? Math.max(0, Math.min(ROUND_SECONDS, Math.ceil((Date.parse(room.deadline) - now - clockOffset.current) / 1000)))
+    : ROUND_SECONDS;
 
   async function action(operation: string, payload: object = {}, overrideCode = roomId ?? code) {
     if (locked.current) return;
@@ -63,11 +62,13 @@ function LiveGame() {
     if (version === sequence.current) {
       if (error || !data) {
         setMessage(operation === 'join' ? 'Xona topilmadi yoki mashg‘ulot tugagan.'
+          : error?.message === 'Round closed' ? 'Raund vaqti tugadi. Keyingi raundni kuting.'
           : error?.message === 'Question bank exhausted' ? 'Bu mavzudagi barcha savollar berildi.'
           : 'Amal bajarilmadi. Xona holatini tekshirib, qayta urining.');
       } else {
         const next = data as Room;
         if (next.serverNow) clockOffset.current = Date.parse(next.serverNow) - Date.now();
+        setNow(Date.now());
         setRoom(next);
         if (operation === 'create' || operation === 'join') {
           setParams({ xona: next.code }, { replace: true });
@@ -90,6 +91,7 @@ function LiveGame() {
       polling = false;
       if (active && version === sequence.current && !error && data) {
         if (data.serverNow) clockOffset.current = Date.parse(data.serverNow) - Date.now();
+        setNow(Date.now());
         setRoom(data);
       }
     }
@@ -100,8 +102,7 @@ function LiveGame() {
 
   useEffect(() => {
     if (!room?.deadline || room.closed) return;
-    const deadline = Date.parse(room.deadline);
-    const tick = () => setSeconds(Math.max(0, Math.ceil((deadline - Date.now() - clockOffset.current) / 1000)));
+    const tick = () => setNow(Date.now());
     tick();
     const timer = window.setInterval(tick, 200);
     return () => window.clearInterval(timer);
@@ -137,7 +138,7 @@ function LiveGame() {
   }
 
   return <div className="container page stack">
-    <PageHeader title="Jonli aralash o‘yin" description="10 raund aralash tartibda chiqadi — 5 ta test, 3 ta moslashtirish va 2 ta grafik."
+    <PageHeader title="Jonli aralash o‘yin" description="5 ta test, 3 ta moslashtirish va 2 ta grafik. Har bir raund uchun 45 soniya."
       crumbs={[{ label: 'O‘yinlar', to: paths.games }, { label: 'Jonli mashg‘ulot' }]} />
     {!user ? <Card title="Mashg‘ulotga kirish"><p>Telefoningizda sayt hisobiga kiring, so‘ng o‘qituvchi bergan xona kodini kiriting.</p>
       <Button to={paths.login + (code ? '?xona=' + encodeURIComponent(code) : '')}>Tizimga kirish</Button></Card> : !room ? <>
@@ -167,7 +168,6 @@ function LiveGame() {
           }}>Havolani nusxalash</Button>
           {!room.finished && <>
             {(!room.fixedRounds || room.round < 10) && <Button disabled={busy || (room.round > 0 && !room.closed)} onClick={start}>{room.round ? 'Keyingi raund' : 'Birinchi raund'}</Button>}
-            {room.round > 0 && !room.closed && <Button disabled={busy} variant="secondary" onClick={() => void action('close')}>Javoblarni yopish</Button>}
             <Button disabled={busy} variant="secondary" onClick={() => void action('finish')}>Mashg‘ulotni yakunlash</Button>
           </>}
         </div>}
@@ -178,6 +178,7 @@ function LiveGame() {
       {room.prompt && <Card title={room.round + (room.fixedRounds ? ' / 10' : '') + '-raund · ' + (room.roundKind ? titles[room.roundKind] : '')} subtitle={room.closed ? 'Raund yopildi' : seconds + ' soniya qoldi'}>
         <div className="stack">
           <p style={{ whiteSpace: 'pre-line' }}><strong>{room.prompt}</strong></p>
+          {room.host && !room.closed && <p className="small muted">Bu o‘qituvchi oynasi. Javoblarni xonaga qo‘shilgan talabalar belgilaydi.</p>}
           {room.visual && <Card title={room.visual.title}>
             {room.visual.values.map((value, i) => <div key={i} className="analytics-bar">
               <span>{room.visual?.labels[i]} · {value}</span>
@@ -189,7 +190,7 @@ function LiveGame() {
           : room.options ? room.options.map((option, i) => <button key={i} type="button"
             className={'test-option' + (room.own === i || (room.closed && room.answer === i) ? ' is-picked' : '')}
             style={{ transform: 'none', boxSizing: 'border-box' }}
-            disabled={busy || room.host || room.closed || seconds <= 0 || room.own !== null}
+            disabled={busy || room.host || room.closed || seconds <= 0 || room.own != null}
             onClick={() => void action('answer', { round: room.round, answer: i })}>
             <b>{String.fromCharCode(65 + i)}</b>
             <span>{option}
@@ -198,7 +199,7 @@ function LiveGame() {
             </span>
           </button>) : <GraphRound key={room.round} room={room} disabled={busy || seconds <= 0}
             submit={answer => void action('answer', { round: room.round, answer })} />}
-          {room.own !== null && <p role="status">{room.closed
+          {room.own != null && <p role="status">{room.closed
             ? (JSON.stringify(room.own) === JSON.stringify(room.answer) ? 'Javobingiz to‘g‘ri.' : 'Javobingiz xato.')
             : 'Javobingiz qabul qilindi.'}</p>}
           {room.closed && !room.answered && <p role="status">Bu raundda javob kelmadi.</p>}
@@ -222,7 +223,7 @@ function LiveGame() {
 
 function MatchRound({ room, disabled, submit }: { room: Room; disabled: boolean; submit: (values: number[]) => void }) {
   const [values, setValues] = useState<number[]>(Array.isArray(room.own) ? room.own : [-1, -1, -1]);
-  const frozen = disabled || room.host || room.closed || room.own !== null;
+  const frozen = disabled || room.host || room.closed || room.own != null;
   return <div className="stack">
     {values.map((value, i) => <label key={i}>{i + 1}-ta’rifga mos atama
       <select className="search-control" value={value} disabled={frozen}
@@ -238,18 +239,12 @@ function MatchRound({ room, disabled, submit }: { room: Room; disabled: boolean;
 
 function GraphRound({ room, disabled, submit }: { room: Room; disabled: boolean; submit: (answer: number[]) => void }) {
   const [values, setValues] = useState([0, 0, 0]);
-  const frozen = disabled || room.host || room.closed || room.own !== null;
+  const frozen = disabled || room.host || room.closed || room.own != null;
+  const shown = room.closed && Array.isArray(room.answer) ? room.answer : Array.isArray(room.own) ? room.own : values;
   return <div className="stack">
-    <Chart values={room.closed && Array.isArray(room.answer) ? room.answer : Array.isArray(room.own) ? room.own : values} />
-    {ranges.map((range, index) => <label key={range.label}>{range.label}
-      <select className="search-control" value={values[index]} disabled={frozen} onChange={event => {
-        const value = Number(event.target.value);
-        setValues(rows => rows.map((entry, i) => i === index ? value : entry));
-      }}>
-        {range.values.map((label, i) => <option key={label} value={range.start + i}>{label}</option>)}
-      </select>
-    </label>)}
+    <Chart values={shown} />
+    {room.closed && Array.isArray(room.answer) && <strong>To‘g‘ri javob</strong>}
+    <GraphControls values={shown} onChange={setValues} disabled={frozen} />
     {!room.host && !room.closed && <Button disabled={frozen} onClick={() => submit(values)}>Javobni yuborish</Button>}
-    {room.closed && Array.isArray(room.answer) && <p>To‘g‘ri javob · {room.answer.map((answer, i) => ranges[i].values[answer - ranges[i].start]).join(' / ')}</p>}
   </div>;
 }
