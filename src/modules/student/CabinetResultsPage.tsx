@@ -54,9 +54,17 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
       setFailed(Boolean(error));
       if (!error) {
         const counts = new Map<string, number>();
+        const bestByTopic = new Map<string, Result>();
         const chronological = [...((data ?? []) as Result[])].sort((a, b) =>
           Date.parse(b.taken_at) - Date.parse(a.taken_at) || b.attempt_id.localeCompare(a.attempt_id));
+        for (const result of chronological) {
+          if ((result.test_scope ?? 0) <= 0 || result.total <= 0) continue;
+          const key = result.student_id + ':' + result.test_scope;
+          const best = bestByTopic.get(key);
+          if (!best || result.points * best.total > best.points * result.total) bestByTopic.set(key, result);
+        }
         setResults(chronological.filter(result => {
+          if ((result.test_scope ?? 0) > 0) return bestByTopic.get(result.student_id + ':' + result.test_scope) === result;
           const count = counts.get(result.student_id) ?? 0;
           if (count >= 2) return false;
           counts.set(result.student_id, count + 1);
@@ -209,7 +217,7 @@ export function CabinetResultsPage({ admin = false }: { admin?: boolean }) {
   return (
     <>
       <PageHeader eyebrow={admin ? 'Analitika' : 'Shaxsiy natijalar'} title={admin ? 'Talabalar natijalari' : 'Mening natijalarim'}
-        description={showTests ? 'Test tahlili har bir talabaning eng so‘nggi 2 ta topshirilgan natijasi asosida shakllanadi.' : 'O‘yin natijalarini guruh, talaba, mavzu va sana bo‘yicha ko‘ring.'} />
+        description={showTests ? 'Har bir talaba va mavzu uchun eng yuqori foiz olinadi. Umumiy va semestr testlaridan eng so‘nggi ikkita natija olinadi.' : 'O‘yin natijalarini guruh, talaba, mavzu va sana bo‘yicha ko‘ring.'} />
       {admin && <Tabs ariaLabel="Hisobot turi" value={report} onChange={setReport}
         items={[{ value: 'tests', label: 'Test natijalari' }, { value: 'games', label: 'O‘yinlar statistikasi' }]} />}
       <Card title="Natijalarni filtrlash" className="mt-5">
