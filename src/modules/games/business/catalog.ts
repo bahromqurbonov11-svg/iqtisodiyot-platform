@@ -10,7 +10,7 @@ export const allSectors: Sector[] = [
     stages: [
       { title: 'Ehtiyot qismlar', concept: 'Zaxira', problem: 'Yangi modelning ekraniga talab noma’lum.', options: [
         ['Faqat buyurtma tushganda sotib olish', 3, 8, 'Omborda sotilmay qoladigan zaxira yo‘q.'],
-        ['Katta partiyani oldindan olish', 16, 28, 'Talab sust bo‘lsa, zaxiraning bir qismi sotilmaydi.', 7],
+        ['Katta partiyani oldindan olish', 24, 36, 'Talab sust bo‘lsa, qimmat zaxiraning katta qismi sotilmaydi.', 3],
         ['Ikki model uchun kichik partiya olish', 8, 15, 'Talab bir necha modelga bo‘linadi.'],
       ] },
       { title: 'Kafolat', concept: 'Sifat', problem: 'Bir necha qayta murojaat bo‘ldi.', options: [
@@ -20,7 +20,7 @@ export const allSectors: Sector[] = [
       ] },
       { title: 'Reklama', concept: 'Mijoz jalb qilish', problem: 'Yangi filialga mijoz kerak.', options: [
         ['Mahalliy reklama', 4, 10, 'Yaqin atrofdagi mijozlar keladi.'],
-        ['Keng reklama kampaniyasi', 14, 25, 'Kampaniya muvaffaqiyati konversiyaga bog‘liq.', 6],
+        ['Keng reklama kampaniyasi', 23, 34, 'Reklama buyurtmaga aylanmasa, sarf qoplanmaydi.', 2],
         ['Tavsiya uchun chegirma', 5, 13, 'Mavjud mijozlar yangi buyurtma olib keladi.'],
       ] },
       { title: 'Yetkazish', concept: 'Operatsion xarajat', problem: 'Mijozlar qurilmani uydan olib ketishni so‘ramoqda.', options: [
@@ -45,7 +45,7 @@ export const allSectors: Sector[] = [
     stages: [
       { title: 'Transport', concept: 'Ijara va doimiy xarajat', problem: 'Buyurtmalar soni mavsumga bog‘liq.', options: [
         ['Safar bo‘yicha transport yollash', 6, 14, 'Talab pasaysa, transport uchun ortiqcha to‘lov bo‘lmaydi.'],
-        ['Oylik ijara olish', 15, 27, 'Buyurtmalar kamayganda ijara xarajati qoplanmaydi.', 8],
+        ['Oylik ijara olish', 24, 36, 'Buyurtmalar kamayganda ijara xarajati qoplanmaydi.', 4],
         ['Yetkazish kunlarini birlashtirish', 5, 12, 'Safar xarajati bir nechta buyurtmaga taqsimlanadi.'],
       ] },
       { title: 'Yo‘nalish', concept: 'Unumdorlik', problem: 'Yoqilg‘i narxi oshdi.', options: [
@@ -70,7 +70,7 @@ export const allSectors: Sector[] = [
       ] },
       { title: 'Bayram mavsumi', concept: 'Talabni prognozlash', problem: 'Kelasi haftada buyurtma ko‘payishi kutilmoqda.', options: [
         ['Faqat oldindan buyurtma bo‘yicha quvvat oshirish', 6, 13, 'Xarajat tasdiqlangan hajmga mos.'],
-        ['Katta jamoani oldindan yollash', 19, 32, 'Talab kelmasa, ish haqi xarajati qoplanmaydi.', 11],
+        ['Katta jamoani oldindan yollash', 28, 41, 'Talab kelmasa, ish haqi xarajati qoplanmaydi.', 5],
         ['Hamkorlar bilan zaxira quvvat kelishuvi', 8, 17, 'Buyurtma oshganda qo‘shimcha quvvat ishga tushadi.'],
       ] },
     ],

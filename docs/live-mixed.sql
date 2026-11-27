@@ -15,6 +15,7 @@ declare
   task record;
   kind text;
   remaining numeric;
+  round_points integer;
   choice jsonb := payload->'answer';
 begin
   if uid is null then raise exception 'Sign-in required'; end if;
@@ -66,9 +67,15 @@ begin
         or choice is null or choice='null'::jsonb then raise exception 'Round closed'; end if;
       remaining := extract(epoch from r.deadline-clock_timestamp());
       if remaining<=0 then raise exception 'Round closed'; end if;
+      round_points := case
+        when choice=r.answer then 100+floor(least(remaining,100))::integer
+        when r.round_kind in ('graph','match') and jsonb_typeof(choice)='array' and jsonb_typeof(r.answer)='array'
+          and jsonb_array_length(choice)=3 and jsonb_array_length(r.answer)=3 then
+          (select round(count(*)*100.0/3)::integer from generate_series(0,2) i where choice->i=r.answer->i)
+        else 0 end;
       update public.econ_live_players set answered_round=r.round, last_answer=choice, response_count=response_count+1,
         correct_count=correct_count+case when choice=r.answer then 1 else 0 end,
-        score=score+case when choice=r.answer then 100+floor(least(remaining,100))::integer else 0 end
+        score=score+round_points
         where code=r.code and player=uid and answered_round<r.round;
     end if;
     base := public.econ_live_game('state',room_code);

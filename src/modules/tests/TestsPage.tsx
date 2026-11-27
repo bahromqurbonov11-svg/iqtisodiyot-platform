@@ -11,6 +11,7 @@ import { AWAY_LIMIT_MS, useAwayReset } from '@/services/useAwayReset';
 interface Attempt {
   id: string;
   deadline?: string;
+  serverNow?: string;
   questions: { question: string; options: string[] }[];
 }
 
@@ -50,6 +51,8 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   const [picked, setPicked] = useState<number | null>(null);
   const pickTimer = useRef<number | undefined>(undefined);
   const resolving = useRef(false);
+  const serverDeadline = useRef<number | undefined>(undefined);
+  const clockRevision = useRef(0);
   const generation = useRef(0);
   const [restart, setRestart] = useState(false);
   const [deadline, setDeadline] = useState(draft?.deadline ?? 0);
@@ -95,7 +98,39 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
     } catch { /* The current attempt remains available in memory. */ }
   }
 
+  function syncDeadline(data: { deadline: string; serverNow?: string }) {
+    const remaining = Math.max(0, Math.min(90_000, Date.parse(data.deadline) - Date.parse(data.serverNow ?? '')));
+    if (!Number.isFinite(remaining)) return Date.now() + 90_000;
+    serverDeadline.current = performance.now() + remaining;
+    setSeconds(Math.ceil(remaining / 1000));
+    return Date.now() + remaining;
+  }
+
+  useEffect(() => {
+    if (!attempt?.deadline || score !== undefined) return;
+    let active = true;
+    async function refresh() {
+      if (!attempt || resolving.current || document.hidden) return;
+      const version = generation.current;
+      const revision = clockRevision.current;
+      const { data, error } = await supabase.rpc('econ_test_clock', { target_attempt: attempt.id });
+      if (!active || version !== generation.current || revision !== clockRevision.current || resolving.current || error || !data?.deadline) return;
+      const nextDeadline = syncDeadline(data);
+      setDeadline(nextDeadline);
+      setAnswers(data.answers);
+      setIndex(data.answers.length);
+      saveDraft({ attempt, index: data.answers.length, deadline: nextDeadline, answers: data.answers });
+    }
+    if (serverDeadline.current === undefined) void refresh();
+    window.addEventListener('online', refresh);
+    return () => {
+      active = false;
+      window.removeEventListener('online', refresh);
+    };
+  }, [attempt, score]);
+
   useAwayReset(Boolean(attempt && score === undefined), () => {
+    serverDeadline.current = undefined;
     generation.current++;
     window.clearTimeout(pickTimer.current);
     saveDraft();
@@ -127,9 +162,11 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
   useEffect(() => {
     if (!attempt || index >= attempt.questions.length || !deadline) return;
     const tick = () => {
-      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      if (attempt.deadline && serverDeadline.current === undefined) return;
+      const millis = attempt.deadline ? serverDeadline.current! - performance.now() : deadline - Date.now();
+      const remaining = Math.max(0, Math.ceil(millis / 1000));
       setSeconds(remaining);
-      if (!remaining && !resolving.current) {
+      if (!remaining && !resolving.current && !document.hidden && navigator.onLine) {
         resolving.current = true;
         void advance(4);
       }
@@ -142,7 +179,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
 
   /** Javob tanlanganda belgi ko‘rinib turadi, so‘ng savol silliq almashadi. */
   function choose(choice: number) {
-    if (!attempt || resolving.current || document.hidden) return;
+    if (!attempt || resolving.current || document.hidden || (attempt.deadline && serverDeadline.current === undefined)) return;
     resolving.current = true;
     if (attempt.deadline) {
       setPicked(choice);
@@ -159,6 +196,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
 
   async function advance(choice: number) {
     if (!attempt) return;
+    clockRevision.current++;
     const version = generation.current;
     window.clearTimeout(pickTimer.current);
     setPicked(null);
@@ -172,14 +210,14 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
       if (version !== generation.current) return;
       if (error || !Array.isArray(data?.answers)) {
         setMessage('Javobni saqlab bo‘lmadi. Qayta urining.');
-        setDeadline(0);
         resolving.current = false;
+        if (navigator.onLine) setDeadline(0);
         return;
       }
       setMessage('');
       nextAnswers = data.answers;
       nextIndex = nextAnswers.length;
-      nextDeadline = Date.parse(data.deadline);
+      nextDeadline = syncDeadline(data);
     }
     setAnswers(nextAnswers);
     setIndex(nextIndex);
@@ -210,7 +248,8 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
     setPicked(null);
     setIndex(0);
     setSeconds(90);
-    const nextDeadline = data.deadline ? Date.parse(data.deadline) : Date.now() + 90_000;
+    serverDeadline.current = undefined;
+    const nextDeadline = data.deadline ? syncDeadline(data) : Date.now() + 90_000;
     const nextAnswers = data.deadline ? [] : data.questions.map(() => -1);
     resolving.current = false;
     setDeadline(nextDeadline);
@@ -256,6 +295,7 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
         description="Umumiy testni boshlang yoki bir mavzu bo‘yicha mashq qiling."
       />
       <div className="stack">
+        {message && <p role="status">{message}</p>}
         {!user && <GuestTest initialTopic={initialTopic} />}
         {user && !attempt && (
           <Card title="Testni boshlash" subtitle="Savollar bankini tanlang va testni boshlang" className="test-start">
@@ -328,7 +368,6 @@ function TestSession({ initialTopic }: { initialTopic?: number }) {
             </div>
           </Card>
         )}
-        {message && <p role="status">{message}</p>}
       </div>
     </div>
   );

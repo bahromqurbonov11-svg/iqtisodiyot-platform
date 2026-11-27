@@ -234,9 +234,7 @@ function LiveGame() {
             </span>
           </button>) : <GraphRound key={room.round} room={room} disabled={busy || seconds <= 0}
             submit={answer => void action('answer', { round: room.round, answer })} />}
-          {room.own != null && <p role="status">{room.closed
-            ? (JSON.stringify(room.own) === JSON.stringify(room.answer) ? 'Javobingiz to‘g‘ri.' : 'Javobingiz xato.')
-            : 'Javobingiz qabul qilindi.'}</p>}
+          {room.own != null && <p role="status">{roundFeedback(room)}</p>}
           {room.closed && !room.answered && <p role="status">Bu raundda javob kelmadi.</p>}
         </div>
       </Card>}
@@ -254,6 +252,17 @@ function LiveGame() {
     </>}
     {message && <p role="status">{message}</p>}
   </div>;
+}
+
+function roundFeedback(room: Room) {
+  if (!room.closed) return 'Javobingiz qabul qilindi.';
+  if (JSON.stringify(room.own) === JSON.stringify(room.answer)) return 'Javobingiz to‘g‘ri. Tezlik bonusi qo‘shildi.';
+  if (Array.isArray(room.own) && Array.isArray(room.answer) && room.answer.length === 3) {
+    const answer = room.answer;
+    const correct = room.own.filter((value, index) => value === answer[index]).length;
+    return '3 qismdan ' + correct + ' tasi to‘g‘ri · ' + Math.round(correct * 100 / 3) + ' ball.';
+  }
+  return 'Javobingiz xato.';
 }
 
 function MatchRound({ room, disabled, submit }: { room: Room; disabled: boolean; submit: (values: number[]) => void }) {
