@@ -118,7 +118,7 @@ export function RegisterPage() {
         });
 
       if (!loginError) {
-        navigate('/kabinet', { replace: true });
+        navigate(paths.home, { replace: true });
       }
     } catch (err) {
       setError(

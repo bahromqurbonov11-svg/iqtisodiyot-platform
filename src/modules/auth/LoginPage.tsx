@@ -1,6 +1,6 @@
 
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button, Notice } from '@/components/ui';
 import { paths } from '@/navigation/paths';
@@ -10,7 +10,6 @@ import { AuthShell } from './AuthShell';
 export function LoginPage() {
   const { provider } = useAuth();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,16 +34,8 @@ export function LoginPage() {
     }
 
     try {
-      const user = await provider.signIn(login, password);
-
-      const room = params.get('xona') ?? '';
-      if (/^[A-F0-9]{6}$/.test(room)) {
-        navigate(paths.game('jonli') + '?xona=' + room, { replace: true });
-      } else if (user.role === 'admin') {
-        navigate(paths.admin, { replace: true });
-      } else {
-        navigate(paths.cabinet, { replace: true });
-      }
+      await provider.signIn(login, password);
+      navigate(paths.home, { replace: true });
     } catch (err) {
       setError(
         err instanceof Error
@@ -59,7 +50,7 @@ export function LoginPage() {
   return (
     <AuthShell
       title="Tizimga kirish"
-      subtitle="Shaxsiy kabinetingizga kirish uchun login va parolingizni kiriting."
+      subtitle="Platformaga kirish uchun login va parolingizni kiriting."
       aside={
         <div className="auth__aside-inner">
           <div className="eyebrow eyebrow--light">
